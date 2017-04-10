@@ -24,7 +24,7 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
     const char *fcnm = "parmt_obsSearch64f\0";
     MPI_Win counterWin;
     double lagTime, *CeInv, *phiWork, *phiAll, *var;
-    int *lagsWork, *nlags, ierr, iobs, jobs, myid, myMTid, nobsProcs,
+    int *lagsWork, *nlags, ierr, iobs, jobs, myid, nobsProcs,
         npmax, value, value0;
     bool lwantLags;
     const double zero = 0.0;
@@ -76,10 +76,9 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
         }
         return -1;
     }
-    MPI_Comm_rank(mtloc.comm, &myMTid);
     if (lwantLags)
     {
-        if (myMTid == master)
+        if (mtloc.myid == master)
         {
             lagsWork = memory_calloc32i(data.nlocs*mtloc.nmtAll);
         }
