@@ -28,3 +28,7 @@ v2gamma.c
 xyz2tp.c
 )
 set (SRCS_COMPEARTH ${SRCS} PARENT_SCOPE)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/compearth_config.h)
+set(headers compearth.h compearth_config.h)
+file (RELATIVE_PATH _relPath "${CMAKE_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
+install(FILES ${headers} DESTINATION ${_relPath} COMPONENT headers)
