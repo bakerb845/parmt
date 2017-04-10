@@ -377,7 +377,7 @@ printf("%d %e\n", i+1, var[i]);
             }
         }
 */
-        for (int k=0; k<data.nlocs*mtloc.nmtAll; k++)
+        for (k=0; k<data.nlocs*mtloc.nmtAll; k++)
         {
             s[k] = exp(-(1.0 - phi[k]));
         }
@@ -555,7 +555,7 @@ printf("%e\n", xnorm);
                                   mtsearch.ng, v,
                                   luneUVMPDF);
         deps = memory_calloc64f(data.nlocs); 
-        for (int i=0; i<data.nlocs; i++)
+        for (i=0; i<data.nlocs; i++)
         {
             deps[i] = data.sacGxx[i].header.evdp;
         }
@@ -577,17 +577,17 @@ double *phiLoc = memory_calloc64f(data.nlocs*mtloc.nmtAll);
 double mt[6];
 int argmin, argmax, idep, imt;
 //for (int k=0; k<data.nlocs*mtloc.nmtAll; k++){phi[k] = 1.0;}
-for (int iobs=0; iobs<data.nobs; iobs++)
+for (iobs=0; iobs<data.nobs; iobs++)
 {
     parmt_locSearch(MPI_COMM_WORLD, iobs, mtloc.nmt, mtloc.ldm,
                     mtloc.mts, &data, phiLoc);
     //cblas_daxpy(data.nlocs*mtloc.nmtAll, 1.0, phiLoc, 1, phi, 1);
-    for (int k=0; k<data.nlocs*mtloc.nmtAll; k++)
+    for (k=0; k<data.nlocs*mtloc.nmtAll; k++)
     {
         phi[k] = phi[k] + phiLoc[k];
     }
 xnorm = 0.0;
-for (int k=0; k<data.nlocs*mtloc.nmtAll; k++){xnorm = xnorm + exp(phi[k]);}
+for (k=0; k<data.nlocs*mtloc.nmtAll; k++){xnorm = xnorm + exp(phi[k]);}
 printf("area under joint jpdf %e\n", xnorm);
 
 printf("phiAll\n");
@@ -728,9 +728,9 @@ for (ik=0; ik<nk; ik++)
 fclose(fout);
 
 fout = fopen("depmag/dipSlip.txt", "w");
-for (int is=0; is<ns; is++)
+for (is=0; is<ns; is++)
 {
-    for (int it=0; it<nt; it++)
+    for (it=0; it<nt; it++)
     {
         int it_is = is*nt + it;
         fprintf(fout, "%e %e %e\n", sigmas[is]*180.0/M_PI, thetas[it]*180./M_PI, strikeDip[it_is]);
@@ -741,13 +741,13 @@ fclose(fout);
 
 
 fout = fopen("depmag/depth.txt", "w");
-for (int iloc=0; iloc<nloc; iloc++)
+for (iloc=0; iloc<nloc; iloc++)
 {
   fprintf(fout, "%d %e\n", iloc, loc[iloc]); 
 }
 fclose(fout);
 
- for (int iobs=0; iobs<data.nobs; iobs++)
+ for (iobs=0; iobs<data.nobs; iobs++)
  {
  parmt_computeSynthetic(iobs, ilocOpt, imtOpt, mtloc.ldm, mtloc.mts, &data); 
 char fout[PATH_MAX];
