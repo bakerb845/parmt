@@ -545,7 +545,7 @@ printf("%e\n", xnorm);
 */
         // Compute the angles in degrees
         cblas_dscal(mtsearch.ng, 180.0/M_PI, gammas, 1); 
-        for (int i=0; i<mtsearch.nb; i++){betas[i] = (M_PI_2 - betas[i])*180.0/M_PI;}
+        for (i=0; i<mtsearch.nb; i++){betas[i] = (M_PI_2 - betas[i])*180.0/M_PI;}
         marginal_write2DToGnuplot("depmag/lune.txt",
                                   mtsearch.ng, gammas,
                                   mtsearch.nb, betas,
