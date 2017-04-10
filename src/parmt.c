@@ -40,6 +40,7 @@ int main(int argc, char *argv[])
     int64_t ngridSearch;
     double hLower, hUpper, uLower, uUpper, vLower, vUpper, xnorm;
     int i, ierr, myid, npInLocGroups, nmt, npInMTGroups, npInObsGroups, nprocs, provided;
+    int ix, iy, k;
     MPI_Comm mtComm, locComm, obsComm;
     bool linMTComm, linLocComm, linObsComm;
     const int master = 0;
@@ -271,7 +272,7 @@ INIT_ERROR:;
     {
         printf("%s: Initializing output file...\n", PROGRAM_NAME);
         deps = memory_calloc64f(data.nlocs); 
-        for (int i=0; i<data.nlocs; i++)
+        for (i=0; i<data.nlocs; i++)
         {
             deps[i] = data.sacGxx[i].header.evdp;
         }
@@ -409,7 +410,7 @@ printf("%d %e\n", i+1, var[i]);
                               6, 1, Mned);
         double *Gpol = memory_calloc64f(6*data.nobs), pol;
         int ipol;
-        for (int iobs=0; iobs<data.nobs; iobs++)
+        for (iobs=0; iobs<data.nobs; iobs++)
         {
             parmt_polarity_computeGreensRowFromData(data.data[iobs],
                                                     1, 6,
@@ -439,11 +440,11 @@ printf("%d %e\n", i+1, var[i]);
                                           pAxis, nAxis, tAxis,
                                           xw1, yw1, pn1);
         FILE *fwork = fopen("depmag/beachballOpt.txt", "w");
-        for (int iy=0; iy<101; iy++)
+        for (iy=0; iy<101; iy++)
         {
-            for (int ix=0; ix<101; ix++)
+            for (ix=0; ix<101; ix++)
             {
-                int k = iy*101 + ix;
+                k = iy*101 + ix;
                 fprintf(fwork, "%e %e %d\n", xw1[k], yw1[k], pn1[k]);
             }
             fprintf(fwork, "\n");
@@ -456,9 +457,9 @@ printf("%d %e\n", i+1, var[i]);
                Mned[0], Mned[1], Mned[2], Mned[3], Mned[4], Mned[5]);
         printf("%s: Objective function computation time: %f\n",
                PROGRAM_NAME, MPI_Wtime() - t0);
-        for (int iobs=0; iobs<data.nobs; iobs++)
+        for (iobs=0; iobs<data.nobs; iobs++)
         {
-            int k = iobs*data.nlocs + jloc;
+            k = iobs*data.nlocs + jloc;
             parmt_utils_sacGrnsToEst(data.data[iobs],
                                      data.sacGxx[k], data.sacGyy[k],
                                      data.sacGzz[k], data.sacGxy[k],
@@ -643,25 +644,26 @@ int ng = mtsearch.ng;
 int nk = mtsearch.nk;
 int ns = mtsearch.ns;
 int nt = mtsearch.nt;
+int im, ib, ig, ik, iloc, is, it;
 double *lune = memory_calloc64f(ng*nb);
 double *luneOpt = memory_calloc64f(ng*nb);
 double *loc = memory_calloc64f(nloc);
 double *strikeSlip = memory_calloc64f(nk*ns);
 double *strikeDip = memory_calloc64f(nk*nt); 
 double *dipSlip = memory_calloc64f(nt*ns);
-for (int iloc=0; iloc<nloc; iloc++)
+for (iloc=0; iloc<nloc; iloc++)
 {
-    for (int im=0; im<nm; im++)
+    for (im=0; im<nm; im++)
     {
-        for (int ib=0; ib<nb; ib++)
+        for (ib=0; ib<nb; ib++)
         {
-            for (int ig=0; ig<ng; ig++)
+            for (ig=0; ig<ng; ig++)
             {
-                for (int ik=0; ik<nk; ik++)
+                for (ik=0; ik<nk; ik++)
                 {
-                    for (int is=0; is<ns; is++)
+                    for (is=0; is<ns; is++)
                     {
-                        for (int it=0; it<nt; it++)
+                        for (it=0; it<nt; it++)
                         {
                             int ig_ib = ib*ng + ig;
                             int it_is = is*nt + it;
@@ -686,14 +688,14 @@ for (int iloc=0; iloc<nloc; iloc++)
         }
     }
 }
-for (int iobs=0; iobs<data.nobs; iobs++)
+for (iobs=0; iobs<data.nobs; iobs++)
 {
 printf("%d %f\n", iobs, data.data[iobs].header.az);
 }
 FILE *fout = fopen("depmag/lune.txt", "w");
-for (int ib=0; ib<nb; ib++)
+for (ib=0; ib<nb; ib++)
 {
-  for (int ig=0; ig<ng; ig++)
+  for (ig=0; ig<ng; ig++)
   {
     int ig_ib = ib*ng + ig;
     fprintf(fout, "%e %e %.16e %.16e\n", gammas[ig]*180./M_PI, (M_PI/2.0 - betas[ib])*180.0/M_PI, lune[ig_ib], luneOpt[ig_ib]);
@@ -702,9 +704,9 @@ for (int ib=0; ib<nb; ib++)
 }
 fclose(fout);
 fout = fopen("depmag/strikeDip.txt", "w");
-for (int ik=0; ik<nk; ik++)
+for (ik=0; ik<nk; ik++)
 {
-    for (int it=0; it<nt; it++)
+    for (it=0; it<nt; it++)
     {
         int ik_it = it*nk + ik;
         fprintf(fout, "%e %e %e\n", thetas[it]*180.0/M_PI, kappas[ik]*180./M_PI, strikeDip[ik_it]); 
@@ -714,9 +716,9 @@ for (int ik=0; ik<nk; ik++)
 fclose(fout);
 
 fout = fopen("depmag/strikeSlip.txt", "w");
-for (int ik=0; ik<nk; ik++)
+for (ik=0; ik<nk; ik++)
 {
-    for (int is=0; is<ns; is++)
+    for (is=0; is<ns; is++)
     {
         int ik_is = is*nk + ik;
         fprintf(fout, "%e %e %e\n", sigmas[is]*180.0/M_PI, kappas[ik]*180./M_PI, strikeSlip[ik_is]);
