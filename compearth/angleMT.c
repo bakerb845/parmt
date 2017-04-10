@@ -1,8 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <cblas.h>
 #include "compearth.h"
+#ifdef PARMT_USE_INTEL
+#include <mkl_cblas.h>
+#else
+#include <cblas.h>
+#endif
+
 /*!
  * @brief Computes the angle between moment tensors.  This is from 
  *        Equation 15 of Tape and Tape 2016 - A confidence parameter for 

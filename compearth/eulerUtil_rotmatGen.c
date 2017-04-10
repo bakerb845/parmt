@@ -1,8 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <cblas.h>
 #include "compearth.h"
+#ifdef PARMT_USE_INTEL
+#include <mkl_cblas.h>
+#else
+#include <cblas.h>
+#endif
 
 static void gemm3_colMajorNoTransNoTrans(const double *__restrict__ A,
                                          const double *__restrict__ B,

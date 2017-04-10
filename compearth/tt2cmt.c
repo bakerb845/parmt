@@ -1,9 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <cblas.h>
 #include <string.h>
 #include "compearth.h"
+#ifdef PARMT_USE_INTEL
+#include <mkl_cblas.h>
+#else
+#include <cblas.h>
+#endif
 
 static int cross(const int n,
                  const double *__restrict__ a,

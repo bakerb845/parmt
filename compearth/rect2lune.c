@@ -1,8 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <cblas.h>
 #include <math.h>
 #include "compearth.h"
+#ifdef PARMT_USE_INTEL
+#include <mkl_cblas.h>
+#else
+#include <cblas.h>
+#endif
 
 /*!
  * @brief Converts v-w coordinates to lune coordinates

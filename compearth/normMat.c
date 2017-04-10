@@ -1,8 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <cblas.h>
 #include "compearth.h"
+#ifdef PARMT_USE_INTEL
+#include <mkl_cblas.h>
+#else
+#include <cblas.h>
+#endif
 
 #ifndef PARMT_USE_ISCL
 static double array_norm64f(const int n, const double *__restrict__ x,
