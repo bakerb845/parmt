@@ -1,0 +1,12 @@
+/*TODO copyright and author info */
+#ifndef PARMT_CONFIG_H__
+#define PARMT_CONFIG_H__ 1
+
+/* using intel */
+#cmakedefine PARMT_USE_INTEL
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+#endif /* PARMT_CONFIG_H__ */
