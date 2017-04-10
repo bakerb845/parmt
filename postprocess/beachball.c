@@ -4,11 +4,16 @@
 #include <float.h>
 #include <string.h>
 #include <stdbool.h>
-#include <cblas.h>
-#include <lapacke.h>
-#include <lapacke_utils.h>
 #include <png.h>
 #include "beachball.h"
+#include "parmt_config.h"
+#ifdef PARMT_USE_INTEL
+#include <mkl_lapacke.h>
+#include <mkl_cblas.h>
+#else
+#include <lapacke.h>
+#include <cblas.h>
+#endif
 //#include "pixmap.h"
 //#include "pixmap_png.h"
 //#include "pixmap_jpg.h"
@@ -21,6 +26,9 @@
 #endif
 #ifndef MAX
 #define MAX(x,y) (((x) > (y)) ? (x) : (y))
+#endif
+#ifndef MIN
+#define MIN(x,y) (((x) < (y)) ? (x) : (y))
 #endif
 #define PIXMAP_COLORS 3
 
