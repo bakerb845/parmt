@@ -140,8 +140,6 @@ int parmt_locSearchL164f(const MPI_Comm locComm,
             return -1; 
         }
         // Tally the objective function
-//printf("%d %d %d %d %d %d %d %d\n", mtloc.myid, mtloc.ldm, mtloc.nmtAll, mtloc.nmt, npts, blockSize, nlags, (int) lwantLags);
-//printf("%d %e %e %e %e %e %e %e\n", mtloc.myid, d[npts/2], G[npts/2], G[npmax+npts/2], G[2*npmax+npts/2], G[3*npmax+npts/2], G[4*npmax+npts/2], G[5*npmax+npts/2]);
         ierr = parmt_mtSearchL164f(mtloc.ldm, mtloc.nmt,
                                    npts, blockSize,
                                    nlags, lwantLags,
@@ -149,15 +147,6 @@ int parmt_locSearchL164f(const MPI_Comm locComm,
                                    &G[3*npmax], &G[4*npmax], &G[5*npmax],
                                    CeInv, mtloc.mts, d,
                                    phiLoc, varLoc, lagLoc);
-if (mtloc.myid == 0)
-{
-//printf("0 %e %e %e %e\n", phiLoc[0], mtloc.mts[5], G[npts/2], G[npts/2+1]);
-}
-if (mtloc.commSize == 1 || mtloc.myid)
-{
-//printf("1 %d %e %e %e\n", mtloc.l2g[mtloc.nmt-1], phiLoc[mtloc.nmt-1], G[npts/2], G[npts/2+1]);
-}
-//MPI_Barrier(mtloc.comm);
         if (ierr != 0)
         {
             printf("%s: Error calling XC64f search %d %d\n",
@@ -167,43 +156,29 @@ if (mtloc.commSize == 1 || mtloc.myid)
         // Get the results on the master
         jndx = 0;
         if (mtloc.myid == master){jndx = iloc*mtloc.nmtAll;}
-//printf("return: %d %d\n", mtloc.nmtProc[1], mtloc.offset[1]);
-        MPI_Gatherv(phiLoc, mtloc.nmt, MPI_DOUBLE,
-                    &phiWork[jndx], mtloc.nmtProc, mtloc.offset,
-                    MPI_DOUBLE, master, mtloc.comm);
-/*
-if (mtloc.myid == 0)
-{
-for (int d=0; d<16; d++)
-{
-//printf("%d %d %e %e\n", d, omp_get_num_threads(), phiLoc[d], G[d*8]);
-}
-}
-*/
-/*
-if (mtloc.myid == 0)
-{
-printf("0 %e %e %e %e %e %e\n", mtloc.mts[0], mtloc.mts[1], mtloc.mts[2], mtloc.mts[3], mtloc.mts[4], mtloc.mts[5]);
-}
-if (mtloc.commSize == 1 || mtloc.myid)
-{
-int last = mtloc.ldm*(mtloc.nmt-1);
-printf("1 %d %e %e %e %e %e %e\n", mtloc.l2g[mtloc.nmt-1], mtloc.mts[last], mtloc.mts[last+1], mtloc.mts[last+2], mtloc.mts[last+3], mtloc.mts[last+4], mtloc.mts[last+5]);
-}
-*/
-//if (mtloc.myid == master){printf("finish: %e %e\n", phi[jndx], phiWork[jndx+mtloc.nmtAll-1]);}
-        if (lwantLags)
+        if (mtloc.commSize == 1)
         {
-            MPI_Gatherv(lagLoc, mtloc.nmt, MPI_INT,
-                        &lagWork[jndx], mtloc.nmtProc, mtloc.offset,
-                        MPI_INT, master, mtloc.comm);
+            array_copy64f_work(mtloc.nmtAll, phiLoc, &phiWork[jndx]);
+            if (lwantLags)
+            {
+                array_copy32i_work(mtloc.nmt, lagLoc, &lagWork[jndx]); 
+            }
+        }
+        else
+        {
+            MPI_Gatherv(phiLoc, mtloc.nmt, MPI_DOUBLE,
+                        &phiWork[jndx], mtloc.nmtProc, mtloc.offset,
+                        MPI_DOUBLE, master, mtloc.comm);
+            if (lwantLags)
+            {
+                MPI_Gatherv(lagLoc, mtloc.nmt, MPI_INT,
+                            &lagWork[jndx], mtloc.nmtProc, mtloc.offset,
+                            MPI_INT, master, mtloc.comm);
+            }
         }
 NEXT_LOCATION:;
         MPI_Barrier(mtloc.comm);
     }
-    //cblas_dscal(npts, 1.0/(double) mtloc.nmtAll, varLoc, 1);
-    //MPI_Reduce(varLoc, varWork, npts, MPI_DOUBLE, MPI_SUM,
-    //               master, mtloc.comm);
     MPI_Reduce(varLoc, varWork, npts, MPI_DOUBLE, MPI_MIN,
                    master, mtloc.comm);
     // Have the location masters reduce their result onto the master
