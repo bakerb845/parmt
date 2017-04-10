@@ -533,7 +533,7 @@ varsum = 1;
 varsum = data->data[iobs].data[cblas_idamax(data->data[iobs].header.npts, data->data[iobs].data, 1)];
 double *CeInv = array_set64f(npmax, 1.0/varsum, &ierr); bool ldiag = true;
 double vmax = array_max64f(npts, var); 
-for (int k=0;k<npts; k++)
+for (k=0;k<npts; k++)
 {
    if (var[k] < vmax*1.e-8)
    {
