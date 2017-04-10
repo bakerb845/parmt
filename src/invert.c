@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "parmt_invert.h"
-#ifdef PARMT_USE_MKL
+#ifdef PARMT_USE_INTEL
 #include <mkl_lapacke.h>
 #include <mkl_cblas.h>
 #else
