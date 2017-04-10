@@ -2,7 +2,7 @@
 #define COMPEARTH_H__ 1
 #include <stdbool.h>
 #include <math.h>
-#include "compearth.h"
+#include "compearth_config.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
