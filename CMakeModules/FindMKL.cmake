@@ -8,7 +8,7 @@
 
 SET(MKL_FOUND "NO")
 
-SET(MKL_NAMES ${MKL_NAMES} libmkl_intel_lp64.a libmkl_core.a libmkl_sequential.a)
+SET(MKL_NAMES ${MKL_NAMES} mkl_intel_lp64 mkl_core mkl_sequential)
 FOREACH (MKL_NAME ${MKL_NAMES})
    FIND_LIBRARY(${MKL_NAME}_LIBRARY
        NAMES ${MKL_NAME} 
