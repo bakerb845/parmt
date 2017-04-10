@@ -580,11 +580,12 @@ printf("integrating\n");
         }
     }
 printf("dumping result\n");
+int ix, iy;
     FILE *fwork;
     fwork = fopen("depmag/beachball.txt", "w");
-    for (int iy=0; iy<nyp; iy++)
+    for (iy=0; iy<nyp; iy++)
     {
-        for (int ix=0; ix<nxp; ix++)
+        for (ix=0; ix<nxp; ix++)
         {
             int k = iy*nxp + ix;
             fprintf(fwork, "%e %e %e %e %e %d\n", xw1[k], yw1[k], bb[k], bbAvg[k], bbWt[k], bmap[nmtBB/2*ldi+k]);
