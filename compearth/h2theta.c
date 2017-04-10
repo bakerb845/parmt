@@ -21,7 +21,7 @@ void compearth_h2theta(const int n, const double *__restrict__ h,
     for (i=0; i<n; i++)
     {
         theta[i] = acos(h[i]);
-        theta[i] = MAX(0, MIN(theta[i], M_PI_2));
+        theta[i] = fmax(0.0, fmin(theta[i], M_PI_2));
     }
     return;
 }

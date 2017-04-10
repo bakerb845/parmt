@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <lapacke_utils.h>
 #include "compearth.h"
 /*!
  * @brief Empirical formula of Dahlen and Tromp (1999) pg. 178 for converting
@@ -37,7 +36,7 @@ int compearth_m02hdur(const int nm, const double *__restrict__ M0,
     for (i=0; i<nm; i++)
     {
         if (M0[i] < 0.0){ierr = ierr + 1;}
-        hdur[i] = 2.4e-6*cbrt(MAX(M0[i], 0.0));
+        hdur[i] = 2.4e-6*cbrt(fmax(M0[i], 0.0));
     }
     if (ierr != 0)
     {
