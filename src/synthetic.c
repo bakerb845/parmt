@@ -42,6 +42,6 @@ printf("%d\n", k);
     cblas_dgemv(CblasColMajor, CblasNoTrans,
                 npts, 6, 1.0, G, npts,
                 &mts[ldm*imtOpt], 1, 0.0, data->est[iobs].data, 1);
-    memory_free(&G);
+    memory_free64f(&G);
     return 0;
 }
