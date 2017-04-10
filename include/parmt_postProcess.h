@@ -1,6 +1,7 @@
 #ifndef PARMT_POSTPROCESS_H__
 #define PARMT_POSTPROCESS_H__ 1
 #include <stdint.h>
+#include "parmt_config.h"
 
 #ifdef __cplusplus
 extern "C"
