@@ -1,8 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <lapacke.h>
 #include "compearth.h"
+#ifdef PARMT_USE_INTEL
+#include <mkl_lapacke.h>
+#else
+#include <lapacke.h>
+#endif
 
 /*!
  * @brief Convert from moment tnesor to scalar seismic moment
