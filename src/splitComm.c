@@ -53,6 +53,16 @@ int parmt_splitComm(const MPI_Comm globalComm,
                fcnm);
         return -1;
     }
+    // Handle base case
+    if (nprocs == 1)
+    {
+        *linObsComm = true;
+        *linLocComm = true;
+        *linMTComm = true;
+        *obsComm = globalComm; 
+        *locComm = globalComm;
+        *mtComm = globalComm;
+    }
     // Generate the ranks definining how we split the global communicator.
     // The strategy is that the x (fast) axis of a cube defines the 
     // the MT communicator, the y (intermediate) axis of a cube defines
