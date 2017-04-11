@@ -205,7 +205,7 @@ __assume_aligned(xc, 64);
     }
     array_zeros64f_work(lxc, xc);
     // Compute \f$ x_c = \sum_{i=1}^{n_{mt}} G \textbf{m} \star \textbf{d} \f$
-#pragma omp parallel shared(Gxc, Gmat, mt, lc, ldm, xc) \
+#pragma omp parallel shared(Gxc, Gmat, mt, lc, xc) \
         firstprivate (dscal, xcorr) \
         private (est, gscal, xscal, i, j, m6, xcw) default(none)
 {
