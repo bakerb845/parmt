@@ -348,7 +348,8 @@ int parmt_discretizeMT64f_MPI(const MPI_Comm comm,
                             {
                                 if (jmt < 0 || jmt >= nmtWork)
                                 {
-                                    printf("%s: Sizing error\n", fcnm);
+                                    printf("%s: Sizing error %d %d %d\n",
+                                           fcnm, mts->myid, jmt, nmtWork);
                                     ierr = 1;
                                 }
                                 for (i=0; i<6; i++)
