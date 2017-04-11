@@ -9,8 +9,10 @@
 #include "parmt_mtsearch.h"
 #ifdef PARMT_USE_INTEL
 #include <mkl_lapacke.h>
+#include <mkl_cblas.h>
 #else
 #include <lapacke.h>
+#include <cblas.h>
 #endif
 #include "iscl/array/array.h"
 #include "iscl/memory/memory.h"
@@ -147,13 +149,11 @@ int parmt_discretizeMT64f_MPI(const MPI_Comm comm,
                               struct localMT_struct *mts)
 {
     const char *fcnm = "parmt_discretizeMT64f_MPI\0";
-    double *bloc, *gloc, *kloc, *mloc, *sloc, *tloc, *mtWork;
+    double *mtWork;
     int64_t nmt64;
-    int *nmtProc, *offset;
-    int dmt, i, ib, ib0, ierr, ig, ig0, ik, ik0, im, im0, is, is0,
-        it, it0, imt, imtAll, imtloc, imt1, imt2, jmt, myid, nbloc, ngloc,
-        nkloc, nmloc, nmtall, nmt, nmtWork, nprocs, nsloc, ntloc;
-    bool *lbloc, *lgloc, *lkloc, *lmloc, *lsloc, *ltloc;
+    int *displ, *nmtProc, *offset, *sendCounts;
+    int dmt, i, ierr, imt, imtAll, imtloc, imt1, imt2, jmt, myid,
+        nmtall, nmt, nmtWork, nprocs;
     const int master = 0;
     //------------------------------------------------------------------------//
     ierr = 0;
@@ -222,161 +222,45 @@ int parmt_discretizeMT64f_MPI(const MPI_Comm comm,
     mts->myid = myid;
     memory_free32i(&nmtProc);
     memory_free32i(&offset);
-    // finall do the division on each process
-    mts->l2g = memory_calloc32i(MAX(1, mts->nmt));
-    lmloc = memory_calloc8l(nm);
-    lbloc = memory_calloc8l(nb);
-    lgloc = memory_calloc8l(ng);
-    lsloc = memory_calloc8l(ns);
-    lkloc = memory_calloc8l(nk);
-    ltloc = memory_calloc8l(nt);
-    im0 = INT_MAX;
-    ib0 = INT_MAX;
-    ig0 = INT_MAX;
-    is0 = INT_MAX;
-    ik0 = INT_MAX;
-    it0 = INT_MAX;
-    // get my local moment tensor terms 
-    imtloc = 0;
-    for (im=0; im<nm; im++)
+    // have master process compute all mts and scatter them 
+    // TODO this should be parallel
+    if (mts->myid == master)
     {
-        for (ib=0; ib<nb; ib++)
+        mtWork = memory_calloc64f(mts->ldm*mts->nmtAll);
+        ierr = parmt_discretizeMT64f(ng, gammas,
+                                     nb, betas,
+                                     nm, M0s,
+                                     nk, kappas,
+                                     nt, thetas,
+                                     ns, sigmas,
+                                     mts->ldm, mts->nmtAll, mtWork);
+    }
+    else
+    {
+        mtWork = memory_calloc64f(1);
+    }
+    MPI_Bcast(&ierr, 1, MPI_INT, master, mts->comm);
+    if (mts->commSize > 1)
+    {
+        // figure out who gets what part of the moment tensor space
+        sendCounts = memory_calloc32i(mts->commSize);
+        displ = memory_calloc32i(mts->commSize);
+        for (i=0; i<mts->commSize; i++)
         {
-            for (ig=0; ig<ng; ig++)
-            {
-                for (ik=0; ik<nk; ik++)
-                {
-                    for (is=0; is<ns; is++)
-                    {
-                        for (it=0; it<nt; it++)
-                        {
-                            // index
-                            imt = im*nb*ng*nk*ns*nt
-                                + ib*ng*nk*ns*nt
-                                + ig*nk*ns*nt
-                                + ik*ns*nt
-                                + is*nt
-                                + it; 
-                            // verify it is in bounds
-                            if (imt >= imt1 && imt < imt2)
-                            {
-                                im0 = MIN(im0, im);
-                                ib0 = MIN(ib0, ib);
-                                ig0 = MIN(ig0, ig);
-                                is0 = MIN(is0, is);
-                                ik0 = MIN(ik0, ik);
-                                it0 = MIN(it0, it);
-                                lmloc[im] = true;
-                                lbloc[ib] = true;
-                                lgloc[ig] = true;
-                                lsloc[is] = true;
-                                lkloc[ik] = true;
-                                ltloc[it] = true;
-                                // update the pointers
-                                mts->l2g[imtloc] = imt;
-                                imtloc = imtloc + 1;
-                            }
-                        }
-                    }
-                }
-            }
+            sendCounts[i] = mts->nmtProc[i]*mts->ldm;
+            displ[i] = mts->ldm*mts->offset[i]; 
         }
+        // set the memory and distribute it
+        mts->mts = memory_calloc64f(mts->ldm*MAX(1,mts->nmt));
+        MPI_Scatterv(mtWork, sendCounts, displ,
+                     MPI_DOUBLE, mts->mts, mts->ldm*mts->nmt,
+                     MPI_DOUBLE, master, mts->comm); 
+        memory_free64f(&mtWork);
     }
-    MPI_Allreduce(&imtloc, &imtAll, 1, MPI_INT, MPI_SUM, mts->comm);
-    if (imtAll != mts->nmtAll)
+    else
     {
-        printf("%s: Error imtAll != nmtAll\n", fcnm);
-        return -1;
+        mts->mts = mtWork;
     }
-    // Compute a superset of my grid
-    // get the local elements of the moment tensor grid search
-    mloc = array_mask64f(nm, M0s,    lmloc, &nmloc, &ierr);
-    bloc = array_mask64f(nb, betas,  lbloc, &nbloc, &ierr);
-    gloc = array_mask64f(ng, gammas, lgloc, &ngloc, &ierr);
-    kloc = array_mask64f(nk, kappas, lkloc, &nkloc, &ierr);
-    sloc = array_mask64f(ns, sigmas, lsloc, &nsloc, &ierr);
-    tloc = array_mask64f(nt, thetas, ltloc, &ntloc, &ierr);
-    nmtWork = MAX(1, nmloc)*MAX(1, nbloc)*MAX(1, ngloc)
-             *MAX(1, nkloc)*MAX(1, nsloc)*MAX(1, ntloc);
-    mtWork = memory_calloc64f(mts->ldm*MAX(1, nmtWork));
-    // discretize the moment tensor space
-    ierr = parmt_discretizeMT64f(ngloc, gloc,
-                                 nbloc, bloc,
-                                 nmloc, mloc,
-                                 nkloc, kloc,
-                                 ntloc, tloc,
-                                 nsloc, sloc,
-                                 mts->ldm, nmtWork, mtWork);
-    if (ierr != 0)
-    {
-        printf("%s: Error discretizing MT on process %d\n", fcnm, myid);
-        return -1;
-    }
-    mts->mts = memory_calloc64f(mts->ldm*MAX(1, mts->nmt));
-    // Extract my moment tensors from superset 
-    imtloc = 0;
-    jmt =-1;
-    for (im=0; im<nm; im++)
-    {   
-        for (ib=0; ib<nb; ib++)
-        {
-            for (ig=0; ig<ng; ig++)
-            {
-                for (ik=0; ik<nk; ik++)
-                {
-                    for (is=0; is<ns; is++)
-                    {
-                        for (it=0; it<nt; it++)
-                        {
-                            // index
-                            imt = im*nb*ng*nk*ns*nt
-                                + ib*ng*nk*ns*nt
-                                + ig*nk*ns*nt
-                                + ik*ns*nt
-                                + is*nt
-                                + it;
-                            jmt = (im - im0)*nbloc*ngloc*nkloc*nsloc*ntloc
-                                + (ib - ib0)*ngloc*nkloc*nsloc*ntloc
-                                + (ig - ig0)*nkloc*nsloc*ntloc
-                                + (ik - ik0)*nsloc*ntloc
-                                + (is - is0)*ntloc
-                                + (it - it0);
-                            // verify it is in bounds
-                            if (imt >= imt1 && imt < imt2)
-                            {
-                                if (jmt < 0 || jmt >= nmtWork)
-                                {
-                                    printf("%s: Sizing error %d %d %d\n",
-                                           fcnm, mts->myid, jmt, nmtWork);
-                                    ierr = 1;
-                                }
-                                for (i=0; i<6; i++)
-                                {
-                                    mts->mts[mts->ldm*imtloc+i]
-                                         = mtWork[mts->ldm*jmt+i];
-                                }
-                                imtloc = imtloc + 1;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    // free memory
-    memory_free8l(&lmloc);
-    memory_free8l(&lbloc);
-    memory_free8l(&lgloc);
-    memory_free8l(&lkloc);
-    memory_free8l(&lsloc);
-    memory_free8l(&ltloc);
-    memory_free64f(&mloc);
-    memory_free64f(&bloc);
-    memory_free64f(&gloc);
-    memory_free64f(&kloc);
-    memory_free64f(&sloc);
-    memory_free64f(&tloc);
-    memory_free64f(&mtWork);
     return ierr;
 }
 //============================================================================//
@@ -442,8 +326,8 @@ int parmt_discretizeMT64f(const int ng,
 {
     const char *fcnm = "parmt_discretizeMT64f\0";
     double lam[3], Muse[6], U[9] __attribute__ ((aligned (64)));
-    double deltaDeg, gammaDeg, kappaDeg, M0, sigmaDeg, thetaDeg;
-    int i, ierr, ierr1, ib, ig, im, imt, ik, is, it;
+    double *mtWork, deltaDeg, gammaDeg, kappaDeg, M0, sigmaDeg, thetaDeg;
+    int i, ierr, ierr1, ib, ig, indx, im, imt, ik, is, it, nmtBase;
     const double pi180i = 180.0/M_PI;
     const double betaMin = 0.0;
     const double betaMax = M_PI;
@@ -528,70 +412,93 @@ int parmt_discretizeMT64f(const int ng,
             return -1;
         }
     }
-    // Loop on scalar moments
-    #pragma omp parallel for collapse(6) \
+    // The moment tensors are equivalent up to a scaling factor - so compute
+    // the unit moment tensor
+    nmtBase = nb*ng*nk*ns*nt;
+    if (nm == 1)
+    {
+        mtWork = mts; 
+    }
+    else
+    {
+        mtWork = memory_calloc64f(nmtBase*ldm);
+    }
+    #pragma omp parallel for collapse(5) \
      firstprivate (lam, Muse, U) \
      private (deltaDeg, gammaDeg, kappaDeg, M0, \
-              sigmaDeg, thetaDeg, ierr1, im, imt, ib, ig, ik, is, it) \
-     shared (fcnm, M0s, betas, gammas, kappas, sigmas, mts, thetas) \
+              sigmaDeg, thetaDeg, ierr1, imt, ib, ig, ik, is, it) \
+     shared (fcnm, M0s, betas, gammas, kappas, sigmas, mtWork, thetas) \
      reduction (max:ierr) \
      default (none)
-    for (im=0; im<nm; im++)
+    // Loop on colatitudes
+    for (ib=0; ib<nb; ib++)
     {
-        // Loop on colatitudes
-        for (ib=0; ib<nb; ib++)
+        // Loop on longitudes
+        for (ig=0; ig<ng; ig++)
         {
-            // Loop on longitudes
-            for (ig=0; ig<ng; ig++)
+            // Loop on strike
+            for (ik=0; ik<nk; ik++)
             {
-                // Loop on strike
-                for (ik=0; ik<nk; ik++)
+                // Loop on rake
+                for (is=0; is<ns; is++)
                 {
-                    // Loop on rake
-                    for (is=0; is<ns; is++)
+                    // Loop on dip
+                    for (it=0; it<nt; it++)
                     {
-                        // Loop on dip
-                        for (it=0; it<nt; it++)
+                        // tape**2 space term
+                        M0 = 1.0;
+                        deltaDeg = (M_PI/2.0 - betas[ib])*pi180i;
+                        gammaDeg = gammas[ig]*pi180i;
+                        kappaDeg = kappas[ik]*pi180i;
+                        sigmaDeg = sigmas[is]*pi180i;
+                        thetaDeg = thetas[it]*pi180i;
+                        // index
+                        imt = ib*ng*nk*ns*nt
+                            + ig*nk*ns*nt
+                            + ik*ns*nt
+                            + is*nt
+                            + it;
+                        // Compute the corresponding moment tensor
+                        ierr1 = compearth_tt2cmt(gammaDeg, deltaDeg, M0,
+                                                 kappaDeg, thetaDeg,
+                                                 sigmaDeg,
+                                                 Muse, lam, U);
+                        // Convert from USE to our NED estimation basis
+                        ierr1 = compearth_convertMT(USE, NED, Muse,
+                                                    &mtWork[imt*ldm]);
+                        if (ierr1 != 0)
                         {
-                            // tape**2 space term
-                            M0 = M0s[im];
-                            deltaDeg = (M_PI/2.0 - betas[ib])*pi180i;
-                            gammaDeg = gammas[ig]*pi180i;
-                            kappaDeg = kappas[ik]*pi180i;
-                            sigmaDeg = sigmas[is]*pi180i;
-                            thetaDeg = thetas[it]*pi180i;
-                            // index
-                            imt = im*nb*ng*nk*ns*nt
-                                + ib*ng*nk*ns*nt
-                                + ig*nk*ns*nt
-                                + ik*ns*nt
-                                + is*nt
-                                + it;
-                            // Compute the corresponding moment tensor
-                            ierr1 = compearth_tt2cmt(gammaDeg, deltaDeg, M0,
-                                                     kappaDeg, thetaDeg,
-                                                     sigmaDeg,
-                                                     Muse, lam, U);
-                            if (ierr1 != 0)
-                            {
-                                printf("%s: Error calling tt2cmt %d\n",
-                                       fcnm, ierr1);
-                                ierr = ierr + 1;
-                                continue;
-                            }
-                            ierr1 = compearth_convertMT(USE, NED, Muse,
-                                                        &mts[imt*ldm]);
-                            if (ierr1 != 0)
-                            {
-                                printf("%s: Error changing coords\n", fcnm);
-                                ierr = ierr + 1;
-                                continue;
-                            }
-                        } // loop on dip
-                    } // loop on rake
-                } // loop on strike
-            } // loop on longitudes
-        } // loop on latitudes
-    } // loop on scalar moments 
-    return 0;
+                            printf("%s: Error changing coords\n", fcnm);
+                            ierr = ierr + 1;
+                            continue;
+                        }
+                    } // loop on dip
+                } // loop on rake
+            } // loop on strike
+        } // loop on longitudes
+    } // loop on latitudes
+    if (ierr != 0)
+    {
+        printf("%s: Errors during mt computation\n", fcnm);
+        ierr = 1;
+    }
+    // Now copy all moment tensors over
+    if (nm == 1)
+    {
+        cblas_dscal(ldm*nmtBase, M0s[0], mtWork, 1);
+    }
+    else
+    {
+        for (im=0; im<nm; im++)
+        {
+            indx = im*nmtBase*ldm; //nb*ng*nk*ns*nt;
+            for (imt=0; imt<ldm*nmtBase; imt++)
+            {
+                mts[indx+imt] = M0s[im]*mtWork[imt];
+            }
+        }
+        memory_free64f(&mtWork);
+    }
+    mtWork = NULL;
+    return ierr;
 }
