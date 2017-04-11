@@ -358,6 +358,37 @@ int nlags = 0;
             printf("%s: Error writing objective function\n", PROGRAM_NAME);
             goto FINISH;
         }
+        int jloc, jm, jb, jg, jk, js, jt; 
+        marginal_getOptimum(data.nlocs, mtsearch.nm, mtsearch.nb,
+                            mtsearch.ng, mtsearch.nk, mtsearch.ns,
+                            mtsearch.nt, phi,
+                            &jloc, &jm, &jb, &jg,
+                            &jk, &js, &jt);
+        printf("%d %f %f %f %f %f %f\n", jloc,
+               gammas[jg]*180.0/M_PI, 90.0-betas[jb]*180.0/M_PI, 1.0,
+               kappas[jk]*180.0/M_PI, thetas[jt]*180.0/M_PI,
+               sigmas[js]*180.0/M_PI);
+        double Muse[6], Mned[6], lam[3], U[9];
+        printf("%d %d %d %d %d %d %d\n", jloc, jg, jb, jm, jk, jt, js);
+        compearth_tt2cmt(gammas[jg]*180.0/M_PI,
+                         90.0-betas[jb]*180.0/M_PI,
+                         M0s[jm],
+                         kappas[jk]*180.0/M_PI,
+                         thetas[jt]*180.0/M_PI,
+                         sigmas[js]*180.0/M_PI,
+                         Muse, lam, U);
+        parmt_discretizeMT64f(1, &gammas[jg],
+                              1, &betas[jb],
+                              1, &M0s[jm],
+                              1, &kappas[jk],
+                              1, &thetas[jt],
+                              1, &sigmas[js],
+                              6, 1, Mned);
+        printf("mtUSE =[%f,%f,%f,%f,%f,%f]\n",
+               Muse[0], Muse[1], Muse[2], Muse[3], Muse[4], Muse[5]);
+        printf("mtNED =[%f,%f,%f,%f,%f,%f]\n",
+               Mned[0], Mned[1], Mned[2], Mned[3], Mned[4], Mned[5]);
+
 goto FINISH;
         double *s = memory_calloc64f(data.nlocs*mtloc.nmtAll);
 /*
@@ -378,29 +409,6 @@ goto FINISH;
                                  array_min64f(data.nlocs*mtloc.nmtAll, phi));
         printf("smax %f smin %f\n", array_max64f(data.nlocs*mtloc.nmtAll, s),
                           array_min64f(data.nlocs*mtloc.nmtAll, s));
-        int jloc, jm, jb, jg, jk, js, jt;
-        marginal_getOptimum(data.nlocs, mtsearch.nm, mtsearch.nb,
-                            mtsearch.ng, mtsearch.nk, mtsearch.ns,
-                            mtsearch.nt, phi,
-                            &jloc, &jm, &jb, &jg,
-                            &jk, &js, &jt);
-        printf("%d %f %f %f %f %f %f\n", jloc, gammas[jg]*180.0/M_PI, 90.0-betas[jb]*180.0/M_PI, 1.0, kappas[jk]*180.0/M_PI, thetas[jt]*180.0/M_PI, sigmas[js]*180.0/M_PI);
-        double Muse[6], Mned[6], lam[3], U[9];
-        printf("%d %d %d %d %d %d %d\n", jloc, jg, jb, jm, jk, jt, js);
-        compearth_tt2cmt(gammas[jg]*180.0/M_PI,
-                         90.0-betas[jb]*180.0/M_PI,
-                         M0s[jm],
-                         kappas[jk]*180.0/M_PI,
-                         thetas[jt]*180.0/M_PI,
-                         sigmas[js]*180.0/M_PI,
-                         Muse, lam, U);
-        parmt_discretizeMT64f(1, &gammas[jg],
-                              1, &betas[jb],
-                              1, &M0s[jm],
-                              1, &kappas[jk],
-                              1, &thetas[jt],
-                              1, &sigmas[js],
-                              6, 1, Mned);
         double *Gpol = memory_calloc64f(6*data.nobs), pol;
         int ipol;
         for (iobs=0; iobs<data.nobs; iobs++)

@@ -55,17 +55,17 @@ int parmt_locSearchL164f(const MPI_Comm locComm,
     const char *fcnm = "parmt_locSearchL164f\0";
     double *G, *d, *phiLoc, *phiWork, *varLoc, *varWork;
     int *lagLoc, *lagWork, ierr, iloc, jndx, jloc, k,
-        myloc, npmax, nprocs, npts;
+        myloc, npmax, nlocProcs, npts;
     const int master = 0;
     ierr = 0;
     myloc =-1;
     if (mtloc.myid == master)
     {
         MPI_Comm_rank(locComm, &myloc);
-        MPI_Comm_size(locComm, &nprocs);
+        MPI_Comm_size(locComm, &nlocProcs);
     }
-    MPI_Bcast(&myloc,  1, MPI_INT, master, mtloc.comm);
-    MPI_Bcast(&nprocs, 1, MPI_INT, master, mtloc.comm);
+    MPI_Bcast(&myloc,     1, MPI_INT, master, mtloc.comm);
+    MPI_Bcast(&nlocProcs, 1, MPI_INT, master, mtloc.comm);
     if (iobs < 0 || iobs >= data->nobs)
     {
         printf("%s: Invalid observation number %d\n", fcnm, iobs);
@@ -89,11 +89,15 @@ int parmt_locSearchL164f(const MPI_Comm locComm,
         return -1;
     }
     // Set space and copy data
+    lagLoc = NULL;
+    lagWork = NULL;
+    varWork = NULL;
+    phiWork = NULL;
     G = memory_calloc64f(6*npmax);
     d = memory_calloc64f(npmax);
     varLoc = array_set64f(npmax, DBL_MAX, &ierr);
     phiLoc = memory_calloc64f(mtloc.nmt);
-    if (nprocs > 1)
+    if (nlocProcs > 1)
     {
         if (mtloc.myid == master)
         {
@@ -127,7 +131,7 @@ int parmt_locSearchL164f(const MPI_Comm locComm,
     }
     npts = data->data[iobs].npts;
     cblas_dcopy(npts, data->data[iobs].data, 1, d, 1);
-    for (jloc=0; jloc<data->nlocs; jloc=jloc+nprocs)
+    for (jloc=0; jloc<data->nlocs; jloc=jloc+nlocProcs)
     {
         iloc = jloc + myloc;
         if (iloc >= data->nlocs){goto NEXT_LOCATION;}
@@ -178,17 +182,16 @@ int parmt_locSearchL164f(const MPI_Comm locComm,
         }
 NEXT_LOCATION:;
     }
+    // Reduce the variance onto varWork
     MPI_Reduce(varLoc, varWork, npts, MPI_DOUBLE, MPI_MIN,
                master, mtloc.comm);
     // Have the location masters reduce their result onto the master
     if (mtloc.myid == master)
     {
-        if (nprocs > 1)
+        if (nlocProcs > 1)
         {
             MPI_Reduce(phiWork, phi, data->nlocs*mtloc.nmtAll, 
                        MPI_DOUBLE, MPI_SUM, master, locComm);
-            //MPI_Reduce(varWork, var, npts,
-            //           MPI_DOUBLE, MPI_SUM, master, locComm);
             MPI_Reduce(varWork, var, npts,
                        MPI_DOUBLE, MPI_MIN, master, locComm);
             if (lwantLags)
@@ -205,7 +208,7 @@ NEXT_LOCATION:;
     memory_free64f(&varLoc);
     memory_free64f(&d);
     memory_free64f(&G);
-    if (nprocs > 1)
+    if (nlocProcs > 1)
     {   
         memory_free64f(&phiWork);
         memory_free64f(&varWork);
@@ -213,6 +216,9 @@ NEXT_LOCATION:;
     }
     phiWork = NULL;
     lagWork = NULL;
+    // Block until everyone is done
+    if (mtloc.myid == master){MPI_Barrier(locComm);}
+    MPI_Barrier(mtloc.comm);
     return 0;
 }
 
