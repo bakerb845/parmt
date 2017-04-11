@@ -93,7 +93,7 @@ int parmt_locSearchL164f(const MPI_Comm locComm,
     d = memory_calloc64f(npmax);
     varLoc = array_set64f(npmax, DBL_MAX, &ierr);
     phiLoc = memory_calloc64f(mtloc.nmt);
-    if (mtloc.commSize > 1)
+    if (nprocs > 1)
     {
         if (mtloc.myid == master)
         {
@@ -181,18 +181,21 @@ NEXT_LOCATION:;
     MPI_Reduce(varLoc, varWork, npts, MPI_DOUBLE, MPI_MIN,
                master, mtloc.comm);
     // Have the location masters reduce their result onto the master
-    if (mtloc.myid == master && nprocs > 1)
+    if (mtloc.myid == master)
     {
-        MPI_Reduce(phiWork, phi, data->nlocs*mtloc.nmtAll, 
-                   MPI_DOUBLE, MPI_SUM, master, locComm);
-        //MPI_Reduce(varWork, var, npts,
-        //           MPI_DOUBLE, MPI_SUM, master, locComm);
-        MPI_Reduce(varWork, var, npts,
-                   MPI_DOUBLE, MPI_MIN, master, locComm);
-        if (lwantLags)
+        if (nprocs > 1)
         {
-            MPI_Reduce(lagWork, lags, data->nlocs*mtloc.nmtAll,
-                       MPI_INT, MPI_SUM, master, locComm);
+            MPI_Reduce(phiWork, phi, data->nlocs*mtloc.nmtAll, 
+                       MPI_DOUBLE, MPI_SUM, master, locComm);
+            //MPI_Reduce(varWork, var, npts,
+            //           MPI_DOUBLE, MPI_SUM, master, locComm);
+            MPI_Reduce(varWork, var, npts,
+                       MPI_DOUBLE, MPI_MIN, master, locComm);
+            if (lwantLags)
+            {
+                MPI_Reduce(lagWork, lags, data->nlocs*mtloc.nmtAll,
+                           MPI_INT, MPI_SUM, master, locComm);
+            }
         }
     }
     cblas_dscal(npts, 1.0/(double) mtloc.nmtAll, varLoc, 1);
@@ -207,7 +210,7 @@ NEXT_LOCATION:;
         memory_free64f(&phiWork);
         memory_free64f(&varWork);
         memory_free32i(&lagWork);
-    }   
+    }
     phiWork = NULL;
     lagWork = NULL;
     return 0;
