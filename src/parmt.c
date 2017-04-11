@@ -25,7 +25,12 @@
 #include "iscl/memory/memory.h"
 
 #define PROGRAM_NAME "parmt"
-static int parseArguments(int argc, char *argv[], char iniFile[PATH_MAX]);
+static int parseArguments(int argc, char *argv[],
+                          const int nprocs,
+                          int *npInObsGroups,
+                          int *npInLocGroups,
+                          int *npInMTGroups,
+                          char iniFile[PATH_MAX]);
 static void printUsage(void);
 int parmt_freeData(struct parmtData_struct *data);
 int parmt_freeLocalMTs(struct localMT_struct *mts);
@@ -54,7 +59,7 @@ struct parmtMtSearchParms_struct mtsearch;
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     iscl_init();
 #ifdef PARMT_USE_INTEL
-    omp_set_num_threads(1);
+    omp_set_num_threads(2);
     mkl_set_num_threads(1);
     ippSetNumThreads(1);
 #endif
@@ -76,7 +81,9 @@ struct parmtMtSearchParms_struct mtsearch;
     memset(&mtloc, 0, sizeof(struct localMT_struct));
     if (myid == master)
     {
-        ierr = parseArguments(argc, argv, iniFile);
+        ierr = parseArguments(argc, argv, nprocs,
+                              &npInObsGroups, &npInLocGroups, &npInMTGroups,
+                              iniFile);
         if (ierr != 0){goto INIT_ERROR;}
         // read the ini file
         printf("%s: Parsing ini file %s...\n", PROGRAM_NAME, iniFile);
@@ -88,9 +95,16 @@ struct parmtMtSearchParms_struct mtsearch;
             printf("%s: Error reading ini file\n", PROGRAM_NAME);
             goto INIT_ERROR;
         }
-        npInObsGroups = 1;
-        npInLocGroups = 1;
-        npInMTGroups = nprocs;
+        printf("%s: Process management:\n", PROGRAM_NAME);
+        printf("        Number of processes in observation groups %d\n",
+               npInObsGroups);
+        printf("        Number of processes in location groups %d\n",
+               npInLocGroups);
+        printf("        Number of processes in moment tensor groups %d\n",
+               npInMTGroups);
+//        npInObsGroups = 1;
+//        npInLocGroups = 1;
+//        npInMTGroups = nprocs;
 printf("verify greens fns are correct\n");
 /*
         double pAxis[3], nAxis[3], tAxis[3], beta, gamma, u,v;
@@ -581,10 +595,19 @@ FINISH:;
     return EXIT_SUCCESS;
 }
 
-static int parseArguments(int argc, char *argv[], char iniFile[PATH_MAX])
+static int parseArguments(int argc, char *argv[],
+                          const int nprocs,
+                          int *npInObsGroups,
+                          int *npInLocGroups,
+                          int *npInMTGroups,
+                          char iniFile[PATH_MAX])
 {
     bool linFile;
+    int prod;
     linFile = false;
+    *npInObsGroups = 1;
+    *npInLocGroups = 1;
+    *npInMTGroups = 1;
     memset(iniFile, 0, PATH_MAX*sizeof(char));
     while (true)
     {
@@ -593,16 +616,31 @@ static int parseArguments(int argc, char *argv[], char iniFile[PATH_MAX])
             {"help", no_argument, 0, '?'},
             {"help", no_argument, 0, 'h'},
             {"ini_file", required_argument, 0, 'i'},
+            {"obsGroupSize", required_argument, 0, 'w'},
+            {"mtGroupSize",  required_argument, 0, 'm'},
+            {"locGroupSize", required_argument, 0, 'l'},
             {0, 0, 0, 0}
         }; 
         int c, optionIndex;
-        c = getopt_long(argc, argv, "?hi:",
+        c = getopt_long(argc, argv, "?hi:w:m:l:",
                         longOptions, &optionIndex);
         if (c ==-1){break;}
         if (c == 'i')
         {
             strcpy(iniFile, (const char *) optarg);
             linFile = true; 
+        }
+        else if (c == 'w' && nprocs > 1)
+        {
+            *npInObsGroups = atoi(optarg);
+        }
+        else if (c == 'l' && nprocs > 1)
+        {
+            *npInLocGroups = atoi(optarg);
+        }
+        else if (c == 'm' && nprocs > 1)
+        {
+            *npInMTGroups = atoi(optarg);
         }
         else if (c == 'h' || c == '?')
         {
@@ -621,17 +659,34 @@ static int parseArguments(int argc, char *argv[], char iniFile[PATH_MAX])
         printUsage();
         return -1;
     }
+    prod = (*npInObsGroups)*(*npInLocGroups)*(*npInMTGroups);
+    if (prod != nprocs)
+    {
+        if (prod != 1)
+        {
+            printf("%s: Invalid process layout - defaulting to (%d,%d,%d)\n", 
+                   PROGRAM_NAME, 1, 1, nprocs); 
+        }
+        *npInObsGroups = 1;
+        *npInLocGroups = 1;
+        *npInMTGroups = nprocs;
+    }
     return 0;
 }
 
 static void printUsage(void)
 {
-    printf("Usage:\n   parmt -i input_file\n\n");
+    printf("Usage:\n   parmt --i=input_file\n\n");
     printf("Required arguments:\n");
     printf("   -i input_file specifies the initialization file\n");
     printf("\n");
     printf("Optional arguments:\n");
+    printf("   -m number of processes in moment-tensor groups\n");
+    printf("   -w number of processes in waveform (observation) groups\n");
+    printf("   -l number of processes in location groups\n");
     printf("   -h displays this message\n");
+    printf("   Note if m*w*l must equal the number of processes\n");
+    printf("   If they are not set the program will set -m=nprocs\n");
     return;
 }
 
