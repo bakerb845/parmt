@@ -324,8 +324,7 @@ int nlags = 0;
         phi = memory_calloc64f(1);
         lags = memory_calloc32i(1);
     }
-double *CeInv = array_set64f(data.data[iobs].npts, 1.0, &ierr);
-double *var = memory_calloc64f(data.data[iobs].npts);
+    // Perform the grid search
     MPI_Wtime();
     ierr = parmt_obsSearch64f(MPI_COMM_WORLD,
                               obsComm, locComm,
@@ -343,31 +342,6 @@ double *var = memory_calloc64f(data.data[iobs].npts);
         printf("%s: Objective function computation time: %f\n",
                PROGRAM_NAME, MPI_Wtime() - t0);
     }
-/*
-    ierr = parmt_locSearchL164f(locComm,
-                                iobs, parms.blockSize,
-                                nlags, lwantLags,
-                                mtloc, &data,
-                                CeInv, phi, var, lags);
-    if (ierr != 0)
-    {
-        printf("%s: Error calling locSearchL164f\n", PROGRAM_NAME);
-        MPI_Abort(MPI_COMM_WORLD, 30);
-    }
-*/
-/*
-for (int i=0; i<61; i++)
-{
-printf("%d %e\n", i+1, var[i]);
-}
-*/
-/*
-    ierr = parmt_locSearchXC64f(locComm,
-                                iobs, parms.blockSize,
-                                nlags, lwantLags,
-                                mtloc, &data,
-                                phi, lags);
-*/
     if (ierr != 0)
     {
         printf("%s: Error calling locSearchXC64f\n", PROGRAM_NAME);
@@ -379,6 +353,12 @@ printf("%d %e\n", i+1, var[i]);
         ierr = parmt_io_writeObjectiveFunction64f(
                    parms.resultsDir, parms.projnm, parms.resultsFileSuffix,
                    nmt, phi);
+        if (ierr != 0)
+        {
+            printf("%s: Error writing objective function\n", PROGRAM_NAME);
+            goto FINISH;
+        }
+goto FINISH;
         double *s = memory_calloc64f(data.nlocs*mtloc.nmtAll);
 /*
         double xdiv = 1.0/(double) data.nobs;
