@@ -64,7 +64,7 @@ int parmt_locSearchL164f(const MPI_Comm locComm,
         MPI_Comm_rank(locComm, &myloc);
         MPI_Comm_size(locComm, &nprocs);
     }
-    MPI_Bcast(&myloc, 1, MPI_INT, master, mtloc.comm);
+    MPI_Bcast(&myloc,  1, MPI_INT, master, mtloc.comm);
     MPI_Bcast(&nprocs, 1, MPI_INT, master, mtloc.comm);
     if (iobs < 0 || iobs >= data->nobs)
     {
@@ -93,7 +93,7 @@ int parmt_locSearchL164f(const MPI_Comm locComm,
     d = memory_calloc64f(npmax);
     varLoc = array_set64f(npmax, DBL_MAX, &ierr);
     phiLoc = memory_calloc64f(mtloc.nmt);
-    if (nprocs > 1)
+    if (mtloc.commSize > 1)
     {
         if (mtloc.myid == master)
         {
@@ -158,7 +158,7 @@ int parmt_locSearchL164f(const MPI_Comm locComm,
         if (mtloc.myid == master){jndx = iloc*mtloc.nmtAll;}
         if (mtloc.commSize == 1)
         {
-            array_copy64f_work(mtloc.nmtAll, phiLoc, &phiWork[jndx]);
+            array_copy64f_work(mtloc.nmt, phiLoc, &phiWork[jndx]);
             if (lwantLags)
             {
                 array_copy32i_work(mtloc.nmt, lagLoc, &lagWork[jndx]); 
@@ -177,10 +177,9 @@ int parmt_locSearchL164f(const MPI_Comm locComm,
             }
         }
 NEXT_LOCATION:;
-        MPI_Barrier(mtloc.comm);
     }
     MPI_Reduce(varLoc, varWork, npts, MPI_DOUBLE, MPI_MIN,
-                   master, mtloc.comm);
+               master, mtloc.comm);
     // Have the location masters reduce their result onto the master
     if (mtloc.myid == master && nprocs > 1)
     {
