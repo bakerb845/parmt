@@ -54,7 +54,7 @@ struct parmtMtSearchParms_struct mtsearch;
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     iscl_init();
 #ifdef PARMT_USE_INTEL
-    omp_set_num_threads(2);
+    omp_set_num_threads(1);
     mkl_set_num_threads(1);
     ippSetNumThreads(1);
 #endif
@@ -326,10 +326,23 @@ int nlags = 0;
     }
 double *CeInv = array_set64f(data.data[iobs].npts, 1.0, &ierr);
 double *var = memory_calloc64f(data.data[iobs].npts);
+    MPI_Wtime();
     ierr = parmt_obsSearch64f(MPI_COMM_WORLD,
                               obsComm, locComm,
                               linObsComm, linLocComm,
                               parms, data, mtloc, phi);
+    if (ierr != 0)
+    {
+        printf("%s: Error calling obsSearch64f\n", PROGRAM_NAME);
+        MPI_Abort(MPI_COMM_WORLD, 30);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (myid == master)
+    {
+        MPI_Wtime();
+        printf("%s: Objective function computation time: %f\n",
+               PROGRAM_NAME, MPI_Wtime() - t0);
+    }
 /*
     ierr = parmt_locSearchL164f(locComm,
                                 iobs, parms.blockSize,
@@ -455,8 +468,6 @@ printf("%d %e\n", i+1, var[i]);
                Muse[0], Muse[1], Muse[2], Muse[3], Muse[4], Muse[5]);
         printf("mtNED =[%f,%f,%f,%f,%f,%f]\n",
                Mned[0], Mned[1], Mned[2], Mned[3], Mned[4], Mned[5]);
-        printf("%s: Objective function computation time: %f\n",
-               PROGRAM_NAME, MPI_Wtime() - t0);
         for (iobs=0; iobs<data.nobs; iobs++)
         {
             k = iobs*data.nlocs + jloc;
