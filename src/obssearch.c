@@ -24,8 +24,7 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
     const char *fcnm = "parmt_obsSearch64f\0";
     MPI_Win counterWin;
     double lagTime, *CeInv, *phiWork, *phiAll, *var;
-    int *lagsWork, *nlags, ierr, iobs, jobs, myid, nobsProcs,
-        npmax, value, value0;
+    int *lagsWork, *nlags, ierr, iobs, myid, nobsProcs, npmax, value, value0;
     bool lwantLags;
     const double zero = 0.0;
     const double half = 0.5;
@@ -89,6 +88,7 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
     }
     // Set space
     var = memory_calloc64f(npmax);
+    if (linObsComm){MPI_Comm_size(obsComm, &nobsProcs);}
     if (linObsComm)
     {
         if (nobsProcs > 1)
@@ -100,6 +100,7 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
             if (phi == NULL)
             {
                 printf("%s: phi not set on master - segfault\n", fcnm);
+                return -1; 
             }
             phiAll = phi;
             array_zeros64f_work(data.nlocs*mtloc.nmtAll, phiAll);
@@ -116,7 +117,6 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
     value0 = 0;
     if (linObsComm)
     {
-        MPI_Comm_size(obsComm, &nobsProcs);
         MPE_setKeyval(MPI_KEYVAL_INVALID);
         MPE_counterCreate(obsComm, 1, &counterWin);
     }
@@ -134,6 +134,11 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
         if (value == value0){continue;} // Already did this
         value0 = value;   // Update the old value
         iobs = value - 1; // Map to C based numbering to indicate observation
+        if (linObsComm)
+        {
+            printf("%s: Proccessing observation %d with %d points\n", fcnm,
+                   iobs+1, data.data[iobs].npts);
+        }
         // Figure out the lags
         lwantLags = false;
         if (nlags[iobs] > 0){lwantLags = true;}
@@ -177,7 +182,7 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
             printf("%s: need to write this function\n", fcnm);
             return -1;
         }
-        // Stack objective function
+        // Scale by number of observations and stack
         if (linObsComm)
         {
             cblas_daxpy(data.nlocs*mtloc.nmtAll, 1.0/(double) data.nobs,
@@ -189,16 +194,16 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
     {
         if (nobsProcs > 1)
         {
-            MPI_Reduce(phiAll, phi, data.nobs*mtloc.nmtAll, MPI_DOUBLE,
-                       MPI_SUM, master, locComm);
+            MPI_Reduce(phiAll, phi, data.nlocs*mtloc.nmtAll, MPI_DOUBLE,
+                       MPI_SUM, master, obsComm);
         }
+        MPI_Win_free(&counterWin);
     }
+    MPI_Barrier(mtloc.comm);
     // Release resources
-    if (linObsComm){MPI_Win_free(&counterWin);}
     if (linObsComm)
     {
         if (nobsProcs > 1){memory_free64f(&phiAll);}
-        phiAll = NULL;
     }
     else
     {
@@ -208,7 +213,7 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
     memory_free32i(&nlags);
     memory_free32i(&lagsWork);
     memory_free64f(&CeInv);
-    // Block until everyone is done
+    phiAll = NULL;
     MPI_Barrier(globalComm);
     return 0;
 }

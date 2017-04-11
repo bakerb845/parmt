@@ -305,24 +305,16 @@ int nlags = 0;
         if (lagTime < 0.0){lagTime = parms.defaultMaxLagTime;}
         nlags = (int) (lagTime/data.data[iobs].header.delta + 0.5);
     }
+    lags = NULL;
     lwantLags = false;
     if (nlags > 0){lwantLags = true;}
-    if (mtloc.myid == master)
+    if (myid == master)
     {
         phi = memory_calloc64f(data.nlocs*mtloc.nmtAll);
-        if (lwantLags)
-        {
-            lags = memory_calloc32i(data.nlocs*mtloc.nmtAll);
-        }
-        else
-        {
-            lags = memory_calloc32i(1);
-        }
     }
     else
     {
         phi = memory_calloc64f(1);
-        lags = memory_calloc32i(1);
     }
     // Perform the grid search
     MPI_Wtime();
@@ -359,6 +351,7 @@ int nlags = 0;
             goto FINISH;
         }
         int jloc, jm, jb, jg, jk, js, jt; 
+        int imtopt = array_argmax64f(data.nlocs*mtloc.nmtAll, phi);
         marginal_getOptimum(data.nlocs, mtsearch.nm, mtsearch.nb,
                             mtsearch.ng, mtsearch.nk, mtsearch.ns,
                             mtsearch.nt, phi,
@@ -369,6 +362,7 @@ int nlags = 0;
                kappas[jk]*180.0/M_PI, thetas[jt]*180.0/M_PI,
                sigmas[js]*180.0/M_PI);
         double Muse[6], Mned[6], lam[3], U[9];
+        printf("phi opt: %d %e\n", imtopt, phi[imtopt]);
         printf("%d %d %d %d %d %d %d\n", jloc, jg, jb, jm, jk, jt, js);
         compearth_tt2cmt(gammas[jg]*180.0/M_PI,
                          90.0-betas[jb]*180.0/M_PI,
@@ -384,6 +378,7 @@ int nlags = 0;
                               1, &thetas[jt],
                               1, &sigmas[js],
                               6, 1, Mned);
+        //printf("%e %e %e\n", phi[0], phi[1000], phi[500000]); 
         printf("mtUSE =[%f,%f,%f,%f,%f,%f]\n",
                Muse[0], Muse[1], Muse[2], Muse[3], Muse[4], Muse[5]);
         printf("mtNED =[%f,%f,%f,%f,%f,%f]\n",
