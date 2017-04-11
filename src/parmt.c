@@ -636,7 +636,7 @@ int parmt_freeData(struct parmtData_struct *data)
 {
     int i;
     if (data->nobs > 0 && data->nlocs > 0 &&
-        data->sacGxx != NULL && data->sacGyy != NULL && data->sacGzz != NULL ||
+        data->sacGxx != NULL && data->sacGyy != NULL && data->sacGzz != NULL &&
         data->sacGxy != NULL && data->sacGxz != NULL && data->sacGyz != NULL)
     {
         for (i=0; i<data->nobs*data->nlocs; i++)
