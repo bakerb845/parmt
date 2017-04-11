@@ -147,16 +147,14 @@ int parmt_discretizeMT64f_MPI(const MPI_Comm comm,
                               struct localMT_struct *mts)
 {
     const char *fcnm = "parmt_discretizeMT64f_MPI\0";
-    double lam[3], Muse[6], U[9] __attribute__ ((aligned (64)));
     double *bloc, *gloc, *kloc, *mloc, *sloc, *tloc, *mtWork;
     int64_t nmt64;
     int *nmtProc, *offset;
-    int dmt, i, ib, ib0, ierr, ierr1, ig, ig0, ik, ik0, im, im0, is, is0,
+    int dmt, i, ib, ib0, ierr, ig, ig0, ik, ik0, im, im0, is, is0,
         it, it0, imt, imtAll, imtloc, imt1, imt2, jmt, myid, nbloc, ngloc,
         nkloc, nmloc, nmtall, nmt, nmtWork, nprocs, nsloc, ntloc;
     bool *lbloc, *lgloc, *lkloc, *lmloc, *lsloc, *ltloc;
     const int master = 0;
-    const double pi180i = 180.0/M_PI;
     //------------------------------------------------------------------------//
     ierr = 0;
     MPI_Comm_size(comm, &nprocs);
