@@ -879,10 +879,12 @@ int parmt_mtSearch_mahalanobis64f(const int ldm, const int nmt, const int npts,
      private(m) shared(mts, phi) \
      default(none)
 #else
+/*
     #pragma omp parallel for simd \
      firstprivate (GtCG, GtCd, dtCd) \
      private(m) shared(mts, phi) \
      default(none) aligned(phi, mts: 64)
+*/
 #endif
     for (imt=0; imt<nmt; imt++)
     {
@@ -939,10 +941,12 @@ int parmt_mtSearch_mahalanobis32f(const int ldm, const int nmt, const int npts,
      private(m) shared(mts, phi) \
      default(none)
 #else
+/*
     #pragma omp parallel for simd \
      firstprivate (GtCG, GtCd, dtCd) \
      private(m) shared(mts, phi) \
      default(none) aligned(phi, mts: 64)
+*/
 #endif
     for (imt=0; imt<nmt; imt++)
     {
@@ -1624,8 +1628,7 @@ static int performL1Search64f(const int nmt, const int ldm,
      firstprivate(dnorm) \
      private (i, ic, idx, imt, jdx, jmt, M, Ncols, R, rnorm, robj, viMin, \
               U, unorm, varLoc) \
-     shared (Cd, CG, Dmat, lags, mblock, Mrows, mts, \
-             nmtBlocks, phi, var) \
+     shared (Cd, CG, Dmat, lags, mts, nmtBlocks, phi, var) \
      default (none) reduction(+:ierr)
     {
     varLoc = array_copy64f(npts, var, &ierr);
