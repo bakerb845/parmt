@@ -152,8 +152,7 @@ int parmt_discretizeMT64f_MPI(const MPI_Comm comm,
     double *mtWork;
     int64_t nmt64;
     int *displ, *nmtProc, *offset, *sendCounts;
-    int dmt, i, ierr, imt, imtAll, imtloc, imt1, imt2, jmt, myid,
-        nmtall, nmt, nmtWork, nprocs;
+    int dmt, i, ierr, imt1, imt2, myid, nmtall, nmt, nprocs;
     const int master = 0;
     //------------------------------------------------------------------------//
     ierr = 0;
