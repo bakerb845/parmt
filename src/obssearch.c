@@ -152,10 +152,12 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
             }
             if (myid == master)
             {
+/*
                 parmt_io_writeVarianceForWaveform64f(
                    parms.resultsDir, parms.projnm, parms.resultsFileSuffix,
                    iobs,
                    data.data[iobs].npts, var);
+*/
             }
         }
         else if (parms.objFnType == 2)
