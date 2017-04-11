@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
     double *deps, *mts, *luneMPDF, *phi, t0, t1, du, dv, dh, dk, ds;
     int64_t ngridSearch;
     double hLower, hUpper, uLower, uUpper, vLower, vUpper, xnorm;
-    int i, ierr, myid, npInLocGroups, nmt, npInMTGroups, npInObsGroups, nprocs, provided;
+    int *lags, i, ierr, myid, npInLocGroups, nmt, npInMTGroups, npInObsGroups, nprocs, provided;
     int ix, iy, k;
     MPI_Comm mtComm, locComm, obsComm;
     bool linMTComm, linLocComm, linObsComm;
@@ -69,6 +69,7 @@ struct parmtMtSearchParms_struct mtsearch;
     h = NULL;
     u = NULL;
     v = NULL;
+    lags = NULL;
     memset(&parms, 0, sizeof(struct parmtGeneralParms_struct));
     memset(&data, 0, sizeof(struct parmtData_struct));
     memset(&mtsearch, 0, sizeof(struct parmtMtSearchParms_struct));
@@ -291,7 +292,6 @@ INIT_ERROR:;
     MPI_Barrier(MPI_COMM_WORLD);
     // Compute the objective functions
     t0 = MPI_Wtime();
-int *lags;
 double lagTime;
 bool lwantLags;
 int iobs = 0;
