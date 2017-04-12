@@ -179,6 +179,16 @@ int parmt_io_writeVarianceForWaveform64f(
 int parmt_io_writeObjectiveFunction64f(
     const char *resultsDir, const char *projnm, const char *resultsSuffix,
     const int nmt, const double *__restrict__ phi);
+int parmt_io_readObjfnArchive64f(
+    const char *resultsDir, const char *projnm, const char *resultsSuffix,
+    int *nlocs, double **deps,
+    int *nm, double **M0s,
+    int *nb, double **betas,
+    int *ng, double **gammas,
+    int *nk, double **kappas,
+    int *ns, double **sigmas,
+    int *nt, double **thetas,
+    int *nmt, double **phi);
 int utils_dataArchive_readAllWaveforms(const char *dataFile,
                                        struct parmtData_struct *data);
 int utils_dataArchive_getLocationID(const hid_t h5fl,

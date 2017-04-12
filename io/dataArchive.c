@@ -494,7 +494,24 @@ int utils_dataArchive_getNumberOfObservations(const hid_t h5fl)
 END:;
     return nobs;
 }
-
+//============================================================================//
+/*!
+ * @brief Given the SAC data structure this returns the corresponding 
+ *        observation ID in the H5 archive
+ *
+ * @param[in] h5fl    HDF5 file handle
+ * @param[in] obs     observation to match
+ *
+ * @result if -1 there are no observations.
+ *         if the return value is equal to the number of observations
+ *         then this is a new observation. 
+ *         otherwise [0,nobs-1] is the observation ID.
+ *
+ * @author Ben Baker
+ *
+ * @copyright ISTI distributed under Apache 2
+ *
+ */
 int utils_dataArchive_getObservationID(const hid_t h5fl,
                                        const struct sacData_struct obs)
 {

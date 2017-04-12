@@ -71,7 +71,7 @@ add_subdirectory(compearth)
 
 add_executable(xmkgrns utils/mkgrns.c)
 add_executable(parmt src/parmt.c src/synthetic.c src/splitComm.c)
-add_executable(postmt postprocess/postprocess.c)
+add_executable(postmt postprocess/postmt.c)
 add_executable(utils_test utils/unit_tests.c)
 add_executable(objfn_test src/unit_tests.c)
 SET (SRCS_PARMT src/broadcast.c src/discretizeMT.c src/locsearch.c

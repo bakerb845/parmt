@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 {
     char iniFile[PATH_MAX];
     double *betas, *h, *kappas, *gammas, *M0s, *sigmas, *thetas, *u, *v;
-    double *deps, *mts, *luneMPDF, *phi, t0, t1, du, dv, dh, dk, ds;
+    double *deps, *luneMPDF, *phi, t0, t1, du, dv, dh, dk, ds;
     int64_t ngridSearch;
     double hLower, hUpper, uLower, uUpper, vLower, vUpper, xnorm;
     int *lags, i, ierr, myid, npInLocGroups, nmt, npInMTGroups, npInObsGroups, nprocs, provided;
@@ -676,7 +676,7 @@ static int parseArguments(int argc, char *argv[],
 
 static void printUsage(void)
 {
-    printf("Usage:\n   parmt --i=input_file\n\n");
+    printf("Usage:\n   parmt -i input_file\n\n");
     printf("Required arguments:\n");
     printf("   -i input_file specifies the initialization file\n");
     printf("\n");
