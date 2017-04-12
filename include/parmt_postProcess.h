@@ -8,6 +8,26 @@ extern "C"
 {
 #endif
 
+// for computing cell spacings
+int postprocess_computeBetaCellSpacing(const int nb, 
+                                       const double *__restrict__ betas,
+                                       double *__restrict__ db);
+int postprocess_computeGammaCellSpacing(const int ng,
+                                        const double *__restrict__ gammas,
+                                        double *__restrict__ dg);
+int postprocess_computeThetaCellSpacing(const int nt,
+                                        const double *__restrict__ thetas,
+                                        double *__restrict__ dt);
+int postprocess_computeKappaCellSpacing(const int nk,
+                                        const double *__restrict__ kappas,
+                                        double *__restrict__ dk);
+int postprocess_computeSigmaCellSpacing(const int ns,
+                                        const double *__restrict__ sigmas,
+                                        double *__restrict__ ds);
+int postprocess_computeM0CellSpacing(const int nm,
+                                     const double *__restrict__ M0s,
+                                     double *__restrict__ dm);
+
 int marginal_computeLuneMPDF(const int nloc,
                              const int nm,
                              const int nb, const double *__restrict__ betas,
@@ -27,13 +47,14 @@ int marginal_computeLuneUVMPDF(const int nloc,
                                const double *__restrict__ phi,
                                double *__restrict__ luneMPDF);
 int marginal_computeDepthMPDF(const int nloc,
-                              const int nm, 
+                              const int nm, const double *__restrict__ M0s,
                               const int nb, const double *__restrict__ betas,
                               const int ng, const double *__restrict__ gammas,
                               const int nk, const double *__restrict__ kappas,
                               const int ns, const double *__restrict__ sigmas,
                               const int nt, const double *__restrict__ thetas,
                               const double *__restrict__ phi,
+                              double *__restrict__ depMagMPDF,
                               double *__restrict__ depMPDF);
 int marginal_getOptimum(const int nloc, const int nm, const int nb, 
                         const int ng, const int nk, const int ns, const int nt, 
@@ -66,8 +87,8 @@ int postprocess_tnp2beachballPolarity(const int nxp,
                                       double *__restrict__ yw1,
                                       int8_t *__restrict__ pn1);
 double marginal_computeNormalization(
-    const int nloc,
-    const int nm, 
+    const int nloc, const double *__restrict__ deps,
+    const int nm, const double *__restrict__ M0s,
     const int nb, const double *__restrict__ betas,
     const int ng, const double *__restrict__ gammas,
     const int nk, const double *__restrict__ kappas,

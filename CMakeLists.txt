@@ -80,7 +80,8 @@ SET (SRCS_PARMT src/broadcast.c src/discretizeMT.c src/locsearch.c
                 src/invert.c src/stackedCrossCorrelation.c 
                 postprocess/beachball.c
                 postprocess/marginal.c
-                postprocess/tt2beachball.c)
+                postprocess/tt2beachball.c
+                postprocess/cellSpacing.c)
 add_library(compearth_shared SHARED ${SRCS_COMPEARTH})
 add_library(compearth_static STATIC ${SRCS_COMPEARTH})
 add_library(parmtUtils_shared SHARED utils/ff2mtGreens.c utils/getNoiseBasis.c

@@ -3,6 +3,8 @@
 #include <string.h>
 #include <limits.h>
 #include <hdf5.h>
+#include "iscl/array/array.h"
+#include "iscl/memory/memory.h"
 #include "iscl/os/os.h"
 
 #define OPEN_FILE 1
@@ -14,6 +16,9 @@
 #define SLIPS "slips"
 #define DIPS "dips"
 #define DEPTHS "depths"
+#define SEARCH_SPACE "/SearchSpace"
+#define OBJECTIVE_FUNCTION "/ObjectiveFunction"
+#define WAVEFORM_FIT_FUNCTION "waveformFitFunction"
 
 static herr_t writeDoubleArrayWithUnits(
     const hid_t groupID, const char *arrayName, const char *units,
@@ -173,8 +178,8 @@ int parmt_io_writeObjectiveFunction64f(
         return -1; 
     }
     h5fl = H5Fopen(flname, H5F_ACC_RDWR, H5P_DEFAULT);
-    groupID = H5Gopen2(h5fl, "/ObjectiveFunction\0", H5P_DEFAULT);
-    dataSet = H5Dopen2(groupID, "waveformFitFunction\0", H5P_DEFAULT);
+    groupID = H5Gopen2(h5fl, OBJECTIVE_FUNCTION, H5P_DEFAULT);
+    dataSet = H5Dopen2(groupID, WAVEFORM_FIT_FUNCTION, H5P_DEFAULT);
     dataSpace = H5Dget_space(dataSet);
     status = H5Dwrite(dataSet, H5T_NATIVE_DOUBLE, H5S_ALL, dataSpace,
                       H5P_DEFAULT, phi);
@@ -261,7 +266,7 @@ int parmt_io_createObjfnArchive64f(
     h5fl = H5Fcreate(flname, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
     // Create a hyperslab where we recall the order of the inverse problem is:
     // location, magnitude, beta, gamma, kappa, sigma, theta
-    groupID = H5Gcreate2(h5fl, "/ObjectiveFunction\0",
+    groupID = H5Gcreate2(h5fl, OBJECTIVE_FUNCTION,
                          H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     dims[0] = (int) nlocs;
     dims[1] = (int) nm;
@@ -285,7 +290,7 @@ int parmt_io_createObjfnArchive64f(
         return -1;
     }
     // Create the search space 
-    groupID = H5Gcreate2(h5fl, "/SearchSpace\0",
+    groupID = H5Gcreate2(h5fl, SEARCH_SPACE,
                          H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     status = writeDoubleArrayWithUnits(groupID, DEPTHS,
                                        "kilometers\0", nlocs, deps);
@@ -333,12 +338,16 @@ int parmt_io_readObjfnArchive64f(
 {
     const char *fcnm = "parmt_io_readObjfnArchive64f\0";
     char flname[PATH_MAX];
-    hid_t groupID, h5fl;
+    int nwork;
+    hid_t dataSet, dataSpace, groupID, h5fl, memSpace;
     herr_t status;
-    int ierr;
+    hsize_t *dims;
+    int ierr, rank;
     //------------------------------------------------------------------------//
     //
     // set outputs 
+    ierr = 0;
+    *nlocs = 0;
     *nm = 0;
     *nb = 0;
     *ng = 0;
@@ -347,6 +356,7 @@ int parmt_io_readObjfnArchive64f(
     *nt = 0;
     *nmt = 0;
 
+    *deps = NULL;
     *M0s = NULL;
     *betas = NULL;
     *gammas = NULL;
@@ -354,6 +364,7 @@ int parmt_io_readObjfnArchive64f(
     *sigmas = NULL;
     *thetas = NULL; 
     *phi = NULL;
+    dims = NULL;
     ierr = parmt_io_createObjfnArchiveName(OPEN_FILE,
                                            resultsDir, projnm,
                                            resultsSuffix, flname);
@@ -362,13 +373,121 @@ int parmt_io_readObjfnArchive64f(
         printf("%s: Failed to open objective function archive\n", fcnm);
         return -1;
     }
+printf("LOOK HERE!!!!!!!!! awful kludge and needs to be fixed\n");
+*nlocs = 25;
+*deps = array_linspace64f(1, 25, *nlocs, &ierr);
     h5fl = H5Fopen(flname, H5F_ACC_RDONLY, H5P_DEFAULT);
-    groupID = H5Gopen2(h5fl, "/ObjectiveFunction\0", H5P_DEFAULT);
+    // Get the model space
+    groupID = H5Gopen2(h5fl, SEARCH_SPACE, H5P_DEFAULT);
+    // Size query
+    nwork =-1;
+//    status = readDoubleArray(groupID, DEPTHS, nwork, nlocs, *deps);
+//    if (status != 0){goto SS_ERROR;}
+//    *deps = memory_calloc64f(*nlocs);
+    status = readDoubleArray(groupID, COLATITUDES, nwork, nb, *betas);
+    if (status != 0){goto SS_ERROR;}
+    *betas = memory_calloc64f(*nb);
+    status = readDoubleArray(groupID, LONGITUDES, nwork, ng, *gammas);
+    if (status != 0){goto SS_ERROR;}
+    *gammas = memory_calloc64f(*ng);
+    status = readDoubleArray(groupID, SCALAR_MOMENTS, nwork, nm, *M0s);
+    if (status != 0){goto SS_ERROR;}
+    *M0s = memory_calloc64f(*nm);
+    status = readDoubleArray(groupID, STRIKES, nwork, nk, *kappas);
+    if (status != 0){goto SS_ERROR;}
+    *kappas = memory_calloc64f(*nk);
+    status = readDoubleArray(groupID, SLIPS, nwork, ns, *sigmas);
+    if (status != 0){goto SS_ERROR;}
+    *sigmas = memory_calloc64f(*ns);
+    status = readDoubleArray(groupID, DIPS, nwork, nt, *thetas);
+    if (status != 0){goto SS_ERROR;}
+    *thetas = memory_calloc64f(*nt);
+    // Read it
+//    nwork = *nlocs;
+//    status = readDoubleArray(groupID, DEPTHS, nwork, nlocs, *deps);
+//    if (status != 0){goto SS_ERROR;}
+    nwork = *nb;
+    status = readDoubleArray(groupID, COLATITUDES, nwork, nb, *betas);
+    if (status != 0){goto SS_ERROR;}
 
+    nwork = *ng;
+    status = readDoubleArray(groupID, LONGITUDES, nwork, ng, *gammas);
+    if (status != 0){goto SS_ERROR;}
+
+    nwork = *nm;
+    status = readDoubleArray(groupID, SCALAR_MOMENTS, nwork, nm, *M0s);
+    if (status != 0){goto SS_ERROR;}
+
+    nwork = *nk;
+    status = readDoubleArray(groupID, STRIKES, nwork, nk, *kappas);
+    if (status != 0){goto SS_ERROR;}
+
+    nwork = *ns; 
+    status = readDoubleArray(groupID, SLIPS, nwork, ns, *sigmas);
+    if (status != 0){goto SS_ERROR;}
+
+    nwork = *nt;
+    status = readDoubleArray(groupID, DIPS, nwork, nt, *thetas);
+    if (status != 0){goto SS_ERROR;}
+SS_ERROR:;
+    status += H5Gclose(groupID);
+    if (status != 0)
+    {
+        printf("%s: Error reading %s\n", fcnm, SEARCH_SPACE);
+        ierr = 1;
+        goto CLOSE_FILE;
+    }
+    // Read the objective function
+    groupID = H5Gopen2(h5fl, OBJECTIVE_FUNCTION, H5P_DEFAULT);
+    dataSet = H5Dopen(groupID, WAVEFORM_FIT_FUNCTION, H5P_DEFAULT);
+    dataSpace = H5Dget_space(dataSet);
+    // Get and check the dimensionality of the hyperslab
+    rank = H5Sget_simple_extent_ndims(dataSpace);
+    if (rank != 7)
+    {
+        printf("%s: Ranks are screwy\n", fcnm);
+        ierr = 1;
+        goto PHI_ERROR;
+    }
+    // Ensure the dimensions are consistent with the grid-search sizes 
+    dims = (hsize_t *) calloc((size_t) rank, sizeof(hsize_t));
+    status = H5Sget_simple_extent_dims(dataSpace, dims, NULL);
+    if ((int) dims[0] != *nlocs || (int) dims[1] != *nm ||
+        (int) dims[2] != *nb    || (int) dims[3] != *ng ||
+        (int) dims[4] != *nk    || (int) dims[5] != *ns ||
+        (int) dims[6] != *nt)
+    {
+        printf("%s: rank mismatch\n", fcnm);
+        printf("%s(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d)\n",
+               "          ",
+               *nlocs, (int) dims[0], *nm, (int) dims[1],
+               *nb,    (int) dims[2], *ng, (int) dims[3],
+               *nk,    (int) dims[4], *ns, (int) dims[5],
+               *nt,    (int) dims[6]);
+       
+        ierr = 1;
+        goto PHI_ERROR;
+    }
+    // Read it
+    *nmt = (int) (dims[0]*dims[1]*dims[2]*dims[3]*dims[4]*dims[5]*dims[6]);
+    *phi = memory_calloc64f(*nmt);
+    memSpace = H5Screate_simple(rank, dims, NULL);
+    status = H5Dread(dataSet, H5T_NATIVE_DOUBLE, memSpace, dataSpace,
+                     H5P_DEFAULT, *phi); 
+    if (status != 0)
+    {
+        printf("%s: Error reading objective function\n", fcnm);
+        ierr = 1;
+    }
+PHI_ERROR:;
+    status = H5Sclose(memSpace);
+    status = H5Sclose(dataSpace);
+    status = H5Dclose(dataSet);
     status = H5Gclose(groupID);
-
+    if (dims != NULL){free(dims);}
+CLOSE_FILE:;
     status = H5Fclose(h5fl); 
-    return 0;
+    return ierr;
 }
 //============================================================================//
 /*!
@@ -461,10 +580,3 @@ static herr_t readDoubleArray(
     status += H5Dclose(dataSet);
     return status;
 }
-/*
-
-int parmt_io_openObjfnArchive( )
-{
-
-}
-*/

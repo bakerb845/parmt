@@ -274,26 +274,53 @@ for (int i=0; i<nv; i++)
 }
 //============================================================================//
 int marginal_computeDepthMPDF(const int nloc,
-                              const int nm,
+                              const int nm, const double *__restrict__ M0s,
                               const int nb, const double *__restrict__ betas,
                               const int ng, const double *__restrict__ gammas,
                               const int nk, const double *__restrict__ kappas,
                               const int ns, const double *__restrict__ sigmas,
                               const int nt, const double *__restrict__ thetas,
                               const double *__restrict__ phi,
+                              double *__restrict__ depMagMPDF,
                               double *__restrict__ depMPDF)
 {
-    double *cos3g, *db,  *dg, *dk, *ds, *dt, *twoSinB4, *sint,
-           dbdg, dkdsdt, dV5, geom, sum;
-    int ib, ierr, ig, ik, iloc, im, imt, indx, is, it, nmt;
-    nmt = nm*nb*ng*nk*ns*nt;
+    const char *fcnm = "marginal_computeDepthMPDF\0";
+    double *cos3g, *db,  *dg, *dk, *dm, *ds, *dt, *twoSinB4, *sint,
+           arg, dbdg, dkdsdt, dV5, geom, sum;
+    int ib, ierr, ig, ik, iloc, im, imt, indx, is, it, jloc;
+    ierr = 0;
     memset(depMPDF, 0, (size_t) nloc*sizeof(double));
-    // Differentiate weights for Riemann quadrature
-    db = diff(nb, betas,  &ierr);
-    dg = diff(ng, gammas, &ierr);
-    dk = diff(nk, kappas, &ierr);
-    ds = diff(ns, sigmas, &ierr);
-    dt = diff(nt, thetas, &ierr);
+    memset(depMagMPDF, 0, (size_t) (nloc*nm)*sizeof(double));
+    // Cell spacings for for Riemann quadrature
+    dm = memory_calloc64f(nm);
+    db = memory_calloc64f(nb);
+    dg = memory_calloc64f(ng);
+    dk = memory_calloc64f(nk);
+    ds = memory_calloc64f(ns);
+    dt = memory_calloc64f(nt);
+    ierr += postprocess_computeBetaCellSpacing(nb,  betas, db);
+    ierr += postprocess_computeGammaCellSpacing(ng, gammas, dg);
+    ierr += postprocess_computeKappaCellSpacing(nk, kappas, dk);
+    ierr += postprocess_computeSigmaCellSpacing(ns, sigmas, ds);
+    ierr += postprocess_computeThetaCellSpacing(nt, thetas, dt);
+    ierr += postprocess_computeM0CellSpacing(nm, M0s, dm);
+printf("%s: for now i'm setting dm = 1 and dl = 1\n", fcnm);
+array_set64f_work(nm, 1.0, dm);
+    if (ierr != 0)
+    {
+        printf("%s: Failed to compute cell spacing\n", fcnm);
+        return -1;
+    }
+    if (array_min64f(nm, dm) <= 0.0 ||
+        array_min64f(nb, db) <= 0.0 ||
+        array_min64f(ng, dg) <= 0.0 ||
+        array_min64f(nk, dk) <= 0.0 ||
+        array_min64f(ns, ds) <= 0.0 ||
+        array_min64f(nt, dt) <= 0.0)
+    {
+        printf("%s: Negative jacobian\n", fcnm);
+        return -1;
+    }
     // Compute the geometric factors
     twoSinB4 = memory_calloc64f(nb);
     for (ib=0; ib<nb; ib++)
@@ -310,6 +337,12 @@ int marginal_computeDepthMPDF(const int nloc,
     {
         cos3g[ig] = cos(3.0*gammas[ig]);
     }
+    if (array_min64f(nb, twoSinB4) <= 0.0 ||
+        array_min64f(nt, sint) <= 0.0 ||
+        array_min64f(ng, cos3g) <= 0.0)
+    {
+        printf("%s: Warning negative jacobian from geometric factors\n", fcnm);
+    }
     for (iloc=0; iloc<nloc; iloc++)
     {
         for (im=0; im<nm; im++)
@@ -323,25 +356,36 @@ int marginal_computeDepthMPDF(const int nloc,
                         for (is=0; is<ns; is++)
                         {
                             for (it=0; it<nt; it++)
-                            { 
-                                imt = im*nb*ng*nk*ns*nt
-                                    + ib*ng*nk*ns*nt
-                                    + ig*nk*ns*nt
-                                    + ik*ns*nt
-                                    + is*nt
-                                    + it;
-                                indx = iloc*nmt + imt;
+                            {
+                                imt = iloc*nm*nb*ng*nk*ns*nt
+                                    +      im*nb*ng*nk*ns*nt
+                                    +         ib*ng*nk*ns*nt
+                                    +            ig*nk*ns*nt
+                                    +               ik*ns*nt
+                                    +                  is*nt
+                                    +                     it;
                                 dkdsdt = (dk[ik]*ds[is])*dt[it];
                                 dbdg = db[ib]*dg[ig];
                                 geom = (twoSinB4[ib]*cos3g[ig])*sint[it];
                                 dV5 = geom*(dbdg*dkdsdt);
-if (dV5 < 0.0){printf("error\n");}
-                                depMPDF[iloc] = depMPDF[iloc] + phi[indx]*dV5;
+                                //if (dV5 < 0.0){printf("error\n");}
+                                arg = phi[imt]*dV5;
+                                jloc = im*nloc + iloc;
+                                depMagMPDF[jloc] = depMagMPDF[jloc] + arg;
                             }
                         }
                     }
                 }
             }
+        }
+    }
+    // Integrate out the depMagMPDF
+    for (iloc=0; iloc<nloc; iloc++)
+    {
+        for (im=0; im<nm; im++)
+        {
+            jloc = im*nloc + iloc;
+            depMPDF[iloc] = depMPDF[iloc] +  depMagMPDF[jloc]*dm[im];
         }
     }
     memory_free64f(&cos3g);
@@ -352,12 +396,13 @@ if (dV5 < 0.0){printf("error\n");}
     memory_free64f(&dk);
     memory_free64f(&ds);
     memory_free64f(&dt);
+    memory_free64f(&dm);
     return ierr;
 }
 //============================================================================//
 double marginal_computeNormalization(
-    const int nloc,
-    const int nm, 
+    const int nloc, const double *__restrict__ deps,
+    const int nm, const double *__restrict__ M0s,
     const int nb, const double *__restrict__ betas,
     const int ng, const double *__restrict__ gammas,
     const int nk, const double *__restrict__ kappas,
@@ -366,18 +411,48 @@ double marginal_computeNormalization(
     const double *__restrict__ phi,
     int *ierr)
 {
-    double *cos3g, *db,  *dg, *dk, *ds, *dt, *twoSinB4, *sint,
-           dbdg, dkdsdt, dV5, geom, sum;
-    int ib, ig, ik, iloc, im, imt, indx, is, it, nmt;
+    const char *fcnm = "marginal_computeNormalization\0";
+    double *cos3g, *db,  *dg, *dk, *dl, *dm, *ds, *dt, *twoSinB4, *sint,
+           dbdg, dkdsdt, dV2, dV5, dV7, geom, sum;
+    int ib, ig, ik, iloc, im, imt, is, it, nmt;
     *ierr = 0;
     sum = 0.0;
     nmt = nm*nb*ng*nk*ns*nt;
-    // Differentiate weights for Riemann quadrature
-    db = diff(nb, betas,  ierr);
-    dg = diff(ng, gammas, ierr);
-    dk = diff(nk, kappas, ierr);
-    ds = diff(ns, sigmas, ierr);
-    dt = diff(nt, thetas, ierr);
+    // Cell spacings for for Riemann quadrature
+    dl = memory_calloc64f(nloc);
+    dm = memory_calloc64f(nm);
+    db = memory_calloc64f(nb);
+    dg = memory_calloc64f(ng);
+    dk = memory_calloc64f(nk);
+    ds = memory_calloc64f(ns);
+    dt = memory_calloc64f(nt);
+    *ierr += postprocess_computeBetaCellSpacing(nb,  betas, db);
+    *ierr += postprocess_computeGammaCellSpacing(ng, gammas, dg);
+    *ierr += postprocess_computeKappaCellSpacing(nk, kappas, dk);
+    *ierr += postprocess_computeSigmaCellSpacing(ns, sigmas, ds);
+    *ierr += postprocess_computeThetaCellSpacing(nt, thetas, dt);
+    *ierr += postprocess_computeM0CellSpacing(nm, M0s, dm);
+    *ierr += postprocess_computeM0CellSpacing(nloc, deps, dl); 
+printf("%s: for now i'm setting dm = 1 and dl = 1\n", fcnm);
+array_set64f_work(nm, 1.0, dm);
+array_set64f_work(nloc, 1.0, dl);
+    if (*ierr != 0)
+    {
+        printf("%s; Error computing normalization\n", fcnm);
+        return sum;
+    }
+    if (array_min64f(nloc, dl) <= 0.0 ||
+        array_min64f(nm, dm) <= 0.0 ||
+        array_min64f(nb, db) <= 0.0 || 
+        array_min64f(ng, dg) <= 0.0 ||
+        array_min64f(nk, dk) <= 0.0 ||
+        array_min64f(ns, ds) <= 0.0 ||
+        array_min64f(nt, dt) <= 0.0)
+    {
+        printf("%s: Negative jacobian\n", fcnm);
+        *ierr = 1;
+        return sum;
+    } 
     // Compute the geometric factors
     twoSinB4 = memory_calloc64f(nb);
     for (ib=0; ib<nb; ib++)
@@ -409,18 +484,20 @@ double marginal_computeNormalization(
                         {
                             for (it=0; it<nt; it++)
                             {
-                                imt = im*nb*ng*nk*ns*nt
-                                    + ib*ng*nk*ns*nt
-                                    + ig*nk*ns*nt
-                                    + ik*ns*nt
-                                    + is*nt
-                                    + it;
-                                indx = iloc*nmt + imt;
+                                imt = iloc*nm*nb*ng*nk*ns*nt
+                                    +      im*nb*ng*nk*ns*nt
+                                    +         ib*ng*nk*ns*nt
+                                    +            ig*nk*ns*nt
+                                    +               ik*ns*nt
+                                    +                  is*nt
+                                    +                     it;
                                 dkdsdt = (dk[ik]*ds[is])*dt[it];
                                 dbdg = db[ib]*dg[ig];
                                 geom = (twoSinB4[ib]*cos3g[ig])*sint[it];
                                 dV5 = geom*(dbdg*dkdsdt);
-                                sum = sum + phi[indx]*dV5;
+                                dV2 = dl[iloc]*dm[im];   
+                                dV7 = dV5*dV2;
+                                sum = sum + phi[imt]*dV7;
                             }
                         }
                     }
@@ -436,6 +513,8 @@ double marginal_computeNormalization(
     memory_free64f(&dk);
     memory_free64f(&ds);
     memory_free64f(&dt);
+    memory_free64f(&dl);
+    memory_free64f(&dm);
     return sum;
 }
 //============================================================================//

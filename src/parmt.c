@@ -490,8 +490,8 @@ goto FINISH;
             sacio_writeTimeSeriesFile(fout, data.est[iobs]);
         }
         // Normalize by area under PDF
-        xnorm = marginal_computeNormalization(data.nlocs,
-                                              mtsearch.nm,
+        xnorm = marginal_computeNormalization(data.nlocs, deps,
+                                              mtsearch.nm, M0s,
                                               mtsearch.nb, betas,
                                               mtsearch.ng, gammas,
                                               mtsearch.nk, kappas,
@@ -499,8 +499,8 @@ goto FINISH;
                                               mtsearch.nt, thetas,
                                               phi, &ierr);
 printf("%e\n", xnorm);
-        xnorm = marginal_computeNormalization(data.nlocs,
-                                              mtsearch.nm,
+        xnorm = marginal_computeNormalization(data.nlocs, deps,
+                                              mtsearch.nm, M0s,
                                               mtsearch.nb, betas,
                                               mtsearch.ng, gammas,
                                               mtsearch.nk, kappas,
@@ -533,6 +533,7 @@ printf("%e\n", xnorm);
                                           s, luneUVMPDF);
       printf("sum2: %f\n", array_sum64f(mtsearch.nb*mtsearch.ng, luneUVMPDF, &ierr));
         double *depMPDF = memory_calloc64f(data.nlocs);
+/*
         ierr = marginal_computeDepthMPDF(data.nlocs,
                                          mtsearch.nm, 
                                          mtsearch.nb, betas,
@@ -541,6 +542,7 @@ printf("%e\n", xnorm);
                                          mtsearch.ns, sigmas,
                                          mtsearch.nt, thetas,
                                          s, depMPDF);
+*/
 /*
         ierr = marginal_computeMarginalBeachball(data.nlocs,
                                                  mtsearch.nm,
