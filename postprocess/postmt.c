@@ -12,6 +12,7 @@
 #include <cblas.h>
 #endif
 #include "parmt_postProcess.h"
+#include "parmt_mtsearch.h"
 #include "iscl/memory/memory.h"
 #include "iscl/os/os.h"
 
@@ -20,18 +21,20 @@
 
 static int parseArguments(int argc, char *argv[], char iniFile[PATH_MAX]);
 static void printUsage(void);
-
+int parmt_freeData(struct parmtData_struct *data);
 
 int main(int argc, char *argv[])
 {
     struct parmtGeneralParms_struct parms;
+    struct parmtData_struct data;
     FILE *ofl;
     char fname[PATH_MAX];
     char iniFile[PATH_MAX];
-    double U[9], Muse[6], lam[3], *betas, *deps, *depMPDF, *depMagMPDF,
-           *gammas, *kappas,
-           *sigmas, *thetas, *M0s, *phi, dip, Mw, xnorm;
-    int ierr, imtopt, jb, jg, jk, jloc, jm, js, jt, nb, ng, nk, nlocs, nm, nmt, ns, nt;
+    double U[9], Muse[6], Mned[6], lam[3], *betas, *deps, *depMPDF, *depMagMPDF,
+           *G, *gammas, *kappas,
+           *sigmas, *thetas, *M0s, *phi, *var, dip, lagTime, Mw, phiLoc, xnorm;
+    int ierr, imtopt, jb, jg, jk, jloc, jm, joptLoc, 
+        js, jt, k, lag, nb, ng, nk, nlags, nlocs, nm, nmt, npmax, npts, ns, nt;
     // Initialize
     depMPDF = NULL; 
     depMagMPDF = NULL;
@@ -44,6 +47,7 @@ int main(int argc, char *argv[])
     M0s = NULL;
     phi = NULL;
     memset(&parms, 0, sizeof(struct parmtGeneralParms_struct));
+    memset(&data, 0, sizeof(struct parmtData_struct));
     // Parse the input arguments 
     ierr = parseArguments(argc, argv, iniFile);
     if (ierr != 0)
@@ -64,8 +68,17 @@ int main(int argc, char *argv[])
     {
         os_makedirs(OUTDIR);
     }
+    // Load the data
+    printf("%s: Reading data...\n", PROGRAM_NAME);
+    ierr = utils_dataArchive_readAllWaveforms(parms.dataFile, &data);
+    if (ierr != 0)
+    {
+        printf("%s: Error reading data\n", PROGRAM_NAME);
+        goto ERROR;
+    }
     // Read the archive
     printf("%s: Reading archive...\n", PROGRAM_NAME); 
+printf("%s %s %s\n", parms.resultsDir, parms.projnm, parms.resultsFileSuffix);
     ierr = parmt_io_readObjfnArchive64f(
                    parms.resultsDir, parms.projnm, parms.resultsFileSuffix,
                    &nlocs, &deps,
@@ -81,6 +94,37 @@ int main(int argc, char *argv[])
         printf("%s: Error loading archive\n", PROGRAM_NAME);
         goto ERROR;
     }
+/*
+double *phi1; 
+    ierr = parmt_io_readObjfnArchive64f(
+                   "bw", parms.projnm, "bodyWaves",
+                   &nlocs, &deps,
+                   &nm, &M0s,
+                   &nb, &betas,
+                   &ng, &gammas,
+                   &nk, &kappas,
+                   &ns, &sigmas,
+                   &nt, &thetas,
+                   &nmt, &phi1);
+for (int imt=0; imt<nmt; imt++)
+{
+  phi[imt] = (12.0*phi1[imt] + 11*phi[imt]);
+}
+        ierr = parmt_io_createObjfnArchive64f("joint", parms.projnm,
+                                              "joint",
+                                              25, //data.nobs,
+                                              nlocs, deps,
+                                              nm, M0s,
+                                              nb, betas,
+                                              ng, gammas,
+                                              nk, kappas,
+                                              ns, sigmas,
+                                              nt, thetas);
+        ierr = parmt_io_writeObjectiveFunction64f(
+                   "joint", parms.projnm, "joint",
+                   nmt, phi);
+return 0;
+*/
     // Get the optimum moment tensor for the waveforms
     ierr = marginal_getOptimum(nlocs, nm, nb,
                                ng, nk, ns, nt,
@@ -100,6 +144,7 @@ int main(int argc, char *argv[])
            +                  js*nt
            +                     jt;
     compearth_m02mw(1, 1, &M0s[jm], &Mw);
+    joptLoc = jloc;
     printf("%s: Optimum information:\n", PROGRAM_NAME);
     printf("        Value: %f\n", phi[imtopt]);
     printf("        Depth: %f (km)\n", deps[jloc]);
@@ -117,8 +162,17 @@ int main(int argc, char *argv[])
                      thetas[jt]*180.0/M_PI,
                      sigmas[js]*180.0/M_PI,
                      Muse, lam, U);
+    ierr = parmt_discretizeMT64f(1, &gammas[jg],
+                                 1, &betas[jb],
+                                 1, &M0s[jm],
+                                 1, &kappas[jk],
+                                 1, &thetas[jt],
+                                 1, &sigmas[js],
+                                 6, 1, Mned);
     printf("mtUSE =[%.6e,%.6e,%.6e,%.6e,%.6e,%.6e]\n",
            Muse[0], Muse[1], Muse[2], Muse[3], Muse[4], Muse[5]);
+    printf("mtUSE =[%.6e,%.6e,%.6e,%.6e,%.6e,%.6e]\n",
+           Mned[0], Mned[1], Mned[2], Mned[3], Mned[4], Mned[5]);
     // Compute the scaling factor
     xnorm = marginal_computeNormalization(nlocs, deps,
                                           nm, M0s,
@@ -154,16 +208,24 @@ int main(int argc, char *argv[])
         printf("%s: Error computing depthMPDF\n", PROGRAM_NAME);
         goto ERROR;
     }
-    for (int im=0; im<nm; im++)
+    // Print the station list for my edification
+    for (k=0; k<data.nobs; k++)
+    {
+        printf("%8.3f %8.3f %6s\n", data.data[k].header.stlo,
+                                    data.data[k].header.stla,
+                                    data.data[k].header.kstnm);
+    }
+int im, iloc;
+    for (im=0; im<nm; im++)
     {
         compearth_m02mw(1, 1, &M0s[im], &Mw);
         printf("Writing magnitude: %f\n", Mw);
         memset(fname, 0, PATH_MAX*sizeof(char));
         sprintf(fname, "%s/%s_dep.%d.txt", OUTDIR, parms.projnm, im+1);
         ofl = fopen(fname, "w");
-        for (int iloc=0; iloc<nlocs; iloc++)
+        for (iloc=0; iloc<nlocs; iloc++)
         {
-            int jloc = im*nlocs + iloc;
+            jloc = im*nlocs + iloc;
             fprintf(ofl, "%e %e\n", deps[iloc], depMagMPDF[jloc]);
         }
         fclose(ofl);
@@ -171,12 +233,50 @@ int main(int argc, char *argv[])
     memset(fname, 0, PATH_MAX*sizeof(char));
     sprintf(fname, "%s/%s_dep.txt", OUTDIR, parms.projnm);
     ofl = fopen(fname, "w");
-    for (int iloc=0; iloc<nlocs; iloc++)
+    for (iloc=0; iloc<nlocs; iloc++)
     {
         fprintf(ofl, "%e %e\n", deps[iloc], depMPDF[iloc]);
     }
     fclose(ofl);
-    
+    // Compute the optimal synthetics
+    for (k=0; k<data.nobs; k++)
+    {
+        // Extract the depth waveform
+        npts = data.data[k].npts;
+        npmax = npts;
+        G = memory_calloc64f(6*npmax);
+        var = memory_calloc64f(npmax);
+        ierr = parmt_utils_setDataOnG(k, joptLoc, npmax, data, G);
+        if (ierr != 0)
+        {
+            printf("%s: Failed to set data on G\n", PROGRAM_NAME);
+            goto ERROR;
+        }
+        nlags = 0;
+        if (parms.lwantLags)
+        {
+            lagTime = data.data[k].header.user0;
+            if (lagTime < 0.0){lagTime = parms.defaultMaxLagTime;}
+            nlags = (int) (lagTime/data.data[k].header.delta + 0.5);
+        }
+        ierr = parmt_mtSearchL164f(6, 1,
+                                   npts, 1,
+                                   nlags, parms.lwantLags,
+                                   &G[0*npmax], &G[1*npmax], &G[2*npmax],
+                                   &G[3*npmax], &G[4*npmax], &G[5*npmax],
+                                   NULL, Mned, data.data[k].data,
+                                   &phiLoc, var, &lag);
+        if (ierr != 0)
+        {
+            printf("%s: Error computing lags for waveform %d\n",
+                   PROGRAM_NAME, k);
+            goto ERROR;
+        }
+        // Compute the synthetic
+printf("%d %d %f\n", nlags, lag, phiLoc);
+        memory_free64f(&G); 
+        memory_free64f(&var);
+    } 
 /*
 double *db = memory_calloc64f(nb);
 double *dg = memory_calloc64f(ng);
@@ -189,6 +289,7 @@ postprocess_computeThetaCellSpacing(nt, thetas, dt);
 */
     // Free memory
 ERROR:;
+    parmt_freeData(&data);
     memory_free64f(&depMagMPDF);
     memory_free64f(&depMPDF);
     memory_free64f(&deps);
@@ -199,6 +300,7 @@ ERROR:;
     memory_free64f(&sigmas);
     memory_free64f(&thetas);
     memory_free64f(&phi);
+    iscl_finalize();
     return ierr;
 }
 //============================================================================//
@@ -258,3 +360,42 @@ static void printUsage(void)
     return;
 }
 
+
+int parmt_freeData(struct parmtData_struct *data)
+{
+    int i;
+    if (data->nobs > 0 && data->nlocs > 0 &&
+        data->sacGxx != NULL && data->sacGyy != NULL && data->sacGzz != NULL &&
+        data->sacGxy != NULL && data->sacGxz != NULL && data->sacGyz != NULL)
+    {
+        for (i=0; i<data->nobs*data->nlocs; i++)
+        {
+            sacio_freeData(&data->sacGxx[i]);
+            sacio_freeData(&data->sacGyy[i]);
+            sacio_freeData(&data->sacGzz[i]);
+            sacio_freeData(&data->sacGxy[i]);
+            sacio_freeData(&data->sacGxz[i]);
+            sacio_freeData(&data->sacGyz[i]);
+        }
+        free(data->sacGxx);
+        free(data->sacGyy);
+        free(data->sacGzz);
+        free(data->sacGxy);
+        free(data->sacGxz);
+        free(data->sacGyz);
+    }
+    if (data->nobs > 0 && data->data != NULL)
+    {
+        for (i=0; i<data->nobs; i++)
+        {
+            sacio_freeData(&data->data[i]);
+        }
+        free(data->data);
+    }
+    if (data->nobs > 0 && data->est != NULL)
+    {
+        free(data->est);
+    }
+    memset(data, 0, sizeof(struct parmtData_struct));
+    return 0;
+}

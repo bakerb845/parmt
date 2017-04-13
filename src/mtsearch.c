@@ -461,6 +461,11 @@ int parmt_mtSearchL164f(const int ldm, const int nmt,
         printf("%s: Internal error - all mts wont be visited\n", fcnm);
         return -1;
     }
+    // They want lags but there are none to compute
+    if (lwantLags && nlags == 0 && lags != NULL)
+    {
+        array_zeros32i_work(nmt, lags);
+    }
     // Introduce the regularizer as to compare ||C_d (Gm - d)||
     computeCG64f(npts, 1, true, CeInv, G, CG);
     computeCd64f(npts, 1, true, CeInv, d, Cd);

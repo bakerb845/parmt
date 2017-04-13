@@ -27,9 +27,11 @@
 
 static int getNpMax(const int iobs, const struct parmtData_struct data,
                     const struct localMT_struct mtloc);
+/*
 static int setDataOnG(const int iobs, const int iloc, const int npmax,
                        const struct parmtData_struct data,
                        double *__restrict__ G);
+*/
 int parmt_computeL1StationMagnitude64f(const int ldm, const int nmt,
                                        const int npts, const int blockSize,
                                        const double *__restrict__ Gxx,
@@ -137,7 +139,7 @@ int parmt_locSearchL164f(const MPI_Comm locComm,
         if (iloc >= data->nlocs){goto NEXT_LOCATION;}
         k = iobs*data->nlocs + iloc;
         // Get the Green's functions onto the matrix G
-        ierr = setDataOnG(iobs, iloc, npmax, *data, G); 
+        ierr = parmt_utils_setDataOnG(iobs, iloc, npmax, *data, G); 
         if (ierr != 0)
         {
             printf("%s: Error setting Greens functions\n", fcnm);
@@ -306,7 +308,7 @@ int parmt_locSearchXC64f(const MPI_Comm locComm,
         if (iloc >= data->nlocs){goto NEXT_LOCATION;}
         k = iobs*data->nlocs + iloc;
         // Get the Green's functions onto the matrix G
-        ierr = setDataOnG(iobs, iloc, npmax, *data, G);
+        ierr = parmt_utils_setDataOnG(iobs, iloc, npmax, *data, G);
         if (ierr != 0)
         {
             printf("%s: Error setting Greens functions\n", fcnm);
@@ -696,6 +698,7 @@ static int getNpMax(const int iobs, const struct parmtData_struct data,
     return npmax;
 }
 
+/*
 static int setDataOnG(const int iobs, const int iloc, const int npmax,
                        const struct parmtData_struct data,
                        double *__restrict__ G)
@@ -743,3 +746,4 @@ static int setDataOnG(const int iobs, const int iloc, const int npmax,
                 data.sacGyz[k].data, 1, &G[5*npmax], 1);
     return 0;
 }
+*/

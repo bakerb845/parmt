@@ -189,6 +189,9 @@ int parmt_io_readObjfnArchive64f(
     int *ns, double **sigmas,
     int *nt, double **thetas,
     int *nmt, double **phi);
+int parmt_utils_setDataOnG(const int iobs, const int iloc, const int npmax,
+                           const struct parmtData_struct data, 
+                           double *__restrict__ G);
 int utils_dataArchive_readAllWaveforms(const char *dataFile,
                                        struct parmtData_struct *data);
 int utils_dataArchive_getLocationID(const hid_t h5fl,
