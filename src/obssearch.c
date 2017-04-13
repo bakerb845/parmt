@@ -58,6 +58,11 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
             lwantLags = false;
             if (nlags[iobs] > 0){lwantLags = true;}
             npmax = MAX(npmax, data.data[iobs].npts);
+            if (parms.lwantLags)
+            {
+                printf("%s: Number of lags for waveform %d is %d\n",
+                       fcnm, nlags[iobs]);
+            }
         }
     }
     MPI_Bcast(nlags, data.nobs, MPI_INT,    master, globalComm);
