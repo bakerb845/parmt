@@ -1680,17 +1680,6 @@ static int performL1Search64f(const int nmt, const int ldm,
         {
             R[i] = fabs(Dmat[i] - U[i]);
         }
-/*
-        for (i=0; i<npts; i++)
-        {
-            for (ic=0; ic<Ncols; ic++)
-            {
-                idx = mblock*i + ic;
-                R[idx] = fabs(Dmat[idx] - U[idx]);
-            }
-            //printf("%d %e %e\n", i, Dmat[i], U[i]);
-        }
-*/
         // Compute |d - u|_1 
         for (i=0; i<npts; i++)
         {

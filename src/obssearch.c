@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include <mpi.h>
 #include "parmt_mtsearch.h"
 #ifdef PARMT_USE_INTEL
@@ -23,12 +24,14 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
 {
     const char *fcnm = "parmt_obsSearch64f\0";
     MPI_Win counterWin;
-    double lagTime, *CeInv, *phiWork, *phiAll, *var;
-    int *lagsWork, *nlags, ierr, iobs, myid, nobsProcs, npmax, value, value0;
+    double lagTime, *CeInv, *phiWork, *phiAll, *var, *varAll, *varOut;
+    int *lagsWork, *nlags, ierr, iobs, myid, nobsProcs,
+        npmax, value, value0;
     bool lwantLags;
     const double zero = 0.0;
     const double half = 0.5;
     const int master = 0;
+    const MPI_Aint sizeOfDouble = (MPI_Aint) (sizeof(double));
     //------------------------------------------------------------------------//
     //
     // Have the root process determine lag information
@@ -41,6 +44,8 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
     phiAll = NULL;
     CeInv = NULL;
     var = NULL;
+    varAll = NULL;
+    varOut = NULL;
     npmax = 0;
     lwantLags = false;
     if (myid == master)
@@ -61,7 +66,7 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
             if (parms.lwantLags)
             {
                 printf("%s: Number of lags for waveform %d is %d\n",
-                       fcnm, nlags[iobs]);
+                       fcnm, iobs+1, nlags[iobs]);
             }
         }
     }
@@ -111,6 +116,7 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
             array_zeros64f_work(data.nlocs*mtloc.nmtAll, phiAll);
         }
         phiWork = memory_calloc64f(data.nlocs*mtloc.nmtAll);
+        varAll = memory_calloc64f(data.nlocs*npmax);
     }
     else
     {
@@ -160,14 +166,10 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
                        fcnm, iobs + 1);
                 return -1;
             }
-            if (myid == master)
+            // Put the variance into the global buffer
+            if (linObsComm)
             {
-/*
-                parmt_io_writeVarianceForWaveform64f(
-                   parms.resultsDir, parms.projnm, parms.resultsFileSuffix,
-                   iobs,
-                   data.data[iobs].npts, var);
-*/
+                array_copy64f_work(npmax, var, &varAll[iobs*npmax]);
             }
         }
         else if (parms.objFnType == 2)
@@ -209,6 +211,24 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
     if (linObsComm)
     {
         if (nobsProcs > 1){memory_free64f(&phiAll);}
+        // Reduce the variance
+        varOut = NULL;
+        if (myid == master){varOut = memory_calloc64f(npmax*data.nobs);}
+        MPI_Reduce(varAll, varOut, npmax*data.nobs, MPI_DOUBLE,
+                   MPI_SUM, master, obsComm);
+        // Have the master write it
+        if (myid == master)
+        {
+            for (iobs=0; iobs<data.nobs; iobs++)
+            {
+                parmt_io_writeVarianceForWaveform64f(
+                   parms.resultsDir, parms.projnm, parms.resultsFileSuffix,
+                   iobs,
+                   data.data[iobs].npts, &varOut[iobs*npmax]);
+            }
+        }
+        memory_free64f(&varAll);
+        memory_free64f(&varOut);
     }
     else
     {
