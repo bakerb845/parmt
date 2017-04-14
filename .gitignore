@@ -1,0 +1,6 @@
+*.[oa]
+Makefile
+CMakeFiles
+CMakeCache.txt
+cmake_install.cmake
+compearth/parmt_config.h
