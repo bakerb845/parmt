@@ -21,6 +21,8 @@ struct parmtGeneralParms_struct
     char dataFile[PATH_MAX];   /*!< Input data/greens functions file */
     char resultsFileSuffix[PATH_MAX]; /*!< Results file suffix */
     char resultsDir[PATH_MAX];        /*!< Results file directory */
+    char ttimesTablesDir[PATH_MAX]; /*!< ttimes travel-times table directory*/
+    char ttimesModel[64];      /*!< ttimes model (default is ak135) */
     double defaultMaxLagTime;  /*!< Maximum max lag time (seconds) that
                                     can be applied to any observation */
     int blockSize;             /*!< Block size in matrix-matrix GM=U

@@ -4,9 +4,18 @@
 #include <string.h>
 #include <math.h>
 #include "parmt_polarity.h"
+#ifdef PARMT_USE_INTEL
+#include <mkl_cblas.h>
+#else
+#include <cblas.h>
+#endif
 #include "ttimes.h"
+#include "iscl/array/array.h"
 #include "iscl/geodetic/geodetic.h"
+#include "iscl/memory/memory.h"
 
+
+#define LDG 8
 #ifndef MAX
 #define MAX(x,y) (((x) > (y)) ? (x) : (y))
 #endif
@@ -19,7 +28,121 @@ static double computeContraction3x3(const double *__restrict__ a,
                                     const double *__restrict__ M,
                                     const double *__restrict__ b);
 static void setM3x3(const int k, double *__restrict__ M);
+static int computePadding64f(const int n);
+static int performPolaritySearch64f(const int nmt, const int ldm, 
+                                    const int nobs,
+                                    const int blockSize, const int mblock,
+                                    const int Mrows, const int Kcols,
+                                    const double *__restrict__ Dmat,
+                                    const double *__restrict__ G,
+                                    const double *__restrict__ Sigma,
+                                    const double *__restrict__ mts, 
+                                    double *__restrict__ phi);
 
+int parmt_polarity_gridSearch(const struct parmtData_struct data)
+{
+    const char *fcnm = "parmt_polarity_gridSearch\0";
+    char kt0[8];
+    double *deps, *G, *Gw;
+    int *observation, *polarity, *waveType, ierr, iloc, iobs, ipol,
+        iwav, k, nPolarity;
+    G = NULL; 
+    // Extract the depths in the grid-search from the first waveform 
+    iobs = 0;
+    deps = memory_calloc64f(data.nlocs);
+    for (iloc=0; iloc<data.nlocs; iloc++)
+    {
+        k = iobs*data.nlocs + iloc;
+        ierr = sacio_getFloatHeader(SAC_FLOAT_EVDP, data.sacGxx[k].header,
+                                    &deps[iloc]);
+        if (ierr != 0)
+        {
+            printf("%s: Unable to get event depth\n", fcnm);
+            memory_free64f(&deps);
+            return -1;
+        }
+    }
+    // Compute the number of polarities
+    nPolarity = 0;
+    polarity = memory_calloc32i(data.nobs);
+    waveType = memory_calloc32i(data.nobs);
+    observation = array_set32i(data.nobs, -1, &ierr);
+    for (iobs=0; iobs<data.nobs; iobs++)
+    {
+        ierr = sacio_getIntegerHeader(SAC_INT_UNUSED0,
+                                      data.data[iobs].header,
+                                      &ipol);
+        // Ensure it is defined
+        if (ierr != 0)
+        {
+            ierr = sacio_getCharacterHeader(SAC_CHAR_KT0,
+                                            data.data[iobs].header,
+                                            kt0);
+            if (ierr != 0)
+            {
+                printf("%s: t0 phase name is not set", fcnm);
+                continue;
+            }
+            iwav = 1;
+            if (kt0[0] == 'P' || kt0[0] == 'p')
+            {
+                iwav = 1;
+            }
+            else if (kt0[0] == 'S' || kt0[0] == 's') 
+            {
+                iwav = 2;
+            }
+            else
+            {
+                printf("%s: Could not classify t0 phase %s\n", fcnm, kt0);
+                continue;
+            }
+            if (ipol == 1 || ipol ==-1)
+            {
+                observation[nPolarity] = iobs;
+                waveType[nPolarity] = iwav;
+                polarity[nPolarity] = ipol;
+                nPolarity = nPolarity + 1;
+            }
+            else
+            {
+                printf("%s: Can't determine polarity\n", fcnm);
+            }
+/*
+            if ((iwav == 1 || iwav == 2) && (ipol == 1 || ipol == 2))
+            {
+                // Loop on the event depths
+                parmt_polarity_computeGreensRowFromData(data.data[iobs],
+                                                        iwav,
+                                                        deps[8],
+                                                        parms.ttimesTablesDir,
+                                                        parms.ttimesModel,
+                                                        &G[LDG]);
+            }
+*/
+        }
+    }
+    if (nPolarity == 0)
+    {
+        printf("%s: There are no polarities\n", fcnm);
+        memory_free32i(&polarity);
+        memory_free32i(&waveType);
+        return 0; 
+    }
+    // Compute the forward modeling matrix
+    for (iobs=0; iobs<data.nobs; iobs++)
+    {
+    //    parmt_polarity_computeGreensRowFromData(data.data[iobs],
+
+    }
+    // 
+    memory_free64f(&deps);
+    memory_free64f(&G);
+    memory_free32i(&observation);
+    memory_free32i(&polarity);
+    memory_free32i(&waveType);
+    return 0;
+}
 //============================================================================//
 int parmt_polarity_computeGreensRowFromData(const struct sacData_struct data,
                                             const int wavetype,
@@ -442,4 +565,199 @@ static double computeContraction3x3(const double *__restrict__ a,
         }
     }
     return res;
+}
+
+int polarity_performSearch(const int ldm, const int nmt,
+                           const int nobs, const int blockSize,
+                           const double *__restrict__ Gxx,
+                           const double *__restrict__ Gyy,
+                           const double *__restrict__ Gzz,
+                           const double *__restrict__ Gxy,
+                           const double *__restrict__ Gxz,
+                           const double *__restrict__ Gyz, 
+                           const double *__restrict__ mts,
+                           const double *__restrict__ d,
+                           const double *__restrict__ wts,
+                           double *__restrict__ phi)
+{
+    const char *fcnm = "polarity_performSearch\0";
+    double *Dmat, *G, *Sigma;
+    int i, ic, ierr, pad, mblock;
+    const int Mrows = nobs;
+    const int Kcols = 6;
+    // Compute the blocksize
+    pad = computePadding64f(blockSize);
+    mblock = blockSize + pad;
+    // If the weights aren't defined then set them to 1
+    if (wts == NULL)
+    {
+        Sigma = array_set64f(nobs, 1.0, &ierr);
+    }
+    else
+    {
+        Sigma = array_copy64f(nobs, wts, &ierr);
+    }
+    // Set the data
+    Dmat = memory_calloc64f(nobs*mblock);
+    for (i=0; i<nobs; i++)
+    {
+        for (ic=0; ic<mblock; ic++)
+        {
+            Dmat[i*mblock+ic] = d[i];
+        }
+    }
+    // Assemble the Green's functions matrix
+    G = memory_calloc64f(nobs*LDG);
+    for (i=0; i<nobs; i++)
+    {
+        G[LDG*i+0] = Gxx[i];
+        G[LDG*i+1] = Gyy[i];
+        G[LDG*i+2] = Gzz[i];
+        G[LDG*i+3] = Gxy[i];
+        G[LDG*i+4] = Gxz[i];
+        G[LDG*i+5] = Gyz[i];
+    }
+    // Perform the polarity search
+    ierr = performPolaritySearch64f(nmt, ldm,
+                                    nobs,
+                                    blockSize, mblock,
+                                    Mrows, Kcols,
+                                    Dmat, G, Sigma, mts, phi);
+    if (ierr != 0)
+    {
+        printf("%s: Error performing polarity search\n", fcnm);
+    }
+    // Clean up
+    memory_free64f(&G);
+    memory_free64f(&Dmat);
+    memory_free64f(&Sigma);
+    return ierr;
+}
+//============================================================================//
+static int performPolaritySearch64f(const int nmt, const int ldm, 
+                                    const int nobs,
+                                    const int blockSize, const int mblock,
+                                    const int Mrows, const int Kcols,
+                                    const double *__restrict__ Dmat,
+                                    const double *__restrict__ G,
+                                    const double *__restrict__ Sigma,
+                                    const double *__restrict__ mts, 
+                                    double *__restrict__ phi) 
+{
+    const char *fcnm = "performPolaritySearch64f\0";
+    double *M, *U, *Usign, *res2, *sigmaWt, res, traceSigma;
+    int i, ic, idx, imt, ierr, jdx, jmt, kmt, nmtBlocks, Ncols;
+    const double one = 1.0; 
+    const double zero = 0.0; 
+    ierr = 0; 
+    nmtBlocks = (int) ((double) (nmt)/(double) (blockSize) + 1.0);
+    if (nmtBlocks*blockSize < nmt) 
+    {    
+        printf("%s: Internal error - all mts wont be visited\n", fcnm);
+        return -1;
+    }
+#ifdef __INTEL_COMPILER
+    __assume_aligned(Sigma, 64);
+    __assume_aligned(G, 64);
+    __assume_aligned(Dmat, 64);
+#endif
+    // The VR in Chiang 2016 is:
+    //   (1 - \frac{ \sum_i w_i (Pol_{i,obs} - Pol_{i,est})^2 }
+    //             { \sum_i w_i (Pol_{i,obs}^2) } )
+    // Because Pol_{obs} and Pol_{est} take values of + or -1  we can
+    // reduce the demoniator so that the VR is
+    //   (1 - \frac{ \sum_i w_i (Pol_{i,obs} - Pol_{i,est})^2 }
+    //             { \sum_i w_i })
+    // Furthermore, we can incorporate this term into the weighting
+    // function s.t.  Sigma/trace(Sigma) to obtain
+    //   (1 - \frac{ \sum_i \hat{Sigma} (Pol_{i,obs} - Pol_{i,est})^2)
+    traceSigma = array_sum64f(nobs, Sigma, &ierr);
+    if (ierr != 0){traceSigma = 1.0;}
+    sigmaWt = memory_calloc64f(nobs);
+#ifdef __INTEL_COMPILER
+    __assume_aligned(sigmaWt, 64);
+#endif
+    for (i=0; i<nobs; i++){sigmaWt[i] = Sigma[i]/traceSigma;}
+/*
+    #pragma omp parallel \
+     private (i, ic, idx, imt, jdx, jmt, M, Ncols, res, res2, U, Usign) \
+     shared (G, Dmat, mts, nmtBlocks, phi, sigmaWt) \
+     default (none) reduction(+:ierr)
+    {
+*/
+    M = memory_calloc64f(mblock*nobs);
+    U = memory_calloc64f(mblock*nobs);
+    res2 = memory_calloc64f(mblock);
+    Usign = memory_calloc64f(mblock*nobs);
+#ifdef __INTEL_COMPILER
+    __assume_aligned(M, 64); 
+    __assume_aligned(U, 64); 
+    __assume_aligned(res2, 64);
+    __assume_aligned(Usign, 64);
+#endif
+/*
+    #pragma omp for
+*/
+    for (kmt=0; kmt<nmtBlocks; kmt++)
+    {
+        jmt = kmt*blockSize;
+        Ncols = MIN(blockSize, nmt - jmt); // Number of columns of M
+        // Set the moment tensor matrix 
+        for (i=0; i<6; i++)
+        {
+            #pragma omp simd aligned(M: 64)
+            for (ic=0; ic<Ncols; ic++)
+            {
+                imt = jmt + ic;
+                idx = ldm*imt + i;
+                jdx = mblock*i;
+                M[jdx+ic] = mts[idx];
+            }
+        }
+        // Compute U = GM
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                    Mrows, Ncols, Kcols, one, G, LDG,
+                    M, mblock, zero, U, mblock);
+        // Make the theoretical polarity +1 or -1 to match the data
+        array_copysign64f_work(mblock*nobs, U, Usign);
+        memset(res2, 0, (size_t) mblock*sizeof(double));
+        // Compute the weighted residual
+        for (i=0; i<nobs; i++)
+        {
+            for (ic=0; ic<Ncols; ic++)
+            {
+                res = Dmat[i*mblock+ic] - Usign[i*mblock+ic];
+                res2[ic] = res2[ic] + sigmaWt[i]*(res*res);
+            }
+        }
+        // Compute the variance and put it into objective function
+        for (ic=0; ic<Ncols; ic++)
+        {
+            phi[jmt+ic] = 1.0 - res2[ic];
+        }
+    }
+    memory_free64f(&Usign);
+    memory_free64f(&U);
+    memory_free64f(&M);
+    memory_free64f(&res2);
+/*
+    } // end parallel section
+*/
+    memory_free64f(&sigmaWt);
+    return 0;
+}
+
+static int computePadding64f(const int n)
+{
+    size_t mod, pad;
+    int ipad;
+    // Set space and make G matrix
+    pad = 0;
+    mod = ((size_t) n*sizeof(double))%64;
+    if (mod != 0)
+    {
+        pad = (64 - mod)/sizeof(double);
+    }
+    ipad = (int) pad;
+    return ipad;
 }

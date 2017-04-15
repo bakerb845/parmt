@@ -18,6 +18,7 @@
 
 #define PROGRAM_NAME "postmt"
 #define OUTDIR "postprocess"
+#define WAVOUT_DIR "obsest"
 
 static int parseArguments(int argc, char *argv[], char iniFile[PATH_MAX]);
 static void printUsage(void);
@@ -32,8 +33,9 @@ int main(int argc, char *argv[])
     char iniFile[PATH_MAX];
     double U[9], Muse[6], Mned[6], lam[3], *betas, *deps, *depMPDF, *depMagMPDF,
            *G, *gammas, *kappas,
-           *sigmas, *thetas, *M0s, *phi, *var, dip, lagTime, Mw, phiLoc, xnorm;
-    int ierr, imtopt, jb, jg, jk, jloc, jm, joptLoc, 
+           *sigmas, *thetas, *M0s, *phi, *var, dip, epoch,
+           lagTime, Mw, phiLoc, xnorm, xsum;
+    int ierr, iobs, imtopt, jb, jg, jk, jloc, jm, joptLoc, 
         js, jt, k, lag, nb, ng, nk, nlags, nlocs, nm, nmt, npmax, npts, ns, nt;
     // Initialize
     depMPDF = NULL; 
@@ -68,6 +70,10 @@ int main(int argc, char *argv[])
     {
         os_makedirs(OUTDIR);
     }
+    if (!os_path_isdir(WAVOUT_DIR))
+    {
+        os_makedirs(WAVOUT_DIR);
+    }
     // Load the data
     printf("%s: Reading data...\n", PROGRAM_NAME);
     ierr = utils_dataArchive_readAllWaveforms(parms.dataFile, &data);
@@ -76,6 +82,8 @@ int main(int argc, char *argv[])
         printf("%s: Error reading data\n", PROGRAM_NAME);
         goto ERROR;
     }
+    data.est = (struct sacData_struct *)
+               calloc((size_t) data.nobs, sizeof(struct sacData_struct));
     // Read the archive
     printf("%s: Reading archive...\n", PROGRAM_NAME); 
 printf("%s %s %s\n", parms.resultsDir, parms.projnm, parms.resultsFileSuffix);
@@ -171,8 +179,18 @@ return 0;
                                  6, 1, Mned);
     printf("mtUSE =[%.6e,%.6e,%.6e,%.6e,%.6e,%.6e]\n",
            Muse[0], Muse[1], Muse[2], Muse[3], Muse[4], Muse[5]);
-    printf("mtUSE =[%.6e,%.6e,%.6e,%.6e,%.6e,%.6e]\n",
+    printf("mtNED =[%.6e,%.6e,%.6e,%.6e,%.6e,%.6e]\n",
            Mned[0], Mned[1], Mned[2], Mned[3], Mned[4], Mned[5]);
+/*
+printf("overriding ned and joptloc\n");
+joptLoc=5;
+Mned[0] = 8.526325e+15;
+Mned[1] =-8.707938e+16;
+Mned[2] = 2.226786e+17;
+Mned[3] =-5.768950e+17;
+Mned[4] =-3.469420e+17;
+Mned[5] =-2.756277e+17;
+*/
     // Compute the scaling factor
     xnorm = marginal_computeNormalization(nlocs, deps,
                                           nm, M0s,
@@ -239,44 +257,79 @@ int im, iloc;
     }
     fclose(ofl);
     // Compute the optimal synthetics
-    for (k=0; k<data.nobs; k++)
+    xsum = 0.0;
+    for (iobs=0; iobs<data.nobs; iobs++)
     {
         // Extract the depth waveform
-        npts = data.data[k].npts;
+        npts = data.data[iobs].npts;
         npmax = npts;
         G = memory_calloc64f(6*npmax);
         var = memory_calloc64f(npmax);
-        ierr = parmt_utils_setDataOnG(k, joptLoc, npmax, data, G);
+        ierr = parmt_utils_setDataOnG(iobs, joptLoc, npmax, data, G);
         if (ierr != 0)
         {
             printf("%s: Failed to set data on G\n", PROGRAM_NAME);
             goto ERROR;
         }
+        // Compute the lag time
         nlags = 0;
+        lag = 0;
         if (parms.lwantLags)
         {
-            lagTime = data.data[k].header.user0;
+            lagTime = data.data[iobs].header.user0;
             if (lagTime < 0.0){lagTime = parms.defaultMaxLagTime;}
-            nlags = (int) (lagTime/data.data[k].header.delta + 0.5);
+            nlags = (int) (lagTime/data.data[iobs].header.delta + 0.5);
         }
         ierr = parmt_mtSearchL164f(6, 1,
                                    npts, 1,
                                    nlags, parms.lwantLags,
                                    &G[0*npmax], &G[1*npmax], &G[2*npmax],
                                    &G[3*npmax], &G[4*npmax], &G[5*npmax],
-                                   NULL, Mned, data.data[k].data,
+                                   NULL, Mned, data.data[iobs].data,
                                    &phiLoc, var, &lag);
         if (ierr != 0)
         {
             printf("%s: Error computing lags for waveform %d\n",
-                   PROGRAM_NAME, k);
+                   PROGRAM_NAME, iobs);
             goto ERROR;
         }
         // Compute the synthetic
-printf("%d %d %f\n", nlags, lag, phiLoc);
+        k = iobs*data.nlocs + joptLoc;
+        parmt_utils_sacGrnsToEst(data.data[iobs],
+                                     data.sacGxx[k], data.sacGyy[k],
+                                     data.sacGzz[k], data.sacGxy[k],
+                                     data.sacGxz[k], data.sacGyz[k],
+                                     Mned,
+                                     &data.est[iobs]);
+        // Fix the timing
+        ierr = sacio_getEpochalStartTime(data.est[iobs].header, &epoch);
+        epoch = epoch + (double) lag*data.data[iobs].header.delta;
+        sacio_setEpochalStartTime(epoch, &data.est[iobs].header);
+        // Write the file
+        memset(fname, 0, PATH_MAX*sizeof(char));
+        sprintf(fname, "%s/%s.%s.%s.%s.SAC",
+                WAVOUT_DIR,
+                data.data[iobs].header.knetwk,
+                data.data[iobs].header.kstnm,
+                data.data[iobs].header.kcmpnm,
+                data.data[iobs].header.khole);
+        sacio_writeTimeSeriesFile(fname, data.data[iobs]);
+        memset(fname, 0, PATH_MAX*sizeof(char));
+        sprintf(fname, "%s/%s.%s.%s.%s.EST.SAC",
+                WAVOUT_DIR,
+                data.data[iobs].header.knetwk,
+                data.data[iobs].header.kstnm,
+                data.data[iobs].header.kcmpnm,
+                data.data[iobs].header.khole);
+        sacio_writeTimeSeriesFile(fname, data.est[iobs]);
+        printf("Waveform %6s has lag %+4d=%+8.3e (s) and a fit of %f\n",
+               data.data[iobs].header.kstnm,
+               lag, lag*data.data[iobs].header.delta, phiLoc);
         memory_free64f(&G); 
         memory_free64f(&var);
+        xsum = xsum + phiLoc;
     } 
+    printf("Average %f\n", xsum/(double) data.nobs );
 /*
 double *db = memory_calloc64f(nb);
 double *dg = memory_calloc64f(ng);

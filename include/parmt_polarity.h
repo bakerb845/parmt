@@ -1,6 +1,7 @@
 #ifndef PARMT_POLARITY_H__
 #define PARMT_POLARITY_H__ 1
 #include "sacio.h"
+#include "parmt_mtsearch.h"
 
 #ifdef __cplusplus
 extern "C"

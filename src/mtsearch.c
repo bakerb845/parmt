@@ -1753,6 +1753,7 @@ static int performL1Search64f(const int nmt, const int ldm,
     } // end parallel section
     return ierr;
 }
+//============================================================================//
 /*!
  * @brief Computes Cd vector
  *
