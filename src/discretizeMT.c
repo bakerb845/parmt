@@ -87,13 +87,114 @@ double Mdc[6], lam[3], U[6], theta;
 */
 //============================================================================//
 /*!
+ * @brief Provides a cell based discretization of the moment tensor space
+ *
+ * @param[in] nb          number of colatitudes
+ * @param[in] betaLower   lower colatitude in grid search [0, betaUpper)
+ * @param[in] betaUpper   upper colatitude in grid search (betaLower, pi]
+ * @param[in] ng          number of longitudes
+ * @param[in] gammaLower  lower longitude in grid search [-pi/6, gammaUpper)
+ * @param[in] gammaUpper  upper longitude in grid search (gammaLower, pi/6]
+ * @param[in] nk          number of strikes in grid search
+ * @param[in] kappaLower  lower strike in grid search [0, kappaUpper)
+ * @param[in] kappaUpper  upper strike in grid search (kappaLower, 2*pi]
+ * @param[in] ns          number of slips in grid search
+ * @param[in] sigmaLower  lower slip angle in grid search [-pi, sigmaUpper)
+ * @param[in] sigmaUPper  upper slip angle in grid search (sigmaUpper, pi]
+ * @param[in] nt          number of dips in grid search 
+ * @param[in] thetaLower  lower dip in grid search [0,dipUpper)
+ * @param[in] thetaUpper  upper dip in grid search (dipLower, pi/2]
+ * @param[in] nm          number of magnitudes
+ * @param[in] m0Lower     lower scalar moment in grid search (Newton-meters)
+ * @param[in] m0Upper     upper scalar moment in grid search (Newton-meters)
+ *
+ * @param[out] betas      colatitudes (radians) at cell centers [nb]
+ * @param[out] gammas     longitudes (radians) at cell centers [ng]
+ * @param[out] kappas     strike angles (radians) at cell centers [nk]
+ * @param[out] sigmas     slip angles (radians) at cell centers [ns]
+ * @param[out] thetas     dip angles (radians) at cell centers [nt]
+ * @param[out] M0s        scalar moments (Newton-meters) in grid search [nm]
+ *
+ * @author Ben Baker
+ *
+ * @copyright ISTI distributed under Apache 2
+ *
+ */
+int parmt_discretizeCells64f(
+    const int nb, const double betaLower, const double betaUpper,
+    const int ng, const double gammaLower, const double gammaUpper,
+    const int nk, const double kappaLower, const double kappaUpper,
+    const int ns, const double sigmaLower, const double sigmaUpper,
+    const int nt, const double thetaLower, const double thetaUpper,
+    const int nm, const double m0Lower, const double m0Upper,
+    double **betas,  double **gammas, double **kappas,
+    double **sigmas, double **thetas, double **M0s)
+{
+    const char *fcnm = "parmt_discretizeCells64f\0";
+    double *u, *v, *h;
+    double du, du2, dv, dv2, dh, dh2, dk, dk2, ds, ds2, 
+           hLower, hUpper, uLower, uUpper, vLower, vUpper;
+    int ierr;
+    const double two = 2.0;
+    // Initialize and do some basic error checks
+    u = NULL;
+    v = NULL;
+    h = NULL;
+    if (nb < 1 || ng < 1 || nk < 1 || ns < 1 || nt < 1 || nm < 1)
+    {
+        if (nb < 1){printf("%s: no betas\n", fcnm);}
+        if (ng < 1){printf("%s: no gammas\n", fcnm);}
+        if (nk < 1){printf("%s: no kappas\n", fcnm);}
+        if (ns < 1){printf("%s: no sigmas\n", fcnm);}
+        if (nt < 1){printf("%s: no thetas\n", fcnm);}
+        if (nm < 1){printf("%s: no magnitudes\n", fcnm);}
+        return -1;
+    }
+    // Discretize the moment tensor space in (u, v, h) space
+    compearth_beta2u(1, &betaLower, &uLower);
+    compearth_beta2u(1, &betaUpper, &uUpper);
+    compearth_gamma2v(1, &gammaLower, &vLower);
+    compearth_gamma2v(1, &gammaUpper, &vUpper);
+    compearth_theta2h(1, &thetaLower, &hLower);
+    compearth_theta2h(1, &thetaUpper, &hUpper);
+    du = (uUpper - uLower)/(double) nb;
+    dv = (vUpper - vLower)/(double) ng;
+    dh =-(hUpper - hLower)/(double) nt; // negative sign makes +theta increasing
+    dk = (kappaUpper - kappaLower)/(double) nk;
+    ds = (sigmaUpper - sigmaLower)/(double) ns;
+    du2 = du/two;
+    dv2 = dv/two;
+    dh2 = dh/two;
+    u = array_linspace64f(uLower+du2, uUpper-du2, nb, &ierr);
+    v = array_linspace64f(vLower+dv2, vUpper-dv2, ng, &ierr);
+    h = array_linspace64f(hLower-dh2, hUpper+dh2, nt, &ierr);
+    *betas  = memory_calloc64f(nb);
+    *gammas = memory_calloc64f(ng);
+    *thetas = memory_calloc64f(nt);
+    compearth_u2beta(nb, 20, 2, u, 1.e-6, *betas);
+    compearth_v2gamma(ng, v, *gammas);
+    compearth_h2theta(nt, h, *thetas);
+    // discretize the magnitudes, kappa, and sigma
+    dk2 = dk/two;
+    ds2 = ds/two;
+    *M0s    = array_linspace64f(m0Lower,        m0Upper,        nm, &ierr);
+    *kappas = array_linspace64f(kappaLower+dk2, kappaUpper-dk2, nk, &ierr);
+    *sigmas = array_linspace64f(sigmaLower+ds2, sigmaUpper-ds2, ns, &ierr);
+    memory_free64f(&u);
+    memory_free64f(&v);
+    memory_free64f(&h);
+    return ierr;
+}
+                          
+//============================================================================//
+/*!
  * @brief Computes the moment tensors in the grid search. 
  *        The grid search ordering is:
  *         Loop on magnitudes
  *          Loop on colatitudes
  *           Loop on longitudes
  *            Loop on strikes
- *             Loop on rakes
+ *             Loop on slips
  *              Loop on dips 
  *
  * @param[in] comm    MPI communicator on which moment tensor will be split
@@ -112,8 +213,8 @@ double Mdc[6], lam[3], U[6], theta;
  * @param[in] nt      number of dip angles
  * @param[in] thetas  dips angles (radians) s.t.
  *                    \f$ \theta \in [0, \pi/2] \f$ [nt]
- * @param[in] ns      number of rake angles
- * @param[in] sigmas  rake angles (radians) s.t. 
+ * @param[in] ns      number of slip angles
+ * @param[in] sigmas  slip angles (radians) s.t. 
  *                    \f$ \sigma \in [-\pi/2, \pi/2] \f$ [ns]
  * @param[in] ldm     leading dimension of mts.  must be >= 6.
  * @param[in] nmt     number of moment tensors (=nm*nb*ng*nk*ns*nt)
@@ -270,7 +371,7 @@ int parmt_discretizeMT64f_MPI(const MPI_Comm comm,
  *          Loop on colatitudes
  *           Loop on longitudes
  *            Loop on strikes
- *             Loop on rakes
+ *             Loop on slips
  *              Loop on dips 
  *
  * @param[in] ng      number of longitudes
@@ -288,8 +389,8 @@ int parmt_discretizeMT64f_MPI(const MPI_Comm comm,
  * @param[in] nt      number of dip angles
  * @param[in] thetas  dips angles (radians) s.t.
  *                    \f$ \theta \in [0, \pi/2] \f$ [nt]
- * @param[in] ns      number of rake angles
- * @param[in] sigmas  rake angles (radians) s.t. 
+ * @param[in] ns      number of slip angles
+ * @param[in] sigmas  slip angles (radians) s.t. 
  *                    \f$ \sigma \in [-\pi/2, \pi/2] \f$ [ns]
  * @param[in] ldm     leading dimension of mts.  must be >= 6.
  * @param[in] nmt     number of moment tensors (=nm*nb*ng*nk*ns*nt)
@@ -438,7 +539,7 @@ int parmt_discretizeMT64f(const int ng,
             // Loop on strike
             for (ik=0; ik<nk; ik++)
             {
-                // Loop on rake
+                // Loop on slip
                 for (is=0; is<ns; is++)
                 {
                     // Loop on dip
@@ -472,7 +573,7 @@ int parmt_discretizeMT64f(const int ng,
                             continue;
                         }
                     } // loop on dip
-                } // loop on rake
+                } // loop on slip 
             } // loop on strike
         } // loop on longitudes
     } // loop on latitudes

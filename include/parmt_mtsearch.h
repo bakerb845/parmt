@@ -28,6 +28,8 @@ extern "C"
 //============================================================================//
 //                                MPI communication                           //
 //============================================================================//
+int parmt_broadcast_parmtPolarityParms(struct parmtPolarityParms_struct *parms,
+                                        const int root, const MPI_Comm comm);
 int parmt_broadcast_mtSearchParms(struct parmtMtSearchParms_struct *parms,
                                   const int root, const MPI_Comm comm); 
 int parmt_broadcast_data(struct parmtData_struct *data,
@@ -55,6 +57,16 @@ int parmt_computeSynthetic(const int iobs,
 //============================================================================//
 //                        discretize moment tensor space                      //
 //============================================================================//
+/*! Cell centers in grid-search */
+int parmt_discretizeCells64f(
+    const int nb, const double betaLower, const double betaUpper,
+    const int ng, const double gammaLower, const double gammaUpper,
+    const int nk, const double kappaLower, const double kappaUpper,
+    const int ns, const double sigmaLower, const double sigmaUpper,
+    const int nt, const double thetaLower, const double thetaUpper,
+    const int nm, const double m0Lower, const double m0Upper,
+    double **betas,  double **gammas, double **kappas,
+    double **sigmas, double **thetas, double **M0s);
 /*! Discretize the moment tensor space with MPI */
 int parmt_discretizeMT64f_MPI(const MPI_Comm comm,
                               const int ng,
