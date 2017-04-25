@@ -20,35 +20,6 @@ struct localMT_struct
     int myid;      /*!< my process ID on communicator */
 };
 
-struct polarityData_struct
-{
-    double *Gxx;      /*!< Polarity Green's functions scaling mxx term.
-                           [nlocs x nobs] with leading dimension nobs.
-                           mxx is in NED system. */
-    double *Gyy;      /*!< Polarity Green's functions scaling myy term.
-                           [nlocs x nobs] with leading dimension nobs.
-                           myy is in NED system. */
-    double *Gzz;      /*!< Polarity Green's functions scaling mzz term.
-                           [nlocs x nobs] with leading dimension nobs.
-                           mzz is in NED system. */
-    double *Gxy;      /*!< Polarity Green's functions scaling mxy term.
-                           [nlocs x nobs] with leading dimension nobs.
-                           mxy is in NED system. */
-    double *Gxz;      /*!< Polarity Green's functions scaling mxz term.
-                           [nlocs x nobs] with leading dimension nobs.
-                           mxz is in NED system. */
-    double *Gyz;      /*!< Polarity Green's functions scaling myz term.
-                           [nlocs x nobs] with leading dimension nobs.
-                           myz is in NED system. */
-    double *polarity; /*!< Polarity (+/-) for iobs'th observation [nobs] */
-    double *wt;       /*!< Data weight (e.g. pick quality) for each
-                           observation (0,1]) */
-    int *obsMap;      /*!< Maps from local polarity observation to original
-                           waveform observation */
-    int nobs;         /*!< Number of observations (polarities) */
-    int nlocs;        /*!< Number of locations */
-};
-
 #ifdef __cplusplus
 extern "C"
 {
