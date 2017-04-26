@@ -439,9 +439,11 @@ int parmt_mtSearchL164f(const int ldm, const int nmt,
     Cd = memory_calloc64f(npts);
     Dmat = memory_calloc64f(mblock*npts);
     Mrows = npts; // Number of rows of G
+/*
 #ifdef PARMT_USE_INTEL
     mkl_set_num_threads(1);
 #endif
+*/
 #ifdef __INTEL_COMPILER
     __assume_aligned(G, 64); 
     __assume_aligned(CG, 64);
@@ -530,13 +532,13 @@ int parmt_mtSearchL164f(const int ldm, const int nmt,
             // Straight copy
             else
             {
-               for (i=0; i<npts; i++)
-               {
-                  for (ic=0; ic<blockSize; ic++)
-                  {
-                      Dmat[mblock*i+ic] = Cd[i];
-                  }
-               }
+                for (i=0; i<npts; i++)
+                {
+                    for (ic=0; ic<blockSize; ic++)
+                    {
+                        Dmat[mblock*i+ic] = Cd[i];
+                    }
+                }
             }
             // Optimize at this lag
             ierr = performL1Search64f(nmt, ldm,

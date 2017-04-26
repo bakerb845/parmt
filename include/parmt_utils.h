@@ -21,8 +21,6 @@ struct parmtGeneralParms_struct
     char dataFile[PATH_MAX];   /*!< Input data/greens functions file */
     char resultsFileSuffix[PATH_MAX]; /*!< Results file suffix */
     char resultsDir[PATH_MAX];        /*!< Results file directory */
-    char ttimesTablesDir[PATH_MAX]; /*!< ttimes travel-times table directory*/
-    char ttimesModel[64];      /*!< ttimes model (default is ak135) */
     double defaultMaxLagTime;  /*!< Maximum max lag time (seconds) that
                                     can be applied to any observation */
     int blockSize;             /*!< Block size in matrix-matrix GM=U
@@ -31,6 +29,14 @@ struct parmtGeneralParms_struct
                                     If 2 then this is a cross-correlation */
     bool lwantLags;            /*!< If true then the program is to optimize
                                     at different synthetic/data lags */
+    char pad[3];
+};
+
+struct parmtPolarityParms_struct
+{
+    char ttimesTablesDir[PATH_MAX]; /*!< ttimes travel-times table directory*/
+    char ttimesModel[64];           /*!< ttimes model (default is ak135) */
+    bool lcomputePolarity;          /*!< if true compute polarity info */
     char pad[3];
 };
 
@@ -95,6 +101,8 @@ extern "C"
 
 int parmt_utils_readGeneralParms(const char *iniFile,
                                  struct parmtGeneralParms_struct *parms);
+int parmt_utils_readPolarityParms(const char *iniFile,
+                                  struct parmtPolarityParms_struct *parms);
 int parmt_utils_readMtSearch(const char *iniFile,
                              struct parmtMtSearchParms_struct *parms);
 int parmt_utils_getEffectiveRank(const double pct,

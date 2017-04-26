@@ -8,7 +8,7 @@
 struct localMT_struct
 {
     double *mts;   /*!< Local moment tensors [ldm*nmt] */
-    int *l2g;      /*!< Maps local to global moment tensor indices */
+    //int *l2g;      /*!< Maps local to global moment tensor indices */
     int *nmtProc;  /*!< Number of moment tensors on each process in
                         communicator [commSize] */
     int *offset;   /*!< Process' global start index offset [commSize]  */

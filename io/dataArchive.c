@@ -265,7 +265,6 @@ int utils_dataArchive_getLocationID(const hid_t h5fl,
     memory_free64f(&evlos);
     return iloc;
 }
-
 //============================================================================//
 int utils_dataArchive_readAllWaveforms(const char *dataFile,
                                        struct parmtData_struct *data)
@@ -314,7 +313,7 @@ int utils_dataArchive_readAllWaveforms(const char *dataFile,
     nread = nobs*nlocs;
     if (nread < 1)
     {
-        log_errorF("%s: Error onthing to read\n", fcnm);
+        log_errorF("%s: Error nothing to read\n", fcnm);
         ierr = 1;
         goto ERROR;
     }

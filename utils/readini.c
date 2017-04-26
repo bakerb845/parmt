@@ -5,6 +5,7 @@
 #include <math.h>
 #include <iniparser.h>
 #include "parmt_utils.h"
+#include "ttimes_config.h"
 #include "iscl/log/log.h"
 #include "iscl/os/os.h"
 
@@ -94,6 +95,55 @@ int parmt_utils_readGeneralParms(const char *iniFile,
         printf("%s: Invalid obj fn type %d\n", fcnm, parms->objFnType);
         return -1;
     }
+END:;
+    iniparser_freedict(ini);
+    return ierr;
+}
+
+int parmt_utils_readPolarityParms(const char *iniFile,
+                                  struct parmtPolarityParms_struct *parms)
+{
+    const char *fcnm = "parmt_utils_readPolarityParms\0";
+    const char *s;
+    int ierr;
+    dictionary *ini;
+    ierr = 0;
+    memset(parms, 0, sizeof(struct parmtPolarityParms_struct));
+    if (!os_path_isfile(iniFile))
+    {
+        log_errorF("%s: Error ini file %s does not exist\n", fcnm, iniFile);
+        return -1;
+    }
+    ini = iniparser_load(iniFile);
+    // do i even want to do this analysis?
+    if (!parms->lcomputePolarity)
+    {
+        strcpy(parms->ttimesTablesDir, TTIMES_DEFAULT_TABLE_DIRECTORY);
+        strcpy(parms->ttimesModel, TTIMES_DEFAULT_MODEL);
+        goto END;
+    }
+    // ttimes tables directory
+    s = iniparser_getstring(ini, "ttimes:ttimesTableDir\0",
+                            TTIMES_DEFAULT_TABLE_DIRECTORY);
+    if (!os_path_isdir(s))
+    {   
+        printf("%s: Error ttimes tables directory doesn't exist\n", fcnm);
+    }   
+    else
+    {   
+        strcpy(parms->ttimesTablesDir, s); 
+    }   
+    // ttimes model
+    s = iniparser_getstring(ini, "ttimes:ttimesModel\0", TTIMES_DEFAULT_MODEL);
+    if (s != NULL)
+    {   
+        strcpy(parms->ttimesModel, s); 
+    }   
+    else
+    {   
+        printf("%s: Error ttimesModel not specified\n", fcnm);
+    }
+
 END:;
     iniparser_freedict(ini);
     return ierr;

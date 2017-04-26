@@ -18,7 +18,6 @@
 #endif
 #include "compearth.h"
 #include "parmt_mtsearch.h"
-#include "parmt_polarity.h"
 #include "parmt_postProcess.h"
 #include "parmt_utils.h"
 #include "iscl/array/array.h"
@@ -44,7 +43,8 @@ int main(int argc, char *argv[])
     double *deps, *luneMPDF, *phi, t0, t1, du, dv, dh, dk, ds;
     int64_t ngridSearch;
     double hLower, hUpper, uLower, uUpper, vLower, vUpper, xnorm;
-    int *lags, i, ierr, myid, npInLocGroups, nmt, npInMTGroups, npInObsGroups, nprocs, provided;
+    int *lags, i, ierr, myid, npInLocGroups, nmt, npInMTGroups,
+        npInObsGroups, nprocs, provided;
     int ix, iy, k;
     MPI_Comm mtComm, locComm, obsComm;
     bool linMTComm, linLocComm, linObsComm;
@@ -54,12 +54,15 @@ struct parmtGeneralParms_struct parms;
 struct parmtData_struct data;
 struct parmtMtSearchParms_struct mtsearch;
     struct localMT_struct mtloc;
+    //------------------------------------------------------------------------//
+    //
+    // initialize MPI, ISCL, and handle threading issues
     MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
     MPI_Comm_rank(MPI_COMM_WORLD, &myid);
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     iscl_init();
 #ifdef PARMT_USE_INTEL
-    omp_set_num_threads(2);
+    //omp_set_num_threads(2);
     mkl_set_num_threads(1);
     ippSetNumThreads(1);
 #endif
@@ -418,6 +421,7 @@ goto FINISH;
                                  array_min64f(data.nlocs*mtloc.nmtAll, phi));
         printf("smax %f smin %f\n", array_max64f(data.nlocs*mtloc.nmtAll, s),
                           array_min64f(data.nlocs*mtloc.nmtAll, s));
+/*
         double *Gpol = memory_calloc64f(6*data.nobs), pol;
         int ipol;
         for (iobs=0; iobs<data.nobs; iobs++)
@@ -439,6 +443,7 @@ goto FINISH;
                    data.data[iobs].header.baz, data.data[iobs].header.cmpinc);
         }
         memory_free64f(&Gpol);
+*/
         double pAxis[3], nAxis[3], tAxis[3];
         postprocess_tt2tnp(betas[jb], gammas[jg],
                            kappas[jk], sigmas[js], thetas[jt],
@@ -734,7 +739,7 @@ int parmt_freeData(struct parmtData_struct *data)
 int parmt_freeLocalMTs(struct localMT_struct *mtloc)
 {
     memory_free64f(&mtloc->mts);
-    memory_free32i(&mtloc->l2g);
+    //memory_free32i(&mtloc->l2g); // TODO remove
     memory_free32i(&mtloc->offset);
     memset(mtloc, 0, sizeof(struct localMT_struct));
     return 0;
