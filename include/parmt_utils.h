@@ -20,6 +20,7 @@ struct parmtGeneralParms_struct
     char projnm[256];          /*!< Project name */
     char dataFile[PATH_MAX];   /*!< Input data/greens functions file */
     char resultsFileSuffix[PATH_MAX]; /*!< Results file suffix */
+    char polarityFileSuffix[PATH_MAX]; /*!< Polarity file suffix */
     char resultsDir[PATH_MAX];        /*!< Results file directory */
     double defaultMaxLagTime;  /*!< Maximum max lag time (seconds) that
                                     can be applied to any observation */

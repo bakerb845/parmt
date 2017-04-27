@@ -178,7 +178,7 @@ int parmt_invertMT64f(const int nobs,
 {
     const char *fcnm = "parmt_invertMT64f\0";
     double *G, *b, *est, m6[6];
-    int i1, i2, ierr, info, iobs, ldg, mrows, ncols, nploc;
+    int i1, i2, ierr, iobs, ldg, mrows, ncols, nploc;
     *phi = 0.0;
     ierr = 0;
     // Create the forward modeling matrix

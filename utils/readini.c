@@ -68,6 +68,25 @@ int parmt_utils_readGeneralParms(const char *iniFile,
     {
         if (strlen(s) > 0){strcpy(parms->resultsFileSuffix, s);}
     }
+    // polarity file suffix
+    s = iniparser_getstring(ini, "general:polarityFileSuffix\0", NULL);
+    if (s == NULL)
+    {
+        sprintf(parms->polarityFileSuffix, "%s_polarity",
+                parms->resultsFileSuffix);
+    }
+    else
+    {
+        if (strlen(s) > 0)
+        {
+            strcpy(parms->polarityFileSuffix, s);
+        }
+        else
+        {
+            sprintf(parms->polarityFileSuffix, "%s_polarity",
+                    parms->resultsFileSuffix);
+        }
+    }
     // read the block size
     parms->blockSize = iniparser_getint(ini, "general:blockSize\0", 32);
     if (parms->blockSize < 1)

@@ -50,8 +50,7 @@ int parmt_polarity_computeTTimesGreens(
     char kt0[8], kcmpnm[8];
     double G6[6], *cmpazs, *cmpincs, *deps, *evlas, *evlos,
            *GxxBuf, *GyyBuf, *GzzBuf, *GxyBuf, *GxzBuf, *GyzBuf,
-           *stlas, *stlos, cmpinc, cmpaz, evla, evlo,
-           stla, stlo;
+           *stlas, *stlos, cmpinc, cmpaz, stla, stlo;
     int *icomps, *observation, *polarity, *waveType, icomp, ierr, ierrAll,
         iloc, iobs, ipol, iwav, jloc, k, kt, myid, nPolarity, nprocs;
     size_t lenos;
@@ -925,8 +924,8 @@ static int performPolaritySearch64f(const int nmt, const int ldm,
                                     double *__restrict__ phi) 
 {
     const char *fcnm = "performPolaritySearch64f\0";
-    double *M, *U, *Usign, *res2, *sqrtSigmaWt, res, traceSigma;
-    int i, ic, idx, imt, ierr, indx, ipol, jndx, jmt, kmt, nmtBlocks, Ncols;
+    double *U, *Usign, *res2, *sqrtSigmaWt, res, traceSigma;
+    int i, ic, ierr, ipol, jmt, kmt, nmtBlocks, Ncols;
     const double one = 1.0; 
     const double zero = 0.0; 
     ierr = 0; 
@@ -963,8 +962,7 @@ static int performPolaritySearch64f(const int nmt, const int ldm,
 #endif
     for (i=0; i<nPolarity; i++){sqrtSigmaWt[i] = sqrt(0.25*Sigma[i]/traceSigma);}
     #pragma omp parallel \
-     private (i, ic, idx, imt, indx, ipol, jndx, jmt, kmt, \
-             Ncols, res, res2, U, Usign) \
+     private (i, ic, ipol, jmt, kmt, Ncols, res, res2, U, Usign) \
      shared (G, Dmat, mts, nmtBlocks, phi, sqrtSigmaWt) \
      default (none) reduction(+:ierr)
     {
