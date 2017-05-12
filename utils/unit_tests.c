@@ -41,7 +41,7 @@ int main()
                           sacRDS, sacRSS, sacRDD, sacREX,
                           sacTDS, sacTSS, sac;
     double *G, baz, cmpaz, cmpinc, xnorm;
-    int i, ierr, imt, indx, npgrns;
+    int ierr, imt, indx, npgrns;
     const double az = 25.0;
     const double M0grns = 1.e20; //3.5481338923357603e+23;
     ierr = 0;

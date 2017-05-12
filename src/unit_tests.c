@@ -412,7 +412,58 @@ fclose(fn);
     iscl_finalize();
     return EXIT_SUCCESS;
 }
-
+//============================================================================//
+int testPolarityMTSearch(void)
+{
+    const char *fcnm = "testPolarityMTSearch\0";
+    const int blockSizes[4] = {1, 2, 32, 64};
+    int ierr, nb, ng, nk, nm, ns, nt;
+    double *betas, *gammas, *kappas, *mts, *M0s, *thetas, *sigmas;
+    double betaMin, betaMax, gammaMin, gammaMax, kappaMin, kappaMax,
+           m0Min, m0Max, sigmaMin, sigmaMax, thetaMin, thetaMax;
+    const double oneDeg = M_PI/180.0;  // one degree for padding
+    // Discretize the moment tensor space
+    ng = 5; // longitudes
+    nb = 6; // colatitudes
+    nk = 7; // strike angles
+    ns = 8; // rake
+    nt = 9; // dip
+    nm = 1; // magnitudes
+    betaMin = 0.0 + oneDeg;
+    betaMax = M_PI - oneDeg;
+    gammaMin =-M_PI/6.0 + oneDeg;
+    gammaMax = M_PI/6.0 - oneDeg;
+    kappaMin = 0.0 + oneDeg;
+    kappaMax = 2.0*M_PI - oneDeg;
+    thetaMin = 0.0 + oneDeg;
+    thetaMax = 0.5*M_PI - oneDeg;
+    sigmaMin =-0.5*M_PI + oneDeg;
+    sigmaMax = 0.5*M_PI - oneDeg;
+    m0Min = 1.0/sqrt(2.0);
+    m0Max = 2.0/sqrt(2.0);
+    ierr = parmt_discretizeCells64f(nb, betaMin, betaMax,
+                                    ng, gammaMin, gammaMax,
+                                    nk, kappaMin, kappaMax,
+                                    ns, sigmaMin, sigmaMax,
+                                    nt, thetaMin, thetaMax,
+                                    nm, m0Min, m0Max,
+                                    &betas, &gammas, &kappas,
+                                    &sigmas, &thetas, &M0s); 
+    if (ierr != 0)
+    {
+        printf("%s: Error making cell discretization\n", fcnm);
+        return EXIT_FAILURE;
+    }
+    memory_free64f(&betas);
+    memory_free64f(&gammas);
+    memory_free64f(&kappas);
+    memory_free64f(&sigmas);
+    memory_free64f(&thetas);
+    memory_free64f(&M0s);
+    // Investigate different block sizes
+    return EXIT_SUCCESS;
+}
+//============================================================================//
 /*!
  * @brief Tests the effect of blocksize in gemm on performance
  */ 

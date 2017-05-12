@@ -2,6 +2,7 @@
 #define COMPEARTH_H__ 1
 #include <stdbool.h>
 #include <math.h>
+#include "parmt_config.h"
 #include "compearth_config.h"
 
 #ifndef M_PI
@@ -17,7 +18,7 @@
 #define MIN(x,y) (((x) < (y)) ? (x) : (y))
 #endif
 
-enum coord_system
+enum compearthCoordSystem_enum
 {
     USE = 1,    /*!< Up, south, east (G-CMT) */
     NED = 2,    /*!< North, east, down (Aki and Richards, 1980 pg 118) */
@@ -32,7 +33,7 @@ enum magType_enum
     HARVARD_CMT = 2    /*!< Mw from Harvard CMT: (2/3)*(log10(M0) - 16.1) */
 };
 
-#ifdef PARMT_USE_ISCL
+#ifdef COMPEARTH_USE_ISCL
 #include "iscl/array/array.h"
 #else
 enum normType_enum
@@ -77,8 +78,8 @@ int compearth_CMT2mw(const int nm, const int im0,
                      const double *__restrict__ M,
                      double *__restrict__ Mw);
 /* Converts between moment tensors in different coordinate systems */
-int compearth_convertMT(const enum coord_system i1in,
-                        const enum coord_system i2in,
+int compearth_convertMT(const enum compearthCoordSystem_enum i1in,
+                        const enum compearthCoordSystem_enum i2in,
                         const double *__restrict__ M,
                         double *__restrict__ Mout);
 /* Computes rotation matrices about axis for given angles */

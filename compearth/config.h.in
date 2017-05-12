@@ -1,6 +1,6 @@
 #ifndef COMPEARTH_CONFIG_H__
 #define COMPEARTH_CONFIG_H__ 1
 
-#cmakedefine PARMT_USE_INTEL
+#cmakedefine COMPEARTH_USE_ISCL
 
 #endif

@@ -70,7 +70,8 @@ add_subdirectory(include)
 add_subdirectory(compearth)
 
 add_executable(xmkgrns utils/mkgrns.c)
-add_executable(parmt src/parmt.c src/synthetic.c src/splitComm.c)
+add_executable(parmt src/parmt.c src/synthetic.c)
+add_executable(polarmt src/polarmt.c)
 add_executable(postmt postprocess/postmt.c)
 add_executable(utils_test utils/unit_tests.c)
 add_executable(objfn_test src/unit_tests.c)
@@ -78,6 +79,7 @@ SET (SRCS_PARMT src/broadcast.c src/discretizeMT.c src/locsearch.c
                 src/magnitude.c src/mtsearch.c
                 src/polarity.c src/obssearch.c
                 src/invert.c src/stackedCrossCorrelation.c 
+                src/splitComm.c
                 postprocess/beachball.c
                 postprocess/marginal.c
                 postprocess/tt2beachball.c
@@ -97,6 +99,7 @@ SET(LINK_LIB_ALL ${INIPARSER_LIBRARY} ${CPS_LIBRARY} ${TTIMES_LIBRARY} ${ISCL_LI
 set_target_properties(xmkgrns PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set_target_properties(parmt PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set_target_properties(postmt PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set_target_properties(polarmt PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set_target_properties(utils_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_TESTING_OUTPUT_DIRECTORY})
 set_target_properties(objfn_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_TESTING_OUTPUT_DIRECTORY})
 set_target_properties(compearth_shared PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
@@ -109,6 +112,7 @@ set_target_properties(parmtUtils_static PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LI
 TARGET_LINK_LIBRARIES(xmkgrns ${LINK_LIB_ALL})
 TARGET_LINK_LIBRARIES(parmt parmt_shared parmtUtils_shared compearth_shared ${SACIO_LIBRARY} ${LINK_LIB_ALL})
 TARGET_LINK_LIBRARIES(postmt parmt_shared parmtUtils_shared compearth_shared ${SACIO_LIBRARY} ${LINK_LIB_ALL})
+TARGET_LINK_LIBRARIES(polarmt parmt_shared parmtUtils_shared compearth_shared ${SACIO_LIBRARY} ${LINK_LIB_ALL})
 TARGET_LINK_LIBRARIES(utils_test parmtUtils_static ${SACIO_LIBRARY} ${LINK_LIB_ALL})
 TARGET_LINK_LIBRARIES(objfn_test parmt_static parmtUtils_static compearth_static
                       ${SACIO_LIBRARY} ${LINK_LIB_ALL})

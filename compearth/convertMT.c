@@ -34,8 +34,8 @@
  * @copyright MIT
  *
  */
-int compearth_convertMT(const enum coord_system i1in,
-                        const enum coord_system i2in,
+int compearth_convertMT(const enum compearthCoordSystem_enum i1in,
+                        const enum compearthCoordSystem_enum i2in,
                         const double *__restrict__ M,
                         double *__restrict__ Mout)
 {
