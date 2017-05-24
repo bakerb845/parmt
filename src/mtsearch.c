@@ -1192,9 +1192,6 @@ int parmt_mtSearch_shiftedMahalanobis32f(const int nlags, const int nmt,
                     dwork, 1, 0.0f, GtCd, 1);
         // Compute d^T C d
         dtCd = cblas_sdot(npts, dwork, 1, Cd, 1);
-#ifndef __INTEL_COMPILER
-        #pragma omp simd aligned(phi, mts: 64)
-#endif
         if (linit)
         {
             for (imt=0; imt<nmt; imt++)
