@@ -5,6 +5,10 @@
 #include <hdf5.h>
 #include <limits.h>
 
+#define SAC_WEIGHT_HDR SAC_FLOAT_USER0
+#define SAC_MAXLAG_HDR SAC_FLOAT_USER1
+#define SAC_POLWGT_HDR SAC_FLOAT_USER2
+
 struct parmtNoiseBasis_struct
 {
     double *sqrtEvals; /*!< sqrt(Eigenvalues) in descending order [nvals] */
@@ -215,7 +219,7 @@ int utils_dataArchive_addObservation(const hid_t h5fl,
                                      const struct sacData_struct obs);
 int utils_dataArchive_setFileName(const char *dirnm, const char *projnm,
                                  char fname[PATH_MAX]);
-int utils_dataArchive_initialize(const char *dirnm, const char *projnm,
+int utils_dataArchive_initialize(const char *fname,
                                  const int nlocs,
                                  const double *__restrict__ evlas,
                                  const double *__restrict__ evlos,
@@ -241,6 +245,24 @@ int utils_dataArchive_loadGreensFunctions(const hid_t h5fl,
                                           struct sacData_struct *sacGxy,
                                           struct sacData_struct *sacGxz,
                                           struct sacData_struct *sacGyz);
+//--------------------------------special header variables--------------------//
+/* Gets and sets observation weight */
+double parmt_utils_getWeight(const struct sacData_struct obs,
+                             const double defaultWeight,
+                             bool *ldefault);
+int parmt_utils_setPolarityWeight(const double weight,
+                                  struct sacData_struct *obs);
+int parmt_utils_setWeight(const double weight,
+                          struct sacData_struct *obs);
+double parmt_utils_getPolarityWeight(const struct sacData_struct obs,
+                                     const double defaultWeight,
+                                     bool *ldefault);
+/* Gets and sets observation max lag time */
+int parmt_utils_setLagTime(const double maxLagTime,
+                           struct sacData_struct *obs);
+double parmt_utils_getLagTime(const struct sacData_struct obs,
+                              const double defaultMaxLag,
+                              bool *ldefault);
 
 #ifdef __cplusplus
 }

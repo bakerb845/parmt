@@ -102,6 +102,7 @@ int utils_dataArchive_setFileName(const char *dirnm, const char *projnm,
     return 0;
 }
 //============================================================================//
+/*
 static int utils_archive_createDataStructure(const hid_t groupID)
 {
     const char *fcnm = "utils_archive_createDataStructure\0";
@@ -189,7 +190,24 @@ static int utils_archive_createDataStructure(const hid_t groupID)
     }
     return status;
 }
+*/
 //============================================================================//
+/*!
+ * @brief Returns the HDF5 location ID.
+ *
+ * @param[in] h5fl    HDF5 file handle.
+ * @param[in] evla    Event latitude (degrees).
+ * @param[in] evlo    Event longitude (degrees).
+ * @param[in] evdp    Event depth (km).
+ *
+ * @result This is the C indexed location ID.  If negative then an error
+ *         occurred.
+ *
+ * @author Ben Baker
+ *
+ * @copyright ISTI distributed under Apache 2.
+ *
+ */
 int utils_dataArchive_getLocationID(const hid_t h5fl,
                                     const double evla,
                                     const double evlo,
@@ -266,6 +284,23 @@ int utils_dataArchive_getLocationID(const hid_t h5fl,
     return iloc;
 }
 //============================================================================//
+/*!
+ * @brief Convenience function for reading all waveforms and Green's functions.
+ *
+ * @param[in] dataFile    This is the name of the HDF5 data archive to read.
+ *
+ * @param[out] data       On successful exit this contains the number of
+ *                        locations and observations in the estimation as
+ *                        well as the observations and Green's functions 
+ *                        required to generate the synthetic seismograms.
+ *
+ * @result 0 indicates success. 
+ *
+ * @author Ben Baker
+ *
+ * @copyright ISTI distributed under Apache 2.
+ *
+ */
 int utils_dataArchive_readAllWaveforms(const char *dataFile,
                                        struct parmtData_struct *data)
 {
@@ -378,19 +413,35 @@ ERROR:;
  * @brief Defines the initial H5 archive which will contain the data,
  *        Green's functions, and parameters
  *
+ * @param[in] fname    Name of the HDF5 archive to write.
+ * @param[in] nlocs    Number of locations in the grid search.
+ * @param[in] evlas    Event latitudes (degrees) in grid search.  This is
+ *                     an array of dimension [nlocs].
+ * @param[in] evlos    Event longitudes (degrees) in grid search.  This is
+ *                     an array of dimension [nlocs].
+ * @param[in] evdps    Event depths (km) in grid search.  This is an array
+ *                     of dimension [nlocs].
+ *
+ * @result 0 indicates success.
+ *
+ * @author Ben Baker
+ *
+ * @copyright ISTI distributed under Apache 2.
+ *
  */
-int utils_dataArchive_initialize(const char *dirnm, const char *projnm,
+int utils_dataArchive_initialize(const char *fname, //const char *dirnm, const char *projnm,
                                  const int nlocs,
                                  const double *__restrict__ evlas,
                                  const double *__restrict__ evlos,
                                  const double *__restrict__ evdps)
 {
     const char *fcnm = "utils_dataArchive_initialize\0";
-    char fname[PATH_MAX], varname[256];
+    char varname[256], *dirnm;
     int i, ierr;
     const hsize_t dims[1] = {nlocs};
     hid_t attribute, dataSet, dataSpace, fid, groupID, locID;
-    // Check that there is an output archive
+    // Check that there is a directory to hold the output archive
+    dirnm = os_dirname(fname);
     if (!os_path_isdir(dirnm))
     {
         ierr = os_makedirs(dirnm);
@@ -401,12 +452,15 @@ int utils_dataArchive_initialize(const char *dirnm, const char *projnm,
         }
     }
     // Make the filename
+/*
     ierr = utils_dataArchive_setFileName(dirnm, projnm, fname);
     if (ierr != 0)
     {
         log_errorF("%s: Error setting filename\n", fcnm);
         return -1;
     }
+*/
+    // Tell the user i'm going to destroy their file 
     if (os_path_isfile(fname))
     {
         log_warnF("%s: Warning overwriting file %s\n", fcnm, fname);

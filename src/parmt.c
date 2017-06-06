@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
     double *deps, *luneMPDF, *phi, t0, t1, du, dv, dh, dk, ds;
     int64_t ngridSearch;
     double hLower, hUpper, uLower, uUpper, vLower, vUpper, xnorm;
-    int *lags, i, ierr, myid, npInLocGroups, nmt, npInMTGroups,
+    int *lags, i, ierr, iobs, myid, npInLocGroups, nmt, npInMTGroups,
         npInObsGroups, nprocs, provided;
     int ix, iy, k;
     MPI_Comm mtComm, locComm, obsComm;
@@ -309,8 +309,12 @@ INIT_ERROR:;
     MPI_Barrier(MPI_COMM_WORLD);
     // Compute the objective functions
     t0 = MPI_Wtime();
+    phi = NULL;
+    lags = NULL;
+/*
+    nlags = 0;
 double lagTime;
-bool lwantLags;
+bool ldefault, lwantLags;
 int iobs = 0;
 int nlags = 0;
     phi = NULL;
@@ -318,13 +322,17 @@ int nlags = 0;
     nlags = 0;
     if (parms.lwantLags)
     {
-        lagTime = data.data[iobs].header.user0;
-        if (lagTime < 0.0){lagTime = parms.defaultMaxLagTime;}
+        //lagTime = data.data[iobs].header.user0;
+        //if (lagTime < 0.0){lagTime = parms.defaultMaxLagTime;}
+        lagTime = parmt_utils_getLagTime(data.data[iobs], 
+                                         parms.defaultMaxLagTime,
+                                         &ldefault);
         nlags = (int) (lagTime/data.data[iobs].header.delta + 0.5);
     }
     lags = NULL;
     lwantLags = false;
     if (nlags > 0){lwantLags = true;}
+*/
     if (myid == master)
     {
         phi = memory_calloc64f(data.nlocs*mtloc.nmtAll);

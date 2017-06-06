@@ -87,7 +87,8 @@ SET (SRCS_PARMT src/broadcast.c src/discretizeMT.c src/locsearch.c
 add_library(compearth_shared SHARED ${SRCS_COMPEARTH})
 add_library(compearth_static STATIC ${SRCS_COMPEARTH})
 add_library(parmtUtils_shared SHARED utils/ff2mtGreens.c utils/getNoiseBasis.c
-            utils/readini.c utils/setDataOnG.c io/dataArchive.c io/objfnArchive.c utils/sacGrnsToEst.c)
+            utils/lagTime.c utils/readini.c utils/setDataOnG.c utils/weights.c
+            io/dataArchive.c io/objfnArchive.c utils/sacGrnsToEst.c)
 add_library(parmtUtils_static STATIC utils/ff2mtGreens.c utils/getNoiseBasis.c
             utils/readini.c io/dataArchive.c io/objfnArchive.c utils/sacGrnsToEst.c)
 add_library(parmt_shared SHARED ${SRCS_PARMT})

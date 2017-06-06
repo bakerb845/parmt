@@ -24,10 +24,11 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
 {
     const char *fcnm = "parmt_obsSearch64f\0";
     MPI_Win counterWin;
-    double lagTime, *CeInv, *phiWork, *phiAll, *var, *varAll, *varOut;
+    double lagTime, *CeInv, *phiWork, *phiAll, *var, *varAll, *varOut, *wts,
+           defaultWeight;
     int *lagsWork, *nlags, ierr, iobs, myid, nobsProcs,
         npmax, value, value0;
-    bool lwantLags;
+    bool ldefault, lwantLags;
     const double zero = 0.0;
     const double half = 0.5;
     const int master = 0;
@@ -46,6 +47,7 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
     var = NULL;
     varAll = NULL;
     varOut = NULL;
+    wts = NULL;
     npmax = 0;
     lwantLags = false;
     if (myid == master)
@@ -55,8 +57,11 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
             nlags[iobs] = 0;
             if (parms.lwantLags)
             {
-                lagTime = data.data[iobs].header.user0;
-                if (lagTime < zero){lagTime = parms.defaultMaxLagTime;}
+                //lagTime = data.data[iobs].header.user0;
+                //if (lagTime < zero){lagTime = parms.defaultMaxLagTime;}
+                lagTime = parmt_utils_getLagTime(data.data[iobs], 
+                                                 parms.defaultMaxLagTime,
+                                                 &ldefault);
                 nlags[iobs] = (int)
                               (lagTime/data.data[iobs].header.delta + half);
             }
@@ -117,6 +122,18 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
         }
         phiWork = memory_calloc64f(data.nlocs*mtloc.nmtAll);
         varAll = memory_calloc64f(data.nlocs*npmax);
+        defaultWeight = 1.0; ///(double) data.nobs;
+        wts = memory_calloc64f(data.nobs); //array_set64f(data.nobs, defaultWeight, &ierr);
+        for (iobs=0; iobs<data.nobs; iobs++)
+        {
+            wts[iobs] = parmt_utils_getWeight(data.data[iobs],
+                                              defaultWeight,
+                                              &ldefault);
+        }
+        // Normalize so weighted sum is unity
+        defaultWeight = array_sum64f(data.nobs, wts, &ierr);
+        defaultWeight = 1.0/defaultWeight;
+        array_set64f_work(data.nobs, defaultWeight, wts);
     }
     else
     {
@@ -192,7 +209,7 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
         // Scale by number of observations and stack
         if (linObsComm)
         {
-            cblas_daxpy(data.nlocs*mtloc.nmtAll, 1.0/(double) data.nobs,
+            cblas_daxpy(data.nlocs*mtloc.nmtAll, wts[iobs], //1.0/(double) data.nobs,
                         phiWork, 1, phiAll, 1);
         }
     }
@@ -238,6 +255,7 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
     memory_free32i(&nlags);
     memory_free32i(&lagsWork);
     memory_free64f(&CeInv);
+    memory_free64f(&wts);
     phiAll = NULL;
     MPI_Barrier(globalComm);
     return 0;

@@ -9,7 +9,7 @@
 #include "parmt_polarity.h"
 #ifdef PARMT_USE_INTEL
 #include <mkl.h>
-#include <ipp.h>
+#include <ipps.h>
 #endif
 #include "compearth.h"
 #include "iscl/iscl/iscl.h"
