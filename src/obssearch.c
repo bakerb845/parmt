@@ -25,7 +25,7 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
     const char *fcnm = "parmt_obsSearch64f\0";
     MPI_Win counterWin;
     double lagTime, *CeInv, *phiWork, *phiAll, *var, *varAll, *varOut, *wts,
-           defaultWeight;
+           defaultWeight, wtNorm;
     int *lagsWork, *nlags, ierr, iobs, myid, nobsProcs,
         npmax, value, value0;
     bool ldefault, lwantLags;
@@ -121,7 +121,7 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
             array_zeros64f_work(data.nlocs*mtloc.nmtAll, phiAll);
         }
         phiWork = memory_calloc64f(data.nlocs*mtloc.nmtAll);
-        varAll = memory_calloc64f(data.nlocs*npmax);
+        varAll = memory_calloc64f(data.nobs*npmax);
         defaultWeight = 1.0; ///(double) data.nobs;
         wts = memory_calloc64f(data.nobs); //array_set64f(data.nobs, defaultWeight, &ierr);
         for (iobs=0; iobs<data.nobs; iobs++)
@@ -131,9 +131,12 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
                                               &ldefault);
         }
         // Normalize so weighted sum is unity
-        defaultWeight = array_sum64f(data.nobs, wts, &ierr);
-        defaultWeight = 1.0/defaultWeight;
-        array_set64f_work(data.nobs, defaultWeight, wts);
+        wtNorm = 1.0/array_sum64f(data.nobs, wts, &ierr);
+        // And rescale the weights
+        for (iobs=0; iobs<data.nobs; iobs++)
+        {
+            wts[iobs] = wts[iobs]*wtNorm; 
+        }
     }
     else
     {
@@ -209,6 +212,7 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
         // Scale by number of observations and stack
         if (linObsComm)
         {
+            //printf("%d %f\n", iobs, wts[iobs]);
             cblas_daxpy(data.nlocs*mtloc.nmtAll, wts[iobs], //1.0/(double) data.nobs,
                         phiWork, 1, phiAll, 1);
         }
@@ -224,6 +228,7 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
         MPI_Win_free(&counterWin);
     }
     MPI_Barrier(mtloc.comm);
+printf("finish me\n");
     // Release resources
     if (linObsComm)
     {
