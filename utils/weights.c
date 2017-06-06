@@ -93,7 +93,7 @@ double parmt_utils_getWeight(const struct sacData_struct obs,
     *ldefault = true;
     weight = defaultWeight;
     ierr = sacio_getFloatHeader(SAC_WEIGHT_HDR, obs.header, &weight);
-    if (ierr != 0)
+    if (ierr == 0)
     {
         *ldefault = false;
         if (weight < 0.0)
@@ -103,6 +103,10 @@ double parmt_utils_getWeight(const struct sacData_struct obs,
             weight = defaultWeight;
             *ldefault = true;
         }
+    }
+    else
+    {
+        weight = defaultWeight;
     }
     return weight;
 }
@@ -139,7 +143,7 @@ double parmt_utils_getPolarityWeight(const struct sacData_struct obs,
     *ldefault = true;
     weight = defaultWeight;
     ierr = sacio_getFloatHeader(SAC_POLWGT_HDR, obs.header, &weight);
-    if (ierr != 0)
+    if (ierr == 0)
     {
         *ldefault = false;
         if (weight < 0.0)
@@ -149,6 +153,10 @@ double parmt_utils_getPolarityWeight(const struct sacData_struct obs,
             weight = defaultWeight;
             *ldefault = true;
         }
+    }
+    else
+    {
+        weight = defaultWeight;
     }
     return weight;
 }
