@@ -228,7 +228,6 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
         MPI_Win_free(&counterWin);
     }
     MPI_Barrier(mtloc.comm);
-printf("finish me\n");
     // Release resources
     if (linObsComm)
     {
