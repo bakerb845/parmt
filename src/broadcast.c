@@ -72,7 +72,7 @@ int parmt_broadcast_data(struct parmtData_struct *data,
     size_t nwork;
     ierr = 0;
     MPI_Comm_rank(comm, &myid);
-    MPI_Comm_rank(comm, &nprocs);
+    MPI_Comm_size(comm, &nprocs);
     if (nprocs == 1){return 0;}
     MPI_Bcast(&data->nobs, 1, MPI_INT, root, comm);
     MPI_Bcast(&data->nlocs, 1, MPI_INT, root, comm);
