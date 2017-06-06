@@ -45,7 +45,7 @@ enum normType_enum
                                         \sum_i |x_i|^p \right )^{1/p}
                                       \right ) \$ norm */
     INFINITY_NORM = 4,          /*!< \$ L_\infty = max |x| \$ */
-    NEGATIVE_INFINITY_NORM = 5, /*!< \$ L_{-\infty} = min |x| \$ */
+    NEGATIVE_INFINITY_NORM = 5  /*!< \$ L_{-\infty} = min |x| \$ */
 };
 #endif
 
