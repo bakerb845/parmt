@@ -37,6 +37,7 @@ int main(int argc, char *argv[])
            lagTime, Mw, phiLoc, xnorm, xsum;
     int ierr, iobs, imtopt, jb, jg, jk, jloc, jm, joptLoc, 
         js, jt, k, lag, nb, ng, nk, nlags, nlocs, nm, nmt, npmax, npts, ns, nt;
+    bool ldefault;
     // Initialize
     depMPDF = NULL; 
     depMagMPDF = NULL;
@@ -276,8 +277,11 @@ int im, iloc;
         lag = 0;
         if (parms.lwantLags)
         {
-            lagTime = data.data[iobs].header.user0;
-            if (lagTime < 0.0){lagTime = parms.defaultMaxLagTime;}
+            //lagTime = data.data[iobs].header.user0;
+            //if (lagTime < 0.0){lagTime = parms.defaultMaxLagTime;}
+            lagTime = parmt_utils_getLagTime(data.data[iobs], 
+                                             parms.defaultMaxLagTime,
+                                             &ldefault);
             nlags = (int) (lagTime/data.data[iobs].header.delta + 0.5);
         }
         ierr = parmt_mtSearchL164f(6, 1,

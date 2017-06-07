@@ -225,7 +225,7 @@ INIT_ERROR:;
     // Discretize the moment tensor space in (u, v, h) space
     if (myid == master)
     {
-        printf("%s: Discreitizing MT space...\n", PROGRAM_NAME);
+        printf("%s: Discretizing MT space...\n", PROGRAM_NAME);
     }
     compearth_beta2u(1, &mtsearch.betaLower, &uLower);
     compearth_beta2u(1, &mtsearch.betaUpper, &uUpper);

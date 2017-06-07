@@ -373,17 +373,17 @@ int parmt_io_readObjfnArchive64f(
         printf("%s: Failed to open objective function archive\n", fcnm);
         return -1;
     }
-printf("LOOK HERE!!!!!!!!! awful kludge and needs to be fixed\n");
-*nlocs = 25;
-*deps = array_linspace64f(1, 25, *nlocs, &ierr);
+//printf("LOOK HERE!!!!!!!!! awful kludge and needs to be fixed\n");
+//*nlocs = 25;
+//*deps = array_linspace64f(1, 25, *nlocs, &ierr);
     h5fl = H5Fopen(flname, H5F_ACC_RDONLY, H5P_DEFAULT);
     // Get the model space
     groupID = H5Gopen2(h5fl, SEARCH_SPACE, H5P_DEFAULT);
     // Size query
     nwork =-1;
-//    status = readDoubleArray(groupID, DEPTHS, nwork, nlocs, *deps);
-//    if (status != 0){goto SS_ERROR;}
-//    *deps = memory_calloc64f(*nlocs);
+    status = readDoubleArray(groupID, DEPTHS, nwork, nlocs, *deps);
+    if (status != 0){goto SS_ERROR;}
+    *deps = memory_calloc64f(*nlocs);
     status = readDoubleArray(groupID, COLATITUDES, nwork, nb, *betas);
     if (status != 0){goto SS_ERROR;}
     *betas = memory_calloc64f(*nb);
@@ -403,9 +403,9 @@ printf("LOOK HERE!!!!!!!!! awful kludge and needs to be fixed\n");
     if (status != 0){goto SS_ERROR;}
     *thetas = memory_calloc64f(*nt);
     // Read it
-//    nwork = *nlocs;
-//    status = readDoubleArray(groupID, DEPTHS, nwork, nlocs, *deps);
-//    if (status != 0){goto SS_ERROR;}
+    nwork = *nlocs;
+    status = readDoubleArray(groupID, DEPTHS, nwork, nlocs, *deps);
+    if (status != 0){goto SS_ERROR;}
     nwork = *nb;
     status = readDoubleArray(groupID, COLATITUDES, nwork, nb, *betas);
     if (status != 0){goto SS_ERROR;}
