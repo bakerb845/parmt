@@ -126,6 +126,10 @@ int compearth_m02hdur(const int nm, const double *__restrict__ M0,
 int compearth_m02mw(const int nm, const enum magType_enum imag,
                     const double *__restrict__ M0, 
                     double *__restrict__ Mw);
+/* Compute M0 from Mw */
+int compearth_mw2m0(const int nm, const enum magType_enum imag,
+                    const double *__restrict__ Mw, 
+                    double *__restrict__ M0);
 /* Convert vector moment tensors to matrix moment tensors */
 void compearth_Mvec2Mmat(const int n,
                          const double *__restrict__ Min,

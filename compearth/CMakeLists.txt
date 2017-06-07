@@ -15,6 +15,7 @@ lune2lam.c
 lune2rect.c
 m02hdur.c
 m02mw.c
+mw2m0.c
 Mvec2Mmat.c
 normal2strdip.c
 normMat.c
