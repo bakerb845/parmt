@@ -446,9 +446,9 @@ int testPolarityMTSearch(void)
                                     nk, kappaMin, kappaMax,
                                     ns, sigmaMin, sigmaMax,
                                     nt, thetaMin, thetaMax,
-                                    nm, m0Min, m0Max,
+                                    nm, m0Min, m0Max, false,
                                     &betas, &gammas, &kappas,
-                                    &sigmas, &thetas, &M0s); 
+                                    &sigmas, &thetas, &M0s);
     if (ierr != 0)
     {
         printf("%s: Error making cell discretization\n", fcnm);

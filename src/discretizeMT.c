@@ -87,33 +87,35 @@ double Mdc[6], lam[3], U[6], theta;
 */
 //============================================================================//
 /*!
- * @brief Provides a cell based discretization of the moment tensor space
+ * @brief Provides a cell based discretization of the moment tensor space.
  *
- * @param[in] nb          number of colatitudes
- * @param[in] betaLower   lower colatitude in grid search [0, betaUpper)
- * @param[in] betaUpper   upper colatitude in grid search (betaLower, pi]
- * @param[in] ng          number of longitudes
- * @param[in] gammaLower  lower longitude in grid search [-pi/6, gammaUpper)
- * @param[in] gammaUpper  upper longitude in grid search (gammaLower, pi/6]
- * @param[in] nk          number of strikes in grid search
- * @param[in] kappaLower  lower strike in grid search [0, kappaUpper)
- * @param[in] kappaUpper  upper strike in grid search (kappaLower, 2*pi]
- * @param[in] ns          number of slips in grid search
- * @param[in] sigmaLower  lower slip angle in grid search [-pi, sigmaUpper)
- * @param[in] sigmaUPper  upper slip angle in grid search (sigmaUpper, pi]
- * @param[in] nt          number of dips in grid search 
- * @param[in] thetaLower  lower dip in grid search [0,dipUpper)
- * @param[in] thetaUpper  upper dip in grid search (dipLower, pi/2]
- * @param[in] nm          number of magnitudes
- * @param[in] m0Lower     lower scalar moment in grid search (Newton-meters)
- * @param[in] m0Upper     upper scalar moment in grid search (Newton-meters)
+ * @param[in] nb          Number of colatitudes.
+ * @param[in] betaLower   Lower colatitude in grid search [0, betaUpper).
+ * @param[in] betaUpper   Upper colatitude in grid search (betaLower, pi].
+ * @param[in] ng          Number of longitudes.
+ * @param[in] gammaLower  Lower longitude in grid search [-pi/6, gammaUpper).
+ * @param[in] gammaUpper  Upper longitude in grid search (gammaLower, pi/6].
+ * @param[in] nk          Number of strikes in grid search.
+ * @param[in] kappaLower  Lower strike in grid search [0, kappaUpper).
+ * @param[in] kappaUpper  Upper strike in grid search (kappaLower, 2*pi].
+ * @param[in] ns          Number of slips in grid search.
+ * @param[in] sigmaLower  Lower slip angle in grid search [-pi, sigmaUpper).
+ * @param[in] sigmaUPper  Upper slip angle in grid search (sigmaUpper, pi].
+ * @param[in] nt          Number of dips in grid search.
+ * @param[in] thetaLower  Lower dip in grid search [0,dipUpper).
+ * @param[in] thetaUpper  Upper dip in grid search (dipLower, pi/2].
+ * @param[in] nm          Number of magnitudes.
+ * @param[in] m0Lower     Lower scalar moment in grid search (Newton-meters).
+ * @param[in] m0Upper     Upper scalar moment in grid search (Newton-meters).
+ * @param[in] luseLog     If true then the the scalar moments will be
+ *                        discretized on a log scale.
  *
- * @param[out] betas      colatitudes (radians) at cell centers [nb]
- * @param[out] gammas     longitudes (radians) at cell centers [ng]
- * @param[out] kappas     strike angles (radians) at cell centers [nk]
- * @param[out] sigmas     slip angles (radians) at cell centers [ns]
- * @param[out] thetas     dip angles (radians) at cell centers [nt]
- * @param[out] M0s        scalar moments (Newton-meters) in grid search [nm]
+ * @param[out] betas      Colatitudes (radians) at cell centers [nb].
+ * @param[out] gammas     Longitudes (radians) at cell centers [ng].
+ * @param[out] kappas     Strike angles (radians) at cell centers [nk].
+ * @param[out] sigmas     Slip angles (radians) at cell centers [ns].
+ * @param[out] thetas     Dip angles (radians) at cell centers [nt].
+ * @param[out] M0s        Scalar moments (Newton-meters) in grid search [nm].
  *
  * @author Ben Baker
  *
@@ -127,13 +129,14 @@ int parmt_discretizeCells64f(
     const int ns, const double sigmaLower, const double sigmaUpper,
     const int nt, const double thetaLower, const double thetaUpper,
     const int nm, const double m0Lower, const double m0Upper,
+    const bool luseLog,
     double **betas,  double **gammas, double **kappas,
     double **sigmas, double **thetas, double **M0s)
 {
     const char *fcnm = "parmt_discretizeCells64f\0";
-    double *u, *v, *h;
+    double *mwl, *u, *v, *h;
     double du, du2, dv, dv2, dh, dh2, dk, dk2, ds, ds2, 
-           hLower, hUpper, uLower, uUpper, vLower, vUpper;
+           hLower, hUpper, mwll, mwul, uLower, uUpper, vLower, vUpper;
     int ierr;
     const double two = 2.0;
     // Initialize and do some basic error checks
@@ -177,7 +180,40 @@ int parmt_discretizeCells64f(
     // discretize the magnitudes, kappa, and sigma
     dk2 = dk/two;
     ds2 = ds/two;
-    *M0s    = array_linspace64f(m0Lower,        m0Upper,        nm, &ierr);
+    if (!luseLog || nm == 1)
+    {
+        *M0s = array_linspace64f(m0Lower, m0Upper, nm, &ierr);
+    }
+    else
+    {
+        // TODO: I doubt this is correct because I don't understand how
+        // lune volumes map to `spherical volumes'.  For simplicity I'll
+        // use a shell but I think I should be looking at the `active 
+        // area' of the beta and gamma grid search.  In the interim I'll
+        // use the volume of a spherical shell which is given by
+        // \frac{4 \pi R^3}{3} where R is the radius (magnitude).  
+        // To get some form of uniform volume spacing I'll take the log 
+        // at the upper and lower limit and discretize evenly in logspace
+        // then come back to M0. 
+        /*
+        m0ll = 3.0*log(4.0*M_PI*m0Lower/3.0);
+        m0ul = 3.0*log(4.0*M_PI*m0Upper/3.0);
+        m0l = array_linspace64f(m0ll, m0ul, nm, &ierr);
+        // Now solve for m0: 3/(4*pi)*exp(m0l/3)
+        cblas_dscal(nm, 1.0/3.0, m0l, 1);         // m0l = m0l/3
+        *M0s = array_exp64f(nm, m0l, &ierr);      // *M0 = exp(m0l/3)
+        cblas_dscal(nm, 3.0/(4.0*M_PI), *M0s, 1); // *M0 = 3/(4*pi)exp(m0l/3)
+        memory_free64f(&m0l);
+        */
+        // TODO: An alternative to doing math is just discretizing on a 
+        // the magnitude scale
+        compearth_m02mw(1, KANAMORI_1978, &m0Lower, &mwll);
+        compearth_m02mw(1, KANAMORI_1978, &m0Upper, &mwul);
+        mwl = array_linspace64f(mwll, mwul, nm, &ierr);
+        *M0s = memory_calloc64f(nm);
+        ierr = compearth_mw2m0(nm, KANAMORI_1978, mwl, *M0s);
+        memory_free64f(&mwl);
+    }
     *kappas = array_linspace64f(kappaLower+dk2, kappaUpper-dk2, nk, &ierr);
     *sigmas = array_linspace64f(sigmaLower+ds2, sigmaUpper-ds2, ns, &ierr);
     memory_free64f(&u);

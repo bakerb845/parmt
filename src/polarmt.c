@@ -155,6 +155,10 @@ INIT_ERROR:;
         MPI_Abort(MPI_COMM_WORLD, 30);
     }
     // Discretize the moment tensor space in (u, v, h) space
+    if (myid == master)
+    {
+        printf("%s: Discreitizing moment tensor space...\n", PROGRAM_NAME);
+    }
     ierr = parmt_discretizeCells64f(
                mtsearch.nb, mtsearch.betaLower,  mtsearch.betaUpper,
                mtsearch.ng, mtsearch.gammaLower, mtsearch.gammaUpper,
@@ -162,6 +166,7 @@ INIT_ERROR:;
                mtsearch.ns, mtsearch.sigmaLower, mtsearch.sigmaUpper,
                mtsearch.nt, mtsearch.thetaLower, mtsearch.thetaUpper,
                mtsearch.nm, mtsearch.m0Lower,    mtsearch.m0Upper,
+               mtsearch.luseLog,
                &betas,  &gammas, &kappas,
                &sigmas, &thetas, &M0s);
     if (ierr != 0)

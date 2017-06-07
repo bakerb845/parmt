@@ -91,6 +91,8 @@ struct parmtMtSearchParms_struct
     int ns; /*!< Number of rake angles */
     int nt; /*!< Number of dip angles */
     int nm; /*!< Number of scalar moments */
+    bool luseLog; /*!< If true then use a log scale when discretizing MT. */
+    char pad[3];
 };
 
 struct parmtDatas_struct

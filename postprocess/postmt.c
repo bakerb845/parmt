@@ -152,7 +152,7 @@ return 0;
            +               jk*ns*nt
            +                  js*nt
            +                     jt;
-    compearth_m02mw(1, 1, &M0s[jm], &Mw);
+    compearth_m02mw(1, KANAMORI_1978, &M0s[jm], &Mw);
     joptLoc = jloc;
     printf("%s: Optimum information:\n", PROGRAM_NAME);
     printf("        Value: %f\n", phi[imtopt]);
@@ -237,7 +237,7 @@ Mned[5] =-2.756277e+17;
 int im, iloc;
     for (im=0; im<nm; im++)
     {
-        compearth_m02mw(1, 1, &M0s[im], &Mw);
+        compearth_m02mw(1, KANAMORI_1978, &M0s[im], &Mw);
         printf("Writing magnitude: %f\n", Mw);
         memset(fname, 0, PATH_MAX*sizeof(char));
         sprintf(fname, "%s/%s_dep.%d.txt", OUTDIR, parms.projnm, im+1);

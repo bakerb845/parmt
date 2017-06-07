@@ -65,6 +65,7 @@ int parmt_discretizeCells64f(
     const int ns, const double sigmaLower, const double sigmaUpper,
     const int nt, const double thetaLower, const double thetaUpper,
     const int nm, const double m0Lower, const double m0Upper,
+    const bool luseLog,
     double **betas,  double **gammas, double **kappas,
     double **sigmas, double **thetas, double **M0s);
 /*! Discretize the moment tensor space with MPI */

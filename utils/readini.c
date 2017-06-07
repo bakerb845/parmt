@@ -8,6 +8,7 @@
 #include "ttimes_config.h"
 #include "iscl/log/log.h"
 #include "iscl/os/os.h"
+#include "compearth.h"
 
 #define DEFAULT_PROJECT_NAME "parmt"
 
@@ -173,7 +174,7 @@ int parmt_utils_readMtSearch(const char *iniFile,
 {
     const char *fcnm = "parmt_utils_readMtSearch\0";
     const char *s; 
-    double betaLower, betaUpper;
+    double betaLower, betaUpper, mw;
     int ierr;
     dictionary *ini;
     bool isMw;
@@ -358,9 +359,15 @@ int parmt_utils_readMtSearch(const char *iniFile,
     if (parms->nm == 1){parms->m0Upper = parms->m0Lower;}
     if (isMw)
     {
-        parms->m0Lower = pow(10.0, 1.5*parms->m0Lower + 9.1);
-        parms->m0Upper = pow(10.0, 1.5*parms->m0Upper + 9.1);
+        //parms->m0Lower = pow(10.0, 1.5*parms->m0Lower + 9.1);
+        //parms->m0Upper = pow(10.0, 1.5*parms->m0Upper + 9.1);
+        mw = parms->m0Lower; 
+        compearth_mw2m0(1, KANAMORI_1978, &mw, &parms->m0Lower);
+        mw = parms->m0Upper;
+        compearth_mw2m0(1, KANAMORI_1978, &mw, &parms->m0Upper);
     }
+    parms->luseLog = iniparser_getboolean(ini, "mtsearch:luseLog", false);
+
     iniparser_freedict(ini);
     return ierr;
 }

@@ -41,6 +41,7 @@ int parmt_broadcast_mtSearchParms(struct parmtMtSearchParms_struct *parms,
     MPI_Bcast(&parms->thetaUpper, 1, MPI_DOUBLE, root, comm);
     MPI_Bcast(&parms->m0Lower, 1, MPI_DOUBLE, root, comm);
     MPI_Bcast(&parms->m0Upper, 1, MPI_DOUBLE, root, comm);
+    MPI_Bcast(&parms->luseLog, 1, MPI_C_BOOL, root, comm);
     return 0; 
 }
 

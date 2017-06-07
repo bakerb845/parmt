@@ -227,6 +227,23 @@ INIT_ERROR:;
     {
         printf("%s: Discretizing MT space...\n", PROGRAM_NAME);
     }
+    // Discretize the moment tensor space in (u, v, h) space
+    ierr = parmt_discretizeCells64f(
+               mtsearch.nb, mtsearch.betaLower,  mtsearch.betaUpper,
+               mtsearch.ng, mtsearch.gammaLower, mtsearch.gammaUpper,
+               mtsearch.nk, mtsearch.kappaLower, mtsearch.kappaUpper,
+               mtsearch.ns, mtsearch.sigmaLower, mtsearch.sigmaUpper,
+               mtsearch.nt, mtsearch.thetaLower, mtsearch.thetaUpper,
+               mtsearch.nm, mtsearch.m0Lower,    mtsearch.m0Upper,
+               mtsearch.luseLog,
+               &betas,  &gammas, &kappas,
+               &sigmas, &thetas, &M0s);
+    if (ierr != 0)
+    {   
+        printf("%s: Error discretizing MT space\n", PROGRAM_NAME);
+        MPI_Abort(MPI_COMM_WORLD, 30);
+    }
+/*
     compearth_beta2u(1, &mtsearch.betaLower, &uLower);
     compearth_beta2u(1, &mtsearch.betaUpper, &uUpper);
     compearth_gamma2v(1, &mtsearch.gammaLower, &vLower);
@@ -254,6 +271,7 @@ INIT_ERROR:;
                                mtsearch.nk, &ierr);
     sigmas = array_linspace64f(mtsearch.sigmaLower+ds/2, mtsearch.sigmaUpper-ds/2,
                                mtsearch.ns, &ierr);
+*/
 //if (myid != master){for (int i=0; i<mtsearch.nb; i++){printf("%f %f\n", u[i],betas[i]);}}
     // avoid an annoying warning
     for (i=0; i<mtsearch.ns; i++)
@@ -412,185 +430,6 @@ int nlags = 0;
                Muse[0], Muse[1], Muse[2], Muse[3], Muse[4], Muse[5]);
         printf("mtNED =[%f,%f,%f,%f,%f,%f]\n",
                Mned[0], Mned[1], Mned[2], Mned[3], Mned[4], Mned[5]);
-
-goto FINISH;
-        double *s = memory_calloc64f(data.nlocs*mtloc.nmtAll);
-/*
-        double xdiv = 1.0/(double) data.nobs;
-        for (int iloc=0; iloc<data.nlocs; iloc++)
-        {
-            for (int k=0; k<mtloc.nmtAll; k++)
-            {
-                s[k] = s[k] + xdiv*(1.0 - phi[iloc*mtloc.nmtAll+k]); 
-            }
-        }
-*/
-        for (k=0; k<data.nlocs*mtloc.nmtAll; k++)
-        {
-            s[k] = exp(-(1.0 - phi[k]));
-        }
-        printf("phimax %f phimin %f\n", array_max64f(data.nlocs*mtloc.nmtAll, phi),
-                                 array_min64f(data.nlocs*mtloc.nmtAll, phi));
-        printf("smax %f smin %f\n", array_max64f(data.nlocs*mtloc.nmtAll, s),
-                          array_min64f(data.nlocs*mtloc.nmtAll, s));
-/*
-        double *Gpol = memory_calloc64f(6*data.nobs), pol;
-        int ipol;
-        for (iobs=0; iobs<data.nobs; iobs++)
-        {
-            parmt_polarity_computeGreensRowFromData(data.data[iobs],
-                                                    1, 6,
-                                                    NULL, "ak135\0",
-                                                    &Gpol[6*iobs]);
-            pol = cblas_ddot(6, &Gpol[6*iobs], 1, Mned, 1)/M0s[jm]; 
-            if (pol > 0.0)
-            {
-                ipol = 1;
-            }
-            else
-            {
-                ipol =-1;
-            }
-            printf("%s: %d %f %f %f\n", data.data[iobs].header.kstnm, ipol, pol,
-                   data.data[iobs].header.baz, data.data[iobs].header.cmpinc);
-        }
-        memory_free64f(&Gpol);
-*/
-        double pAxis[3], nAxis[3], tAxis[3];
-        postprocess_tt2tnp(betas[jb], gammas[jg],
-                           kappas[jk], sigmas[js], thetas[jt],
-                           pAxis, nAxis, tAxis);
-        double *xw1 = memory_calloc64f(101*101);
-        double *yw1 = memory_calloc64f(101*101); 
-        int8_t *pn1 = (int8_t *) calloc(101*101, sizeof(int8_t));
-        postprocess_tnp2beachballPolarity(101, 1.5, 1.5, 1.0,
-                                          pAxis, nAxis, tAxis,
-                                          xw1, yw1, pn1);
-        FILE *fwork = fopen("depmag/beachballOpt.txt", "w");
-        for (iy=0; iy<101; iy++)
-        {
-            for (ix=0; ix<101; ix++)
-            {
-                k = iy*101 + ix;
-                fprintf(fwork, "%e %e %d\n", xw1[k], yw1[k], pn1[k]);
-            }
-            fprintf(fwork, "\n");
-        }
-        free(pn1);
-        fclose(fwork);
-        printf("mtUSE =[%f,%f,%f,%f,%f,%f]\n",
-               Muse[0], Muse[1], Muse[2], Muse[3], Muse[4], Muse[5]);
-        printf("mtNED =[%f,%f,%f,%f,%f,%f]\n",
-               Mned[0], Mned[1], Mned[2], Mned[3], Mned[4], Mned[5]);
-        for (iobs=0; iobs<data.nobs; iobs++)
-        {
-            k = iobs*data.nlocs + jloc;
-            parmt_utils_sacGrnsToEst(data.data[iobs],
-                                     data.sacGxx[k], data.sacGyy[k],
-                                     data.sacGzz[k], data.sacGxy[k],
-                                     data.sacGxz[k], data.sacGyz[k],
-                                     Mned,
-                                     &data.est[iobs]);
-            char fout[PATH_MAX];
-            sprintf(fout, "obsest/%s.%s.%s.%s.SAC",
-                    data.data[iobs].header.knetwk,
-                    data.data[iobs].header.kstnm,
-                    data.data[iobs].header.kcmpnm,
-                    data.data[iobs].header.khole);
-            sacio_writeTimeSeriesFile(fout, data.data[iobs]);
-            memset(fout, 0, PATH_MAX*sizeof(char));
-            sprintf(fout, "obsest/%s.%s.%s.%s.EST.SAC",
-                    data.est[iobs].header.knetwk,
-                    data.est[iobs].header.kstnm,
-                    data.est[iobs].header.kcmpnm,
-                    data.est[iobs].header.khole);
-            sacio_writeTimeSeriesFile(fout, data.est[iobs]);
-        }
-        // Normalize by area under PDF
-        xnorm = marginal_computeNormalization(data.nlocs, deps,
-                                              mtsearch.nm, M0s,
-                                              mtsearch.nb, betas,
-                                              mtsearch.ng, gammas,
-                                              mtsearch.nk, kappas,
-                                              mtsearch.ns, sigmas,
-                                              mtsearch.nt, thetas,
-                                              phi, &ierr);
-printf("%e\n", xnorm);
-        xnorm = marginal_computeNormalization(data.nlocs, deps,
-                                              mtsearch.nm, M0s,
-                                              mtsearch.nb, betas,
-                                              mtsearch.ng, gammas,
-                                              mtsearch.nk, kappas,
-                                              mtsearch.ns, sigmas,
-                                              mtsearch.nt, thetas,
-                                              s, &ierr);
-printf("%e\n", xnorm);
-        if (ierr != 0){xnorm = 1;}
-        cblas_dscal(data.nlocs*mtloc.nmtAll, 1.0/xnorm, s, 1);
-        // Do some simple post-processing
-        luneMPDF = memory_calloc64f(mtsearch.nb*mtsearch.ng);
-        double *luneUVMPDF = memory_calloc64f(mtsearch.nb*mtsearch.ng);
-        ierr = marginal_computeLuneMPDF(data.nlocs,
-                                        mtsearch.nm,
-                                        mtsearch.nb, betas,
-                                        mtsearch.ng, gammas,
-                                        mtsearch.nk, kappas,
-                                        mtsearch.ns, sigmas,
-                                        mtsearch.nt, h,
-                                        s, luneMPDF);
-     printf("total: %d\n", mtsearch.nb*mtsearch.ng);
-     printf("sum1: %f\n", array_sum64f(mtsearch.nb*mtsearch.ng, luneMPDF, &ierr));
-        ierr = marginal_computeLuneUVMPDF(data.nlocs,
-                                          mtsearch.nm,
-                                          mtsearch.nb, u,
-                                          mtsearch.ng, v,
-                                          mtsearch.nk, kappas,
-                                          mtsearch.ns, sigmas,
-                                          mtsearch.nt, h,
-                                          s, luneUVMPDF);
-      printf("sum2: %f\n", array_sum64f(mtsearch.nb*mtsearch.ng, luneUVMPDF, &ierr));
-        double *depMPDF = memory_calloc64f(data.nlocs);
-/*
-        ierr = marginal_computeDepthMPDF(data.nlocs,
-                                         mtsearch.nm, 
-                                         mtsearch.nb, betas,
-                                         mtsearch.ng, gammas,
-                                         mtsearch.nk, kappas,
-                                         mtsearch.ns, sigmas,
-                                         mtsearch.nt, thetas,
-                                         s, depMPDF);
-*/
-/*
-        ierr = marginal_computeMarginalBeachball(data.nlocs,
-                                                 mtsearch.nm,
-                                                 mtsearch.nb, betas,
-                                                 mtsearch.ng, gammas,
-                                                 mtsearch.nk, kappas,
-                                                 mtsearch.ns, sigmas,
-                                                 mtsearch.nt, thetas,
-                                                 s);
-*/
-        // Compute the angles in degrees
-        cblas_dscal(mtsearch.ng, 180.0/M_PI, gammas, 1); 
-        for (i=0; i<mtsearch.nb; i++){betas[i] = (M_PI_2 - betas[i])*180.0/M_PI;}
-        marginal_write2DToGnuplot("depmag/lune.txt",
-                                  mtsearch.ng, gammas,
-                                  mtsearch.nb, betas,
-                                  luneMPDF);
-        marginal_write2DToGnuplot("depmag/luneUV.txt",
-                                  mtsearch.nb, u,
-                                  mtsearch.ng, v,
-                                  luneUVMPDF);
-        deps = memory_calloc64f(data.nlocs); 
-        for (i=0; i<data.nlocs; i++)
-        {
-            deps[i] = data.sacGxx[i].header.evdp;
-        }
-        marginal_write1DToGnuplot("depmag/depth.txt",
-                                  data.nlocs, deps, depMPDF);
-        memory_free64f(&luneMPDF);
-        memory_free64f(&deps);
-        memory_free64f(&depMPDF);
     }
 FINISH:;
     if (linObsComm){MPI_Comm_free(&obsComm);}
