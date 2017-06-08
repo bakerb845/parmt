@@ -10,7 +10,7 @@
 #include "iscl/log/log.h"
 #include "iscl/memory/memory.h"
 #include "iscl/os/os.h"
-#ifdef PREPMT_USE_INTEL
+#ifdef PARMT_USE_INTEL
 #include <mkl_cblas.h>
 #else
 #include <cblas.h>

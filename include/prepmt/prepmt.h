@@ -1,6 +1,6 @@
 #ifndef PREPMT_H__
 #define PREPMT_H__ 1
-
+#include "parmt_config.h"
 #include "prepmt/prepmt_commands.h"
 #include "prepmt/prepmt_dataArchive.h"
 #include "prepmt/prepmt_event.h"
