@@ -1,0 +1,8 @@
+#ifndef PREPMT_CONFIG_H__
+#define PREPMT_CONFIG_H__ 1
+
+#define PREPMT_MIN_TELESEISMIC_DIST 30.0
+#define PREPMT_MAX_TELESEISMIC_DIST 95.0
+
+
+#endif

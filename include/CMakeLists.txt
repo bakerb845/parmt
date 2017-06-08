@@ -1,4 +1,5 @@
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/parmt_config.h)
 set(headers parmt_mtsearch.h parmt_utils.h)
+add_subdirectory(prepmt)
 file (RELATIVE_PATH _relPath "${CMAKE_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
 install(FILES ${headers} DESTINATION ${_relPath} COMPONENT headers)

@@ -37,6 +37,7 @@ IF (PARMT_USE_INTEL)
    ${CMAKE_CURRENT_SOURCE_DIR}/compearth
    ${MKL_INCLUDE_DIR}
    ${ISCL_INCLUDE_DIR}
+   ${ISPL_INCLUDE_DIR}
    ${IPP_INCLUDE_DIR}
    ${CPS_INCLUDE_DIR}
    ${TTIMES_INCLUDE_DIR}
@@ -73,6 +74,7 @@ add_executable(xmkgrns utils/mkgrns.c)
 add_executable(parmt src/parmt.c src/synthetic.c)
 add_executable(polarmt src/polarmt.c)
 add_executable(postmt postprocess/postmt.c)
+add_executable(mergemt src/mergemt.c)
 add_executable(utils_test utils/unit_tests.c)
 add_executable(objfn_test src/unit_tests.c)
 SET (SRCS_PARMT src/broadcast.c src/discretizeMT.c src/locsearch.c
@@ -84,6 +86,14 @@ SET (SRCS_PARMT src/broadcast.c src/discretizeMT.c src/locsearch.c
                 postprocess/marginal.c
                 postprocess/tt2beachball.c
                 postprocess/cellSpacing.c)
+SET (SRCS_PREPMT prepmt/commands.c
+                 prepmt/event.c
+                 prepmt/hudson96.c
+                 prepmt/prepData.c
+                 prepmt/dataArchive.c
+                 prepmt/greens.c
+                 prepmt/hpulse96.c
+                 prepmt/pickFile.c)
 add_library(compearth_shared SHARED ${SRCS_COMPEARTH})
 add_library(compearth_static STATIC ${SRCS_COMPEARTH})
 add_library(parmtUtils_shared SHARED utils/ff2mtGreens.c utils/getNoiseBasis.c
@@ -91,29 +101,36 @@ add_library(parmtUtils_shared SHARED utils/ff2mtGreens.c utils/getNoiseBasis.c
             io/dataArchive.c io/objfnArchive.c utils/sacGrnsToEst.c)
 add_library(parmtUtils_static STATIC utils/ff2mtGreens.c utils/getNoiseBasis.c
             utils/readini.c io/dataArchive.c io/objfnArchive.c utils/sacGrnsToEst.c)
+ADD_LIBRARY(prepmt_shared SHARED ${SRCS_PREPMT})
+#ADD_LIBRARY(prepmt_static STATIC ${SRC_PREPMT})
 add_library(parmt_shared SHARED ${SRCS_PARMT})
 add_library(parmt_static STATIC ${SRCS_PARMT})
 
-SET(LINK_LIB_ALL ${INIPARSER_LIBRARY} ${CPS_LIBRARY} ${TTIMES_LIBRARY} ${ISCL_LIBRARY} ${MPI_C_LIBRARIES} ${H5_LIBRARY}
-                   -Wl,--start-group ${MKL_LIBRARY}  -Wl,--end-group -lm -ldl -lpthread -lpng -lstdc++)
+SET(LINK_LIB_ALL ${INIPARSER_LIBRARY} ${CPS_LIBRARY} ${TTIMES_LIBRARY} ${SACIO_LIBRARY}
+                 ${ISCL_LIBRARY} ${MPI_C_LIBRARIES} ${H5_LIBRARY}
+                 -Wl,--start-group ${MKL_LIBRARY}  -Wl,--end-group -lm -ldl -lpthread -lpng -lstdc++)
 
-set_target_properties(xmkgrns PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set_target_properties(parmt PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set_target_properties(postmt PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set_target_properties(polarmt PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set_target_properties(utils_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_TESTING_OUTPUT_DIRECTORY})
-set_target_properties(objfn_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_TESTING_OUTPUT_DIRECTORY})
-set_target_properties(compearth_shared PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
-set_target_properties(compearth_static PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
-set_target_properties(parmt_shared PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
-set_target_properties(parmt_static PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
-set_target_properties(parmtUtils_shared PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
-set_target_properties(parmtUtils_static PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
+SET_TARGET_PROPERTIES(xmkgrns PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+SET_TARGET_PROPERTIES(parmt PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+SET_TARGET_PROPERTIES(postmt PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+SET_TARGET_PROPERTIES(polarmt PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+SET_TARGET_PROPERTIES(mergemt PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+SET_TARGET_PROPERTIES(utils_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_TESTING_OUTPUT_DIRECTORY})
+SET_TARGET_PROPERTIES(objfn_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_TESTING_OUTPUT_DIRECTORY})
+SET_TARGET_PROPERTIES(compearth_shared PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
+SET_TARGET_PROPERTIES(compearth_static PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
+SET_TARGET_PROPERTIES(parmt_shared PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
+SET_TARGET_PROPERTIES(parmt_static PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
+SET_TARGET_PROPERTIES(parmtUtils_shared PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
+SET_TARGET_PROPERTIES(parmtUtils_static PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
+SET_TARGET_PROPERTIES(prepmt_shared PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
+#SET_TARGET_PROPERTIES(prepmt_static PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
 
 TARGET_LINK_LIBRARIES(xmkgrns ${LINK_LIB_ALL})
-TARGET_LINK_LIBRARIES(parmt parmt_shared parmtUtils_shared compearth_shared ${SACIO_LIBRARY} ${LINK_LIB_ALL})
-TARGET_LINK_LIBRARIES(postmt parmt_shared parmtUtils_shared compearth_shared ${SACIO_LIBRARY} ${LINK_LIB_ALL})
-TARGET_LINK_LIBRARIES(polarmt parmt_shared parmtUtils_shared compearth_shared ${SACIO_LIBRARY} ${LINK_LIB_ALL})
+TARGET_LINK_LIBRARIES(parmt parmt_shared parmtUtils_shared compearth_shared ${LINK_LIB_ALL})
+TARGET_LINK_LIBRARIES(postmt parmt_shared parmtUtils_shared compearth_shared ${LINK_LIB_ALL})
+TARGET_LINK_LIBRARIES(polarmt parmt_shared parmtUtils_shared compearth_shared ${LINK_LIB_ALL})
+TARGET_LINK_LIBRARIES(mergemt parmt_shared parmtUtils_shared compearth_shared ${LINK_LIB_ALL})
 TARGET_LINK_LIBRARIES(utils_test parmtUtils_static ${SACIO_LIBRARY} ${LINK_LIB_ALL})
 TARGET_LINK_LIBRARIES(objfn_test parmt_static parmtUtils_static compearth_static
                       ${SACIO_LIBRARY} ${LINK_LIB_ALL})
