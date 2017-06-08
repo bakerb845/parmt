@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <getopt.h>
 #include <iniparser.h>
 #include "parmt_utils.h"
 #include "iscl/array/array.h"
@@ -14,6 +15,10 @@
 #endif
 
 #define PROGRAM_NAME "mergemt"
+
+static void printUsage(void);
+static int parseArguments(int argc, char *argv[],
+                          char iniFile[PATH_MAX]);
 
 struct mergemtParms_struct
 {
@@ -39,8 +44,18 @@ int main(int argc, char *argv[])
         nk, nk0, nk1, nlocs, nlocs0, nlocs1, nm, nm0, nm1, nmt, nmt0, nmt1,
         ns, ns0, ns1, nt, nt0, nt1;
     const int jm = 0;
-memset(iniFile, 0, PATH_MAX*sizeof(char));
-strcpy(iniFile, "dprk.ini"); 
+    ierr = parseArguments(argc, argv, iniFile);
+    if (ierr != 0)
+    {
+        if (ierr ==-2){return EXIT_SUCCESS;}
+        printf("%s: Error parsing arguments\n", PROGRAM_NAME);
+        return EXIT_FAILURE;
+    } 
+    if (!os_path_isfile(iniFile))
+    {
+        printf("%s: Error ini file doesn't exist\n", PROGRAM_NAME);
+        return EXIT_FAILURE;
+    }
     ierr = mergemt_readIni(iniFile, &parms);
     if (ierr != 0)
     {
@@ -203,46 +218,6 @@ NEXT:;
                      + jm*nb1*ng1*nk1*ns1*nt1;
                 ncopy = nb0*ng0*nk0*ns0*nt0;
                 cblas_daxpy(ncopy,  1.0, &phi1[jndx], 1, &phi0[indx], 1); 
-/*
-                for (int ib=0; ib<nb0; ib++)
-                {
-                    for (int ig=0; ig<ng0; ig++)
-                    {
-                        for (int ik=0; ik<nk0; ik++)
-                        {
-                            for (int is=0; is<ns0; is++)
-                            {
-                                for (int it=0; it<nt0; it++)
-                                {
-                                    int imt = il*nm0*nb0*ng0*nk0*ns0*nt0
-                                            + im*nb0*ng0*nk0*ns0*nt0
-                                            + ib*ng0*nk0*ns0*nt0
-                                            + ig*nk0*ns0*nt0
-                                            + ik*ns0*nt0
-                                            + is*nt0
-                                            + it;
-                                    int jmt = il*nm1*nb1*ng1*nk1*ns1*nt1
-                                            + jm*nb1*ng1*nk1*ns1*nt1
-                                            + ib*ng1*nk1*ns1*nt1
-                                            + ig*nk1*ns1*nt1
-                                            + ik*ns1*nt1
-                                            + is*nt1
-                                            + it; 
-*/
-/*
-if (ib == 0 && ig == 0 && ik == 0 && is == 0 && it == 0)
-{
-printf("%d %d %d %d\n",imt, jmt, nmt0, nmt1);
-}
-*/
-/*
-                                    phi0[imt] = phi0[imt] + phi1[jmt];
-                                }
-                            }
-                        }
-                    }
-                }
-*/
             }
         }
 printf("%f\n", array_max64f(nmt0, phi0));
@@ -308,7 +283,7 @@ printf("%f\n", array_max64f(nmt0, phi0));
     memory_free64f(&phi1);
     return EXIT_SUCCESS;
 }
-
+//============================================================================//
 int mergemt_readIni(const char *iniFile,
                     struct mergemtParms_struct *parms) 
 {
@@ -364,4 +339,60 @@ int mergemt_readIni(const char *iniFile,
 
     iniparser_freedict(ini);
     return 0;
+}
+//============================================================================//
+static int parseArguments(int argc, char *argv[],
+                          char iniFile[PATH_MAX])
+{
+    bool linFile;
+    int prod;
+    linFile = false;
+    memset(iniFile, 0, PATH_MAX*sizeof(char));
+    while (true)
+    {   
+        static struct option longOptions[] =
+        {
+            {"help", no_argument, 0, '?'},
+            {"help", no_argument, 0, 'h'},
+            {"ini_file", required_argument, 0, 'i'},
+            {0, 0, 0, 0}
+        };
+        int c, optionIndex;
+        c = getopt_long(argc, argv, "?hi:m:l:",
+                        longOptions, &optionIndex);
+        if (c ==-1){break;}
+        if (c == 'i')
+        {
+            strcpy(iniFile, (const char *) optarg);
+            linFile = true;
+        }
+        else if (c == 'h' || c == '?')
+        {
+            printUsage();
+            return -2;
+        }
+        else
+        {
+            printf("%s: Unknown options: %s\n",
+                   PROGRAM_NAME, argv[optionIndex]);
+        }
+    }
+    if (!linFile)
+    {
+        printf("%s: Error must specify ini file\n\n", PROGRAM_NAME);
+        printUsage();
+        return -1;
+    }
+    return 0;
+}
+//============================================================================//
+static void printUsage(void)
+{
+    printf("Usage:\n   mergemt -i input_file\n\n");
+    printf("Required arguments:\n");
+    printf("   -i input_file specifies the initialization file\n");
+    printf("\n");
+    printf("Optional arguments:\n");
+    printf("   -h displays this message\n");
+    return;
 }

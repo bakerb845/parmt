@@ -460,7 +460,7 @@ static int parseArguments(int argc, char *argv[],
 }
 static void printUsage(void)
 {
-    printf("Usage:\n   parmt -i input_file\n\n");
+    printf("Usage:\n   polarmt -i input_file\n\n");
     printf("Required arguments:\n");
     printf("   -i input_file specifies the initialization file\n");
     printf("\n");
