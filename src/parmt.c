@@ -92,6 +92,8 @@ struct parmtMtSearchParms_struct mtsearch;
         printf("%s: Parsing ini file %s...\n", PROGRAM_NAME, iniFile);
         ierr = 0;
         ierr += parmt_utils_readGeneralParms(iniFile, &parms);
+        strcpy(parms.programName, PROGRAM_NAME);
+        parms.programID = PARMT_ID;
         ierr += parmt_utils_readMtSearch(iniFile, &mtsearch);
         if (ierr != 0)
         {
@@ -316,8 +318,9 @@ INIT_ERROR:;
         {
             deps[i] = data.sacGxx[i].header.evdp;
         }
-        ierr = parmt_io_createObjfnArchive64f(parms.resultsDir, parms.projnm,
-                                              parms.resultsFileSuffix,
+        ierr = parmt_io_createObjfnArchive64f(//parms.resultsDir, parms.projnm,
+                                              //parms.resultsFileSuffix,
+                                              PROGRAM_NAME, parms.parmtArchive, 
                                               data.nobs,
                                               data.nlocs, deps,
                                               mtsearch.nm, M0s,
@@ -390,8 +393,8 @@ int nlags = 0;
     {
         printf("%s: Writing results...\n", PROGRAM_NAME);
         ierr = parmt_io_writeObjectiveFunction64f(
-                   parms.resultsDir, parms.projnm, parms.resultsFileSuffix,
-                   nmt, phi);
+                   //parms.resultsDir, parms.projnm, parms.resultsFileSuffix,
+                   parms.parmtArchive, nmt, phi);
         if (ierr != 0)
         {
             printf("%s: Error writing objective function\n", PROGRAM_NAME);

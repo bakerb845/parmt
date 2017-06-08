@@ -31,6 +31,7 @@ int main(int argc, char *argv[])
     FILE *ofl;
     char fname[PATH_MAX];
     char iniFile[PATH_MAX];
+    char programNameIn[256];
     double U[9], Muse[6], Mned[6], lam[3], *betas, *deps, *depMPDF, *depMagMPDF,
            *G, *gammas, *kappas,
            *sigmas, *thetas, *M0s, *phi, *var, dip, epoch,
@@ -66,6 +67,12 @@ int main(int argc, char *argv[])
         printf("%s: Error reading general parameters\n", PROGRAM_NAME);
         return EXIT_FAILURE;
     }
+    if (!os_path_isfile(parms.postmtFile))
+    {
+        printf("%s: Archive file %s doesn't exist\n",
+               PROGRAM_NAME, parms.postmtFile);
+        return EXIT_FAILURE;
+    }
     // TODO make this a config
     if (!os_path_isdir(OUTDIR))
     {
@@ -86,10 +93,12 @@ int main(int argc, char *argv[])
     data.est = (struct sacData_struct *)
                calloc((size_t) data.nobs, sizeof(struct sacData_struct));
     // Read the archive
-    printf("%s: Reading archive...\n", PROGRAM_NAME); 
+    printf("%s: Reading archive %s...\n", PROGRAM_NAME, parms.postmtFile); 
 printf("%s %s %s\n", parms.resultsDir, parms.projnm, parms.resultsFileSuffix);
     ierr = parmt_io_readObjfnArchive64f(
-                   parms.resultsDir, parms.projnm, parms.resultsFileSuffix,
+                   //parms.resultsDir, parms.projnm, parms.resultsFileSuffix,
+                   parms.postmtFile, //parms.parmtArchive,
+                   programNameIn,
                    &nlocs, &deps,
                    &nm, &M0s,
                    &nb, &betas,

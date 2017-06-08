@@ -52,12 +52,17 @@ int parmt_broadcast_generalParms(struct parmtGeneralParms_struct *parms,
     MPI_Comm_size(comm, &nprocs);
     if (nprocs == 1){return 0;}
     MPI_Bcast(parms->projnm,            256,      MPI_CHAR, root, comm);
+    MPI_Bcast(parms->programName,       256,      MPI_CHAR, root, comm);
     MPI_Bcast(parms->dataFile,          PATH_MAX, MPI_CHAR, root, comm);
     MPI_Bcast(parms->resultsDir,        PATH_MAX, MPI_CHAR, root, comm);
     MPI_Bcast(parms->resultsFileSuffix, PATH_MAX, MPI_CHAR, root, comm);
+    MPI_Bcast(parms->parmtArchive,      PATH_MAX, MPI_CHAR, root, comm);
+    MPI_Bcast(parms->polarmtArchive,    PATH_MAX, MPI_CHAR, root, comm);
+    MPI_Bcast(parms->postmtFile,        PATH_MAX, MPI_CHAR, root, comm);
 
     MPI_Bcast(&parms->blockSize, 1, MPI_INT, root, comm);
     MPI_Bcast(&parms->objFnType, 1, MPI_INT, root, comm);
+    MPI_Bcast(&parms->programID, 1, MPI_INT, root, comm);
 
     MPI_Bcast(&parms->defaultMaxLagTime, 1, MPI_DOUBLE, root, comm);
 

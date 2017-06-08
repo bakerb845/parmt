@@ -52,9 +52,15 @@ int parmt_polarity_computeTTimesGreens(
            *GxxBuf, *GyyBuf, *GzzBuf, *GxyBuf, *GxzBuf, *GyzBuf,
            *stlas, *stlos, cmpinc, cmpaz, stla, stlo;
     int *icomps, *observation, *polarity, *waveType, icomp, ierr, ierrAll,
-        iloc, iobs, ipol, iwav, jloc, k, kt, myid, nPolarity, nprocs;
+        iloc, iobs, ipol, it, iwav, jloc, k, kt, myid, nPolarity, nprocs;
     size_t lenos;
     const int master = 0;
+    const int nTimeVars = 11;
+    const enum sacHeader_enum timeVarNames[11]
+       = {SAC_CHAR_KA,
+          SAC_CHAR_KT0, SAC_CHAR_KT1, SAC_CHAR_KT2, SAC_CHAR_KT3,
+          SAC_CHAR_KT4, SAC_CHAR_KT5, SAC_CHAR_KT6, SAC_CHAR_KT7,
+          SAC_CHAR_KT8, SAC_CHAR_KT9};
     //------------------------------------------------------------------------//
     //
     // Initialize
@@ -161,10 +167,14 @@ int parmt_polarity_computeTTimesGreens(
                 printf("%s: Cannot classify component %s\n", fcnm, kcmpnm);
                 continue; 
             }
-            // Get the pick
-            ierr = sacio_getCharacterHeader(SAC_CHAR_KT0,
-                                            data.data[iobs].header,
-                                            kt0);
+            // Get the primary pick
+            for (it=0; it<nTimeVars; it++)
+            {
+                ierr = sacio_getCharacterHeader(timeVarNames[it],
+                                                data.data[iobs].header,
+                                                kt0);
+                if (ierr == 0){break;}
+            }
             lenos = strlen(kt0);
             // Ensure the pick is defined
             if (ierr == 0 && lenos > 1)
@@ -901,7 +911,8 @@ printf("%f %f\n", array_min64f(nmt, phiLoc), array_max64f(nmt, phiLoc));
     // Reduce the search onto the master
     //if (linLocComm && mylocID == master)
     {
-
+         MPI_Reduce(phiWork, phi, nlocs*mtloc.nmtAll, MPI_DOUBLE,
+                    MPI_SUM, master, locComm);
     }
     // Free memory
     memory_free64f(&phiWork);

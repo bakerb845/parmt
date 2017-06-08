@@ -82,6 +82,8 @@ int main(int argc, char *argv[])
         if (ierr != 0){goto INIT_ERROR;}
         ierr = 0;
         ierr += parmt_utils_readGeneralParms(iniFile, &parms);
+        strcpy(parms.programName, PROGRAM_NAME);
+        parms.programID = POLARMT_ID;
         ierr += parmt_utils_readMtSearch(iniFile, &mtsearch);
         ierr += parmt_utils_readPolarityParms(iniFile, &polarityParms);
         if (ierr != 0)
@@ -174,36 +176,6 @@ INIT_ERROR:;
         printf("%s: Error discretizing MT space\n", PROGRAM_NAME);
         MPI_Abort(MPI_COMM_WORLD, 30);
     }
-/*
-    compearth_beta2u(1, &mtsearch.betaLower, &uLower);
-    compearth_beta2u(1, &mtsearch.betaUpper, &uUpper);
-    compearth_gamma2v(1, &mtsearch.gammaLower, &vLower);
-    compearth_gamma2v(1, &mtsearch.gammaUpper, &vUpper);
-    compearth_theta2h(1, &mtsearch.thetaLower, &hLower);
-    compearth_theta2h(1, &mtsearch.thetaUpper, &hUpper);
-    du = (uUpper - uLower)/(double) mtsearch.nb;
-    dv = (vUpper - vLower)/(double) mtsearch.ng;
-    dh =-(hUpper - hLower)/(double) mtsearch.nt;
-    dk = (mtsearch.kappaUpper - mtsearch.kappaLower)/(double) mtsearch.nk;
-    ds = (mtsearch.sigmaUpper - mtsearch.sigmaLower)/(double) mtsearch.ns;
-    u = array_linspace64f(uLower+du/2, uUpper-du/2, mtsearch.nb, &ierr);
-    v = array_linspace64f(vLower+dv/2, vUpper-dv/2, mtsearch.ng, &ierr);
-    h = array_linspace64f(hLower-dh/2, hUpper+dh/2, mtsearch.nt, &ierr);
-    betas  = memory_calloc64f(mtsearch.nb);
-    gammas = memory_calloc64f(mtsearch.ng);
-    thetas = memory_calloc64f(mtsearch.nt);
-    compearth_u2beta(mtsearch.nb, 20, 2, u, 1.e-6, betas);
-    compearth_v2gamma(mtsearch.ng, v, gammas);
-    compearth_h2theta(mtsearch.nt, h, thetas);
-    M0s    = array_linspace64f(mtsearch.m0Lower,    mtsearch.m0Upper,
-                               mtsearch.nm, &ierr);
-    kappas = array_linspace64f(mtsearch.kappaLower+dk/2,
-                               mtsearch.kappaUpper-dk/2,
-                               mtsearch.nk, &ierr);
-    sigmas = array_linspace64f(mtsearch.sigmaLower+ds/2,
-                               mtsearch.sigmaUpper-ds/2,
-                               mtsearch.ns, &ierr);
-*/
     // avoid an annoying warning
     for (i=0; i<mtsearch.ns; i++)
     {
@@ -297,8 +269,9 @@ INIT_ERROR:;
         {
             deps[i] = data.sacGxx[i].header.evdp;
         }
-        ierr = parmt_io_createObjfnArchive64f(parms.resultsDir, parms.projnm,
-                                              parms.polarityFileSuffix,
+        ierr = parmt_io_createObjfnArchive64f(//parms.resultsDir, parms.projnm,
+                                              //parms.polarityFileSuffix,
+                                              PROGRAM_NAME, parms.polarmtArchive,
                                               data.nobs,
                                               data.nlocs, deps,
                                               1, M0unit, //mtsearch.nm, M0s,
@@ -311,8 +284,10 @@ INIT_ERROR:;
         {
             printf("%s: Error initializing file\n", PROGRAM_NAME);
         }
+printf("Max: %f\n", array_max64f(mtloc.nmtAll, phi));
         ierr = parmt_io_writeObjectiveFunction64f(
-                   parms.resultsDir, parms.projnm, parms.polarityFileSuffix,
+                   //parms.resultsDir, parms.projnm, parms.polarityFileSuffix,
+                   parms.polarmtArchive,
                    mtloc.nmtAll, phi);
         if (ierr != 0)
         {

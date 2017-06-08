@@ -24,6 +24,7 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
 {
     const char *fcnm = "parmt_obsSearch64f\0";
     MPI_Win counterWin;
+    const char *archiveName = NULL;
     double lagTime, *CeInv, *phiWork, *phiAll, *var, *varAll, *varOut, *wts,
            defaultWeight, wtNorm;
     int *lagsWork, *nlags, ierr, iobs, myid, nobsProcs,
@@ -240,13 +241,23 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
         // Have the master write it
         if (myid == master)
         {
+            if (parms.programID == PARMT_ID)
+            {
+                archiveName = parms.parmtArchive;
+            }
+            else if (parms.programID == POLARMT_ID)
+            {
+                archiveName = parms.polarmtArchive;
+            }
             for (iobs=0; iobs<data.nobs; iobs++)
             {
                 parmt_io_writeVarianceForWaveform64f(
-                   parms.resultsDir, parms.projnm, parms.resultsFileSuffix,
+                   //parms.resultsDir, parms.projnm, parms.resultsFileSuffix,
+                   archiveName,
                    iobs,
                    data.data[iobs].npts, &varOut[iobs*npmax]);
             }
+            archiveName = NULL;
         }
         memory_free64f(&varAll);
         memory_free64f(&varOut);

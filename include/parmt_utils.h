@@ -9,6 +9,10 @@
 #define SAC_MAXLAG_HDR SAC_FLOAT_USER1
 #define SAC_POLWGT_HDR SAC_FLOAT_USER2
 
+#define PARMT_ID 1
+#define POLARMT_ID 2
+#define POSTMT_ID 3
+
 struct parmtNoiseBasis_struct
 {
     double *sqrtEvals; /*!< sqrt(Eigenvalues) in descending order [nvals] */
@@ -22,16 +26,21 @@ struct parmtNoiseBasis_struct
 struct parmtGeneralParms_struct
 {
     char projnm[256];          /*!< Project name */
+    char programName[256];     /*!< Program name */
     char dataFile[PATH_MAX];   /*!< Input data/greens functions file */
     char resultsFileSuffix[PATH_MAX]; /*!< Results file suffix */
     char polarityFileSuffix[PATH_MAX]; /*!< Polarity file suffix */
     char resultsDir[PATH_MAX];        /*!< Results file directory */
+    char parmtArchive[PATH_MAX];    /*!< Parmt archive name */
+    char polarmtArchive[PATH_MAX];  /*!< Polarity archive name */
+    char postmtFile[PATH_MAX];      /*!< Input into postmt */
     double defaultMaxLagTime;  /*!< Maximum max lag time (seconds) that
                                     can be applied to any observation */
     int blockSize;             /*!< Block size in matrix-matrix GM=U
                                     multliplications */
     int objFnType;             /*!< If 1 then this is L1 norm.
                                     If 2 then this is a cross-correlation */
+    int programID; 
     bool lwantLags;            /*!< If true then the program is to optimize
                                     at different synthetic/data lags */
     char pad[3];
@@ -179,7 +188,8 @@ int parmt_utils_sacGrnsToEst(const struct sacData_struct data,
                              struct sacData_struct *est);
 //-------------------------------file io--------------------------------------//
 int parmt_io_createObjfnArchive64f(
-    const char *archiveDir, const char *projnm, const char *suffix,
+    //const char *archiveDir, const char *projnm, const char *suffix,
+    const char *programName, const char *flname,
     const int nobs,
     const int nlocs,
     const double *__restrict__ deps,
@@ -190,14 +200,18 @@ int parmt_io_createObjfnArchive64f(
     const int ns, const double *__restrict__ sigmas,
     const int nt, const double *__restrict__ thetas);
 int parmt_io_writeVarianceForWaveform64f(
-    const char *resultsDir, const char *projnm, const char *resultsSuffix,
+    //const char *resultsDir, const char *projnm, const char *resultsSuffix,
+    const char *flname,
     const int waveformNumber,
     const int npts, const double *__restrict__ var);
 int parmt_io_writeObjectiveFunction64f(
-    const char *resultsDir, const char *projnm, const char *resultsSuffix,
+    //const char *resultsDir, const char *projnm, const char *resultsSuffix,
+    const char *flname,
     const int nmt, const double *__restrict__ phi);
 int parmt_io_readObjfnArchive64f(
-    const char *resultsDir, const char *projnm, const char *resultsSuffix,
+    //const char *resultsDir, const char *projnm, const char *resultsSuffix,
+    const char *flname,
+    char programName[256],
     int *nlocs, double **deps,
     int *nm, double **M0s,
     int *nb, double **betas,

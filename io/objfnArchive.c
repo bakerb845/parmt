@@ -19,6 +19,7 @@
 #define SEARCH_SPACE "/SearchSpace"
 #define OBJECTIVE_FUNCTION "/ObjectiveFunction"
 #define WAVEFORM_FIT_FUNCTION "waveformFitFunction"
+#define CREATOR "ProgramCreator"
 
 static herr_t writeDoubleArrayWithUnits(
     const hid_t groupID, const char *arrayName, const char *units,
@@ -117,14 +118,17 @@ int parmt_io_createObjfnArchiveName(const int job,
 }
 //============================================================================//
 int parmt_io_writeVarianceForWaveform64f(
-    const char *resultsDir, const char *projnm, const char *resultsSuffix,
+    //const char *resultsDir, const char *projnm, const char *resultsSuffix,
+    const char *flname,
     const int waveformNumber,
     const int npts, const double *__restrict__ var)
 {
     const char *fcnm = "parmt_io_writeVarianceForWaveform64f\0";
-    char flname[PATH_MAX], arrayName[512];
+    //char flname[PATH_MAX]
+    char arrayName[512];
     int ierr;
     hid_t groupID, h5fl;
+/*
     ierr = parmt_io_createObjfnArchiveName(OPEN_FILE,
                                            resultsDir, projnm,
                                            resultsSuffix, flname);
@@ -133,6 +137,12 @@ int parmt_io_writeVarianceForWaveform64f(
         printf("%s: Failed to open archive\n", fcnm);
         return -1; 
     }
+*/
+    if (!os_path_isfile(flname))
+    {
+        printf("%s: Archive file %s does not exist\n", fcnm, flname);
+        return -1;
+    } 
     h5fl = H5Fopen(flname, H5F_ACC_RDWR, H5P_DEFAULT);
     groupID = H5Gopen2(h5fl, "/Variances\0", H5P_DEFAULT);
     memset(arrayName, 0, 512*sizeof(char));
@@ -144,13 +154,13 @@ int parmt_io_writeVarianceForWaveform64f(
 }
 //============================================================================//
 /*!
- * @brief Writes the the objective function to the initialized archive file 
+ * @brief Writes the the objective function to the initialized archive file.
  *
  * @param[in] resultsDir      directory in which archive will reside
  * @param[in] projnm          name of project
  * @param[in] resultsSuffix   project suffix
- * @param[in] nmt             number of moment tensors
- * @param[in] phi             objective function at all moment tensor points
+ * @param[in] nmt             Number of moment tensors.
+ * @param[in] phi             Objective function at all moment tensor points
  *                            [nmt]
  *
  * @result 0 indicates success
@@ -161,14 +171,17 @@ int parmt_io_writeVarianceForWaveform64f(
  *
  */
 int parmt_io_writeObjectiveFunction64f(
-    const char *resultsDir, const char *projnm, const char *resultsSuffix,
+    //const char *resultsDir, const char *projnm, const char *resultsSuffix,
+    const char *flname,
     const int nmt, const double *__restrict__ phi)
 {
     const char *fcnm = "parmt_io_writeObjectiveFunction64f\0";
-    char flname[PATH_MAX];
+    //char flname[PATH_MAX];
     int ierr;
     hid_t dataSet, dataSpace, groupID, h5fl;
     herr_t status;
+    ierr = 0;
+/*
     ierr = parmt_io_createObjfnArchiveName(OPEN_FILE,
                                            resultsDir, projnm,
                                            resultsSuffix, flname);
@@ -176,6 +189,12 @@ int parmt_io_writeObjectiveFunction64f(
     {
         printf("%s: Failed to open objective function archive\n", fcnm);
         return -1; 
+    }
+*/
+    if (!os_path_isfile(flname))
+    {
+        printf("%s: File %s doesn't exist\n", fcnm, flname);
+        return -1;
     }
     h5fl = H5Fopen(flname, H5F_ACC_RDWR, H5P_DEFAULT);
     groupID = H5Gopen2(h5fl, OBJECTIVE_FUNCTION, H5P_DEFAULT);
@@ -231,7 +250,8 @@ int parmt_io_writeObjectiveFunction64f(
  *
  */
 int parmt_io_createObjfnArchive64f(
-    const char *resultsDir, const char *projnm, const char *resultsSuffix,
+    //const char *resultsDir, const char *projnm, const char *resultsSuffix,
+    const char *programName, const char *flname,
     const int nobs,
     const int nlocs,
     const double *__restrict__ deps,
@@ -243,14 +263,18 @@ int parmt_io_createObjfnArchive64f(
     const int nt, const double *__restrict__ thetas)
 {
     const char *fcnm = "parmt_io_createObjfnArchive\0";
-    char flname[PATH_MAX];
+    //char flname[PATH_MAX];
     int ierr;
-    hid_t dataSpace, dataSet, groupID, h5fl, plist;
+    hid_t attrID, attrSpace, attrType, dataSpace, dataSet, groupID, h5fl, plist;
+    char *dirName;
+    size_t lenos;
     herr_t status;
     hsize_t dims[7];
     const hsize_t rank = 7;
     const double fillValue =-1;
     status = 0;
+    ierr = 0;
+/*
     ierr = parmt_io_createObjfnArchiveName(CREATE_FILE,
                                            resultsDir, projnm,
                                            resultsSuffix, flname);
@@ -258,6 +282,22 @@ int parmt_io_createObjfnArchive64f(
     {
         printf("%s: Failed to make objective function archive\n", fcnm);
         return -1;
+    }
+*/
+    dirName = os_dirname(flname);
+    if (!os_path_isdir(dirName))
+    {   
+        ierr = os_makedirs(dirName);
+        if (ierr != 0)
+        {
+            printf("%s: Error making root directory %s\n", fcnm, dirName);
+            return -1; 
+        }
+    }
+    if (dirName != NULL){free(dirName);}
+    if (os_path_isfile(flname))
+    {   
+        printf("%s: Over-writing file %s\n", fcnm, flname);
     }
     if (os_path_isfile(flname))
     {
@@ -268,6 +308,19 @@ int parmt_io_createObjfnArchive64f(
     // location, magnitude, beta, gamma, kappa, sigma, theta
     groupID = H5Gcreate2(h5fl, OBJECTIVE_FUNCTION,
                          H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    // Tag the program who created it 
+    lenos = strlen(programName) + 1;
+    attrSpace = H5Screate(H5S_SCALAR);
+    attrType = H5Tcopy(H5T_C_S1);
+    H5Tset_size(attrType, lenos);
+    H5Tset_strpad(attrType, H5T_STR_NULLTERM);
+    attrID = H5Acreate2(groupID, CREATOR, attrType,
+                        attrSpace, H5P_DEFAULT, H5P_DEFAULT);
+    H5Awrite(attrID, attrType, programName); 
+    H5Aclose(attrID);
+    H5Tclose(attrType);
+    H5Sclose(attrSpace);
+
     dims[0] = (int) nlocs;
     dims[1] = (int) nm;
     dims[2] = (int) nb; 
@@ -326,7 +379,8 @@ int parmt_io_createObjfnArchive64f(
  *
  */
 int parmt_io_readObjfnArchive64f(
-    const char *resultsDir, const char *projnm, const char *resultsSuffix,
+    const char *flname,
+    char programName[256],
     int *nlocs, double **deps,
     int *nm, double **M0s,
     int *nb, double **betas,
@@ -334,12 +388,12 @@ int parmt_io_readObjfnArchive64f(
     int *nk, double **kappas,
     int *ns, double **sigmas,
     int *nt, double **thetas,
-    int *nmt, double **phi  )
+    int *nmt, double **phi)
 {
     const char *fcnm = "parmt_io_readObjfnArchive64f\0";
-    char flname[PATH_MAX];
     int nwork;
-    hid_t dataSet, dataSpace, groupID, h5fl, memSpace;
+    hid_t attrID, attrSpace, attrType, 
+          dataSet, dataSpace, groupID, h5fl, memSpace;
     herr_t status;
     hsize_t *dims;
     int ierr, rank;
@@ -356,6 +410,8 @@ int parmt_io_readObjfnArchive64f(
     *nt = 0;
     *nmt = 0;
 
+    memset(programName, 0, 256*sizeof(char));
+
     *deps = NULL;
     *M0s = NULL;
     *betas = NULL;
@@ -365,6 +421,13 @@ int parmt_io_readObjfnArchive64f(
     *thetas = NULL; 
     *phi = NULL;
     dims = NULL;
+
+    if (!os_path_isfile(flname))
+    {
+        printf("%s: Error file %s doesn't exist\n", fcnm, flname);
+        return -1;
+    }
+/*
     ierr = parmt_io_createObjfnArchiveName(OPEN_FILE,
                                            resultsDir, projnm,
                                            resultsSuffix, flname);
@@ -373,12 +436,14 @@ int parmt_io_readObjfnArchive64f(
         printf("%s: Failed to open objective function archive\n", fcnm);
         return -1;
     }
+*/
 //printf("LOOK HERE!!!!!!!!! awful kludge and needs to be fixed\n");
 //*nlocs = 25;
 //*deps = array_linspace64f(1, 25, *nlocs, &ierr);
     h5fl = H5Fopen(flname, H5F_ACC_RDONLY, H5P_DEFAULT);
     // Get the model space
     groupID = H5Gopen2(h5fl, SEARCH_SPACE, H5P_DEFAULT);
+ 
     // Size query
     nwork =-1;
     status = readDoubleArray(groupID, DEPTHS, nwork, nlocs, *deps);
@@ -439,6 +504,13 @@ SS_ERROR:;
     }
     // Read the objective function
     groupID = H5Gopen2(h5fl, OBJECTIVE_FUNCTION, H5P_DEFAULT);
+    // Get the program name
+    attrID = H5Aopen(groupID, CREATOR, H5P_DEFAULT);
+    attrType = H5Aget_type(attrID);
+    H5Aread(attrID, attrType, programName);
+    H5Tclose(attrType);
+    H5Aclose(attrID);
+    // Open the dataspaces
     dataSet = H5Dopen(groupID, WAVEFORM_FIT_FUNCTION, H5P_DEFAULT);
     dataSpace = H5Dget_space(dataSet);
     // Get and check the dimensionality of the hyperslab

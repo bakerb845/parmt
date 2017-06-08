@@ -17,6 +17,7 @@ int parmt_utils_readGeneralParms(const char *iniFile,
 {
     const char *fcnm = "parmt_utils_readGeneralParms\0";
     const char *s;
+    char *dirName;
     int ierr;
     dictionary *ini;
     ierr = 0;
@@ -60,6 +61,45 @@ int parmt_utils_readGeneralParms(const char *iniFile,
         ierr = 1;
         goto END;
     }
+    s = iniparser_getstring(ini, "general:parmtArchive\0", NULL);
+    if (s == NULL)
+    {
+ printf("not done yet\n");
+    } 
+    strcpy(parms->parmtArchive, s);
+    dirName = os_dirname(parms->parmtArchive);
+    if (!os_path_isdir(dirName))
+    {   
+        ierr = os_makedirs(dirName);
+        if (ierr != 0)
+        {
+            log_errorF("%s: Failed to make directory %s\n", fcnm, dirName);
+            goto END;
+        }
+    }
+    free(dirName);
+
+    s = iniparser_getstring(ini, "general:polarmtArchive\0", NULL);
+    if (s == NULL)
+    {
+printf("not done yet\n");
+    }
+    strcpy(parms->polarmtArchive, s);
+    dirName = os_dirname(parms->polarmtArchive);
+    if (!os_path_isdir(dirName))
+    {
+        ierr = os_makedirs(dirName);
+        if (ierr != 0)
+        {
+            log_errorF("%s: Failed to make directory %s\n", fcnm, dirName);
+            goto END;
+        }
+    }
+    free(dirName);
+
+    s = iniparser_getstring(ini, "general:postmtFile\0", NULL);
+    strcpy(parms->postmtFile, s);
+/*
     // output file directory
     s = iniparser_getstring(ini, "general:resultsFileDirectory\0", "./");
     strcpy(parms->resultsDir, s);
@@ -88,6 +128,7 @@ int parmt_utils_readGeneralParms(const char *iniFile,
                     parms->resultsFileSuffix);
         }
     }
+*/
     // read the block size
     parms->blockSize = iniparser_getint(ini, "general:blockSize\0", 32);
     if (parms->blockSize < 1)
