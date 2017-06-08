@@ -35,9 +35,10 @@ int main(int argc, char *argv[])
            *M0, *M1, *M0loc, *phi0, *phi1,
            *phiLoc, *sigma0, *sigma1, *sigmaLoc, *theta0, *theta1,
            *thetaLoc, xsum;
-    int i, ierr, nb, nb0, nb1, ng, ng0, ng1, nk, nk0, nk1, 
-        nlocs, nlocs0, nlocs1, nm, nm0, nm1, nmt, nmt0, nmt1,
+    int i, ierr, il, im, indx, jndx, nb, nb0, nb1, ncopy, ng, ng0, ng1,
+        nk, nk0, nk1, nlocs, nlocs0, nlocs1, nm, nm0, nm1, nmt, nmt0, nmt1,
         ns, ns0, ns1, nt, nt0, nt1;
+    const int jm = 0;
 memset(iniFile, 0, PATH_MAX*sizeof(char));
 strcpy(iniFile, "dprk.ini"); 
     ierr = mergemt_readIni(iniFile, &parms);
@@ -192,11 +193,17 @@ NEXT:;
             cblas_daxpy(nmt1, 1.0, phi1, 1, &phi0[nmt1*i], 1);
         }
 */
-        for (int il=0; il<nlocs0; il++)
+        for (il=0; il<nlocs0; il++)
         {
-            int jm = 0;
-            for (int im=0; im<nm0; im++)
+            for (im=0; im<nm0; im++)
             {
+                indx = il*nm0*nb0*ng0*nk0*ns0*nt0
+                     + im*nb0*ng0*nk0*ns0*nt0;
+                jndx = il*nm1*nb1*ng1*nk1*ns1*nt1
+                     + jm*nb1*ng1*nk1*ns1*nt1;
+                ncopy = nb0*ng0*nk0*ns0*nt0;
+                cblas_daxpy(ncopy,  1.0, &phi1[jndx], 1, &phi0[indx], 1); 
+/*
                 for (int ib=0; ib<nb0; ib++)
                 {
                     for (int ig=0; ig<ng0; ig++)
@@ -221,18 +228,21 @@ NEXT:;
                                             + ik*ns1*nt1
                                             + is*nt1
                                             + it; 
+*/
 /*
 if (ib == 0 && ig == 0 && ik == 0 && is == 0 && it == 0)
 {
 printf("%d %d %d %d\n",imt, jmt, nmt0, nmt1);
 }
 */
+/*
                                     phi0[imt] = phi0[imt] + phi1[jmt];
                                 }
                             }
                         }
                     }
                 }
+*/
             }
         }
 printf("%f\n", array_max64f(nmt0, phi0));
