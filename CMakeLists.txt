@@ -67,16 +67,19 @@ macro (add_sources)
 endmacro (add_sources)
 
 # Add directories to compile
-add_subdirectory(include)
-add_subdirectory(compearth)
+ADD_SUBDIRECTORY(include)
+# TODO - email carl tape and make this into its own repository
+ADD_SUBDIRECTORY(compearth)
 
-add_executable(xmkgrns utils/mkgrns.c)
-add_executable(parmt src/parmt.c src/synthetic.c)
-add_executable(polarmt src/polarmt.c)
-add_executable(postmt postprocess/postmt.c)
-add_executable(mergemt src/mergemt.c)
-add_executable(utils_test utils/unit_tests.c)
-add_executable(objfn_test src/unit_tests.c)
+ADD_EXECUTABLE(xgrnsTeleB prepmt/grnsTeleB.c)
+ADD_EXECUTABLE(xprepTeleP prepmt/prepTeleP.c)
+ADD_EXECUTABLE(xmkgrns utils/mkgrns.c)
+ADD_EXECUTABLE(parmt src/parmt.c src/synthetic.c)
+ADD_EXECUTABLE(polarmt src/polarmt.c)
+ADD_EXECUTABLE(postmt postprocess/postmt.c)
+ADD_EXECUTABLE(mergemt src/mergemt.c)
+ADD_EXECUTABLE(utils_test utils/unit_tests.c)
+ADD_EXECUTABLE(objfn_test src/unit_tests.c)
 SET (SRCS_PARMT src/broadcast.c src/discretizeMT.c src/locsearch.c
                 src/magnitude.c src/mtsearch.c
                 src/polarity.c src/obssearch.c
@@ -94,21 +97,22 @@ SET (SRCS_PREPMT prepmt/commands.c
                  prepmt/greens.c
                  prepmt/hpulse96.c
                  prepmt/pickFile.c)
-add_library(compearth_shared SHARED ${SRCS_COMPEARTH})
-add_library(compearth_static STATIC ${SRCS_COMPEARTH})
-add_library(parmtUtils_shared SHARED utils/ff2mtGreens.c utils/getNoiseBasis.c
+ADD_LIBRARY(compearth_shared SHARED ${SRCS_COMPEARTH})
+ADD_LIBRARY(compearth_static STATIC ${SRCS_COMPEARTH})
+ADD_LIBRARY(parmtUtils_shared SHARED utils/ff2mtGreens.c utils/getNoiseBasis.c
             utils/lagTime.c utils/readini.c utils/setDataOnG.c utils/weights.c
             io/dataArchive.c io/objfnArchive.c utils/sacGrnsToEst.c)
-add_library(parmtUtils_static STATIC utils/ff2mtGreens.c utils/getNoiseBasis.c
+ADD_LIBRARY(parmtUtils_static STATIC utils/ff2mtGreens.c utils/getNoiseBasis.c
             utils/readini.c io/dataArchive.c io/objfnArchive.c utils/sacGrnsToEst.c)
 ADD_LIBRARY(prepmt_shared SHARED ${SRCS_PREPMT})
 #ADD_LIBRARY(prepmt_static STATIC ${SRC_PREPMT})
-add_library(parmt_shared SHARED ${SRCS_PARMT})
-add_library(parmt_static STATIC ${SRCS_PARMT})
+ADD_LIBRARY(parmt_shared SHARED ${SRCS_PARMT})
+ADD_LIBRARY(parmt_static STATIC ${SRCS_PARMT})
 
 SET(LINK_LIB_ALL ${INIPARSER_LIBRARY} ${CPS_LIBRARY} ${TTIMES_LIBRARY} ${SACIO_LIBRARY}
                  ${ISCL_LIBRARY} ${MPI_C_LIBRARIES} ${H5_LIBRARY}
-                 -Wl,--start-group ${MKL_LIBRARY}  -Wl,--end-group -lm -ldl -lpthread -lpng -lstdc++)
+                 -Wl,--start-group ${MKL_LIBRARY} -Wl,--end-group 
+                 ${IPP_LIBRARY} -lm -ldl -lpthread -lpng -lstdc++)
 
 SET_TARGET_PROPERTIES(xmkgrns PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 SET_TARGET_PROPERTIES(parmt PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -126,6 +130,12 @@ SET_TARGET_PROPERTIES(parmtUtils_static PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LI
 SET_TARGET_PROPERTIES(prepmt_shared PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
 #SET_TARGET_PROPERTIES(prepmt_static PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
 
+TARGET_LINK_LIBRARIES(xgrnsTeleB
+                      prepmt_shared parmt_shared parmtUtils_shared compearth_shared
+                      ${LINK_LIB_ALL} ${ISPL_LIBRARY})
+TARGET_LINK_LIBRARIES(xprepTeleP
+                      prepmt_shared parmt_shared parmtUtils_shared compearth_shared
+                      ${LINK_LIB_ALL} ${ISPL_LIBRARY})
 TARGET_LINK_LIBRARIES(xmkgrns ${LINK_LIB_ALL})
 TARGET_LINK_LIBRARIES(parmt parmt_shared parmtUtils_shared compearth_shared ${LINK_LIB_ALL})
 TARGET_LINK_LIBRARIES(postmt parmt_shared parmtUtils_shared compearth_shared ${LINK_LIB_ALL})
