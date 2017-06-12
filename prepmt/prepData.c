@@ -282,11 +282,11 @@ int prepmt_prepData_getDefaultDTAndWindowFromIniFile(const char *iniFile,
     }
     ini = iniparser_load(iniFile);
     memset(vname, 0, 256*sizeof(char));
-    sprintf(vname, "%s:cutStart\0", section);
+    sprintf(vname, "%s:cutStart", section);
     *cutStart = iniparser_getdouble(ini, vname, -2.0);
 
     memset(vname, 0, 256*sizeof(char));
-    sprintf(vname, "%s:cutEnd\0", section);
+    sprintf(vname, "%s:cutEnd", section);
     *cutEnd   = iniparser_getdouble(ini, vname, 3.0);
     if (*cutEnd <= *cutStart)
     {    
@@ -296,7 +296,7 @@ int prepmt_prepData_getDefaultDTAndWindowFromIniFile(const char *iniFile,
     }
 
     memset(vname, 0, 256*sizeof(char));
-    sprintf(vname, "%s:targetDt\0", section);
+    sprintf(vname, "%s:targetDt", section);
     *targetDt = iniparser_getdouble(ini, vname, 0.1);
     if (*targetDt <= 0.0)
     {    
