@@ -60,6 +60,17 @@ int compearth_convertMT(const enum compearthCoordSystem_enum i1in,
         printf("%s: Error unkonwn output coordinate system %d\n", fcnm, i2);
         return -1;
     }
+    // Base case
+    if (i1 == i2)
+    {
+        Mout[0] = M[0];
+        Mout[1] = M[1];
+        Mout[2] = M[2];
+        Mout[3] = M[3];
+        Mout[4] = M[4];
+        Mout[5] = M[5];
+        return 0;
+    }
     // Convert
     if (i1 == 1)
     {

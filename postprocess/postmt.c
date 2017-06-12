@@ -191,6 +191,21 @@ return 0;
            Muse[0], Muse[1], Muse[2], Muse[3], Muse[4], Muse[5]);
     printf("mtNED =[%.6e,%.6e,%.6e,%.6e,%.6e,%.6e]\n",
            Mned[0], Mned[1], Mned[2], Mned[3], Mned[4], Mned[5]);
+    // Write the output file
+
+    struct globalMapOpts_struct globalMap;
+    memset(&globalMap, 0, sizeof(struct globalMapOpts_struct));
+    strcpy(globalMap.outputScript, "gmtScripts/globalMap.sh");
+    strcpy(globalMap.psFile, "globalMap.ps");
+    array_copy64f_work(6, Muse, globalMap.mts);
+    globalMap.basis = USE;
+    globalMap.evla = data.data[0].header.evla;
+    globalMap.evlo = data.data[0].header.evlo;
+    globalMap.evdp = deps[jloc]; 
+    globalMap.lwantMT = true;
+    globalMap.lwantPolarity = true;
+printf("%f %f\n", globalMap.mts[0], globalMap.mts[1]);
+    ierr = postmt_gmtHelper_writeGlobalMap(globalMap, data.nobs, data.data);
 /*
 printf("overriding ned and joptloc\n");
 joptLoc=5;
@@ -219,6 +234,71 @@ Mned[5] =-2.756277e+17;
     }
     printf("%s: Scaling factor: %e\n", PROGRAM_NAME, xnorm);
     cblas_dscal(nmt, 1.0/xnorm, phi, 1);
+    printf("%s: Computing pure histograms\n", PROGRAM_NAME);
+
+    double *locHist, *magHist, *betaHist, *gammaHist, *kappaHist, *sigmaHist, *thetaHist;
+    ierr = postmt_gmtHelper_makeRegularHistograms(nlocs, nm,
+                                                  nb, ng, nk, ns, nt, 
+                                                  nmt, phi,
+                                                  &locHist, &magHist, &betaHist,
+                                                  &gammaHist, &kappaHist, &sigmaHist,
+                                                  &thetaHist);
+    int i;
+/*
+    printf("Depths\n");
+    for (i=0; i<nlocs; i++)
+    {
+        printf("%f %f\n", deps[i], locHist[i]);
+    }
+    printf("Magnitudes\n");
+    for (i=0; i<nm; i++)
+    {
+        compearth_m02mw(1, KANAMORI_1978, &M0s[i], &Mw);
+        printf("%f %f\n", Mw, magHist[i]);
+    }
+    printf("Gammas\n");
+    for (i=0; i<ng; i++)
+    {
+        printf("%f %f\n", gammas[i]*180.0/M_PI, gammaHist[i]);
+    }
+*/
+    printf("Betas\n");
+    for (i=0; i<nb; i++)
+    {
+        printf("%f %f\n", 90.0 - betas[i]*180.0/M_PI, betaHist[i]);
+    }
+/*
+    printf("Kappas\n");
+    for (i=0; i<nk; i++)
+    {
+        printf("%f %f\n", kappas[i]*180.0/M_PI, kappaHist[i]);
+    }
+    printf("Sigmas\n");
+    for (i=0; i<ns; i++)
+    {
+        printf("%f %f\n", sigmas[i]*180.0/M_PI, sigmaHist[i]);
+    }
+    printf("Thetas\n");
+    for (i=0; i<nt; i++)
+    {
+        printf("%f %f\n", thetas[i]*180.0/M_PI, thetaHist[i]);
+    }
+*/
+ierr = postmt_gmtHelper_writeBetaBoxes("gmtScripts/betaBox.sh", "betaBox.ps",
+                                       nb, betas, betaHist);
+ierr = postmt_gmtHelper_writeGammaBoxes("gmtScripts/gammaBox.sh", "gammaBox.ps",
+                                        ng, gammas, gammaHist);
+ierr = postmt_gmtHelper_writeKappaBoxes("gmtScripts/kappaBox.sh", "kappaBox.ps",
+                                        nk, kappas, kappaHist);
+ierr = postmt_gmtHelper_writeSigmaBoxes("gmtScripts/sigmaBox.sh", "sigmaBox.ps",
+                                        ns, sigmas, sigmaHist);
+ierr = postmt_gmtHelper_writeThetaBoxes("gmtScripts/thetaBox.sh", "thetaBox.ps",
+                                        nt, thetas, thetaHist);
+ierr = postmt_gmtHelper_writeMagnitudeBoxes("gmtScripts/magBox.sh", "magBox.ps",
+                                            nm, M0s, magHist);
+ierr = postmt_gmtHelper_writeDepthBoxes("gmtScripts/depBox.sh", "depBox.ps",
+                                        nlocs, deps, locHist);
+
     // Start the post-processing - compute the depgh magnitude mPDFs
     printf("%s: Computing the depth MPDF's\n", PROGRAM_NAME);
     depMagMPDF = memory_calloc64f(nm*nlocs);

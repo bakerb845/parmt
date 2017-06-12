@@ -544,6 +544,8 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
                                    &sacFFGrns[kndx].header);
             sacio_setIntegerHeader(SAC_INT_NZMSEC, 0,
                                    &sacFFGrns[kndx].header);
+            sacio_setBooleanHeader(SAC_BOOL_LCALDA, false,
+                                   &sacFFGrns[kndx].header);
             sacio_setFloatHeader(SAC_FLOAT_DELTA, ffGrns->dt,
                                  &sacFFGrns[kndx].header);
             sacio_setFloatHeader(SAC_FLOAT_GCARC, ffGrns->dist/111.195,

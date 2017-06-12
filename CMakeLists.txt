@@ -71,15 +71,16 @@ ADD_SUBDIRECTORY(include)
 # TODO - email carl tape and make this into its own repository
 ADD_SUBDIRECTORY(compearth)
 
-ADD_EXECUTABLE(xgrnsTeleB prepmt/grnsTeleB.c)
-ADD_EXECUTABLE(xprepTeleP prepmt/prepTeleP.c)
-ADD_EXECUTABLE(xmkgrns utils/mkgrns.c)
 ADD_EXECUTABLE(parmt src/parmt.c src/synthetic.c)
 ADD_EXECUTABLE(polarmt src/polarmt.c)
 ADD_EXECUTABLE(postmt postprocess/postmt.c)
 ADD_EXECUTABLE(mergemt src/mergemt.c)
-ADD_EXECUTABLE(utils_test utils/unit_tests.c)
-ADD_EXECUTABLE(objfn_test src/unit_tests.c)
+#ADD_EXECUTABLE(xgrnsTeleB prepmt/grnsTeleB.c)
+#ADD_EXECUTABLE(xprepTeleP prepmt/prepTeleP.c)
+##ADD_EXECUTABLE(xmkgrns utils/mkgrns.c)
+#ADD_EXECUTABLE(utils_test utils/unit_tests.c)
+#ADD_EXECUTABLE(objfn_test src/unit_tests.c)
+
 SET (SRCS_PARMT src/broadcast.c src/discretizeMT.c src/locsearch.c
                 src/magnitude.c src/mtsearch.c
                 src/polarity.c src/obssearch.c
@@ -88,7 +89,8 @@ SET (SRCS_PARMT src/broadcast.c src/discretizeMT.c src/locsearch.c
                 postprocess/beachball.c
                 postprocess/marginal.c
                 postprocess/tt2beachball.c
-                postprocess/cellSpacing.c)
+                postprocess/cellSpacing.c
+                postprocess/gmtHelper.c)
 SET (SRCS_PREPMT prepmt/commands.c
                  prepmt/event.c
                  prepmt/hudson96.c
@@ -114,15 +116,16 @@ SET(LINK_LIB_ALL ${INIPARSER_LIBRARY} ${CPS_LIBRARY} ${TTIMES_LIBRARY} ${SACIO_L
                  -Wl,--start-group ${MKL_LIBRARY} -Wl,--end-group 
                  ${IPP_LIBRARY} -lm -ldl -lpthread -lpng -lstdc++)
 
-SET_TARGET_PROPERTIES(xgrnsTeleB PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-SET_TARGET_PROPERTIES(xprepTeleP PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-SET_TARGET_PROPERTIES(xmkgrns PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+#SET_TARGET_PROPERTIES(xgrnsTeleB PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+#SET_TARGET_PROPERTIES(xprepTeleP PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+##SET_TARGET_PROPERTIES(xmkgrns PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+#SET_TARGET_PROPERTIES(utils_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_TESTING_OUTPUT_DIRECTORY})
+#SET_TARGET_PROPERTIES(objfn_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_TESTING_OUTPUT_DIRECTORY})
+
 SET_TARGET_PROPERTIES(parmt PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 SET_TARGET_PROPERTIES(postmt PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 SET_TARGET_PROPERTIES(polarmt PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 SET_TARGET_PROPERTIES(mergemt PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-SET_TARGET_PROPERTIES(utils_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_TESTING_OUTPUT_DIRECTORY})
-SET_TARGET_PROPERTIES(objfn_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_TESTING_OUTPUT_DIRECTORY})
 SET_TARGET_PROPERTIES(compearth_shared PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
 SET_TARGET_PROPERTIES(compearth_static PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
 SET_TARGET_PROPERTIES(parmt_shared PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
@@ -132,20 +135,21 @@ SET_TARGET_PROPERTIES(parmtUtils_static PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LI
 SET_TARGET_PROPERTIES(prepmt_shared PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
 #SET_TARGET_PROPERTIES(prepmt_static PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
 
-TARGET_LINK_LIBRARIES(xgrnsTeleB
-                      prepmt_shared parmt_shared parmtUtils_shared compearth_shared
-                      ${LINK_LIB_ALL} ${ISPL_LIBRARY})
-TARGET_LINK_LIBRARIES(xprepTeleP
-                      prepmt_shared parmt_shared parmtUtils_shared compearth_shared
-                      ${LINK_LIB_ALL} ${ISPL_LIBRARY})
-TARGET_LINK_LIBRARIES(xmkgrns ${LINK_LIB_ALL})
+#TARGET_LINK_LIBRARIES(xgrnsTeleB
+#                      prepmt_shared parmt_shared parmtUtils_shared compearth_shared
+#                      ${LINK_LIB_ALL} ${ISPL_LIBRARY})
+#TARGET_LINK_LIBRARIES(xprepTeleP
+#                      prepmt_shared parmt_shared parmtUtils_shared compearth_shared
+#                      ${LINK_LIB_ALL} ${ISPL_LIBRARY})
+##TARGET_LINK_LIBRARIES(xmkgrns ${LINK_LIB_ALL})
+#TARGET_LINK_LIBRARIES(utils_test parmtUtils_shared ${SACIO_LIBRARY} ${LINK_LIB_ALL})
+#TARGET_LINK_LIBRARIES(objfn_test parmt_shared parmtUtils_shared compearth_shared
+#                      ${SACIO_LIBRARY} ${LINK_LIB_ALL}
+
 TARGET_LINK_LIBRARIES(parmt parmt_shared parmtUtils_shared compearth_shared ${LINK_LIB_ALL})
 TARGET_LINK_LIBRARIES(postmt parmt_shared parmtUtils_shared compearth_shared ${LINK_LIB_ALL})
 TARGET_LINK_LIBRARIES(polarmt parmt_shared parmtUtils_shared compearth_shared ${LINK_LIB_ALL})
 TARGET_LINK_LIBRARIES(mergemt parmt_shared parmtUtils_shared compearth_shared ${LINK_LIB_ALL})
-TARGET_LINK_LIBRARIES(utils_test parmtUtils_static ${SACIO_LIBRARY} ${LINK_LIB_ALL})
-TARGET_LINK_LIBRARIES(objfn_test parmt_static parmtUtils_static compearth_static
-                      ${SACIO_LIBRARY} ${LINK_LIB_ALL})
 
 ADD_TEST(NAME utils_test 
          WORKING_DIRECTORY ${CMAKE_TESTING_OUTPUT_DIRECTORY}
