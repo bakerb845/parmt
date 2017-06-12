@@ -1,6 +1,7 @@
 #ifndef PREPMT_STRUCT_H__
 #define PREPMT_STRUCT_H__ 1
 #include <stdbool.h>
+#include <compearth.h>
 #include "sacio.h"
 //#include "preptm/prepmt_config.h"
 
