@@ -142,9 +142,9 @@ int main(int argc, char **argv)
             for (idist=0; idist<ndists; idist++)
             {
                 k = idist*ndeps + idep;
-                r[k] = precompute.dists[idist]; 
+                r[k] = precompute.dists[idist]*111.195;
                 depths[k] = precompute.depths[idep];
-                printf("%f %f\n", r[k], depths[k]);
+                printf("%f %f\n", r[k]/111.195, depths[k]);
             }
         }
         npts = precompute.npts;
@@ -327,7 +327,7 @@ return 0;
         }
         if (sac != NULL){free(sac);}
         H5Fclose(h5fl);
-printf("finishing\n");
+        printf("%s: Finishing program\n");
     }
     MPI_Barrier(MPI_COMM_WORLD);
 FINISH:;
