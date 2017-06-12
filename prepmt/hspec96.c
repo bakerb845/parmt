@@ -99,6 +99,11 @@ int main(int argc, char **argv)
     grns = NULL;
     zresp = NULL;
     modelName = NULL;
+    r = NULL;
+    depthr = NULL;
+    depths = NULL;
+    vred = NULL;
+    tshift = NULL; 
     memset(&hprepParms, 0, sizeof(struct hprep96_parms_struct));
     memset(&hspecParms, 0, sizeof(struct hspec96_parms_struct));
     memset(&hpulseParms, 0, sizeof(struct hpulse96_parms_struct));
@@ -327,7 +332,7 @@ return 0;
         }
         if (sac != NULL){free(sac);}
         H5Fclose(h5fl);
-        printf("%s: Finishing program\n");
+        printf("%s: Finishing program\n", PROGRAM_NAME);
     }
     MPI_Barrier(MPI_COMM_WORLD);
 FINISH:;
@@ -367,7 +372,7 @@ int prepmt_hspec96_initializeArchive(
     const int ndepths, const double *__restrict__ depths,
     const int ngcarcs,  const double *__restrict__ gcarcs)
 {
-    char modelName[512], depthName[512], varName[512];
+    char modelName[512], depthName[512]; //, varName[512];
     hid_t h5fl, dataSet, dataSpace, depthGroup, modelGroup;
     hsize_t dims[1];
     int idep;
@@ -622,9 +627,8 @@ int prepmt_hspec96_readHspec96Parameters(
  */
 static int parseArguments(int argc, char *argv[], char iniFile[PATH_MAX])
 {
-    bool linFile, lsection;
+    bool linFile;
     linFile = false;
-    lsection = false;
     memset(iniFile, 0, PATH_MAX*sizeof(char));
     while (true)
     {   
