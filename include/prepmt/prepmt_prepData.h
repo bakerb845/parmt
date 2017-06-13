@@ -38,6 +38,10 @@ int prepmt_prepData_verifyTeleseismicDistance(const double *dminIn,
 int prepmt_prepData_verifyRegionalDistance(const double *dminIn,
                                            const double *dmaxIn,
                                            const struct sacData_struct data);
+/* Archive utility */
+int prepmt_prepData_archiveWaveforms(const char *archiveFile,
+                                     const int nobs, 
+                                     const struct sacData_struct *data);
 /* Utilities for computing theoretical travel times. */
 int prepmt_prepData_setTheoreticalSurfaceWaveArrivalTime(
     const double vel, const bool lr,

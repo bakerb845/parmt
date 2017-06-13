@@ -222,7 +222,7 @@ int main(int argc, char **argv)
         }
     }
     // Write the results to an h5 archive
-    ierr = prepmt_telep_archiveWaveforms(archiveFile, nfiles, sacData);
+    ierr = prepmt_prepData_archiveWaveforms(archiveFile, nfiles, sacData);
     if (ierr != 0)
     {
         printf("%s: Error writing archive!\n", PROGRAM_NAME);
@@ -235,6 +235,7 @@ int main(int argc, char **argv)
     return 0;
 }
 //============================================================================//
+/*
 int prepmt_telep_archiveWaveforms(const char *archiveFile,
                                   const int nobs,
                                   const struct sacData_struct *data)
@@ -312,6 +313,7 @@ int prepmt_telep_archiveWaveforms(const char *archiveFile,
             goto ERROR;
         }
     }
+*/
 /*
  int nfilesRef;
  char **files;
@@ -321,11 +323,13 @@ for (k=0; k<nfilesRef; k++)
  printf("%s\n", files[k]);
 }
 */
+/*
 ERROR:;
     H5Gclose(groupID);
     H5Fclose(fileID);
     return ierr;
 }
+*/
 //============================================================================//
 int prepmt_telep_intermediateFileOptions(const char *iniFile,
                                         const char *section,

@@ -155,18 +155,12 @@ int main(int argc, char **argv)
             ierr = prepmt_prepData_setTheoreticalSurfaceWaveArrivalTime(
                          surfaceWaveVel, DO_RAYLEIGH_PICKS,
                          SAC_FLOAT_A, SAC_CHAR_KA, nfiles, sacData);
-/*
-            ierr = prepmt_prepData_setPrimaryPorSPickFromTheoreticalTime(
-                                                      NULL, "ak135", DO_P_PICKS,
-                                                      SAC_FLOAT_A, SAC_CHAR_KA,
-                                                      nfiles, sacData);
             if (ierr != 0)
             {
-                printf("%s: Failed to set theoretical primary picks\n",
+                printf("%s: Failed to set theoretical surface wave picks\n",
                        PROGRAM_NAME);
                 return EXIT_FAILURE;
             }
-*/
         }
         else
         {
@@ -227,9 +221,8 @@ int main(int argc, char **argv)
             sacio_writeTimeSeriesFile(fname, sacData[k]);
         }
     }
-return 0;
     // Write the results to an h5 archive
-    ierr = prepmt_telep_archiveWaveforms(archiveFile, nfiles, sacData);
+    ierr = prepmt_prepData_archiveWaveforms(archiveFile, nfiles, sacData);
     if (ierr != 0)
     {
         printf("%s: Error writing archive!\n", PROGRAM_NAME);
@@ -240,89 +233,6 @@ return 0;
     free(sacData);
     iscl_finalize();
     return 0;
-}
-//============================================================================//
-int prepmt_telep_archiveWaveforms(const char *archiveFile,
-                                  const int nobs,
-                                  const struct sacData_struct *data)
-{
-    const char *fcnm = "prepmt_telep_archiveWaveforms\0";
-    char dir[PATH_MAX];
-    char **csplit;
-    char objName[256];
-    int ierr, k, nsplit;
-    hid_t attr, dataSpace, fileID, groupID;
-    size_t lc;
-    ierr = 0;
-    // Check inputs
-    if (archiveFile == NULL)
-    {
-        printf("%s: Error archive file is NULL\n", fcnm);
-        return -1;
-    }
-    if (strlen(archiveFile) == 0)
-    {
-        printf("%s: Error archive file is blank\n", fcnm);
-        return -1;
-    }
-    // Ensure the archive directory exists
-    memset(dir, 0, PATH_MAX*sizeof(char));
-    csplit = string_rsplit("/", archiveFile, &nsplit);
-    if (nsplit > 1 && csplit != NULL)
-    {
-        // Get the directory
-        lc = strlen(archiveFile) - strlen(csplit[nsplit-1]) + 1;
-        strncpy(dir, archiveFile, lc);
-        if (!os_path_isdir(dir))
-        {
-            ierr = os_makedirs(dir);
-            if (ierr != 0)
-            {
-                printf("%s: Failed to make output dircectory: %s\n", fcnm, dir);
-                return -1;
-            }
-        }
-        for (k=0; k<nsplit; k++)
-        {
-            if (csplit[k] != NULL){free(csplit[k]);}
-        }
-        free(csplit);
-    }
-    if (os_path_isfile(archiveFile))
-    {
-        printf("%s: Clobbering file %s\n", fcnm, archiveFile);
-    } 
-    // Create a brand new file to hold the data
-    fileID = H5Fcreate(archiveFile, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-    // Write to /ObservedWaveforms directory
-    groupID = H5Gcreate2(fileID, "/ObservedWaveforms", 
-                         H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    dataSpace = H5Screate(H5S_SCALAR);
-    attr = H5Acreate(groupID, "NumberOfWaveforms", H5T_NATIVE_INT,
-                     dataSpace, H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(attr, H5T_NATIVE_INT, &nobs);
-    H5Aclose(attr);
-    H5Sclose(dataSpace);
-    // Write each waveform
-    for (k=0; k<nobs; k++)
-    {
-        memset(objName, 0, 256*sizeof(char));
-        sprintf(objName, "%s.%s.%s.%s.SAC",
-                data[k].header.knetwk,
-                data[k].header.kstnm,
-                data[k].header.kcmpnm,
-                data[k].header.khole);
-        ierr = sacioh5_writeTimeSeries2(objName, groupID, data[k]);
-        if (ierr != 0)
-        {
-            printf("%s: Error writing waveform: %d\n", fcnm, k + 1);
-            goto ERROR;
-        }
-    }
-ERROR:;
-    H5Gclose(groupID);
-    H5Fclose(fileID);
-    return ierr;
 }
 //============================================================================//
 int prepmt_telep_intermediateFileOptions(const char *iniFile,
