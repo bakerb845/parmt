@@ -788,12 +788,12 @@ static void grns2sac(const struct hwave_greens_struct grns,
         if (lsh)
         {
             sac[k].header.t1 = grns.timesh;
-            strcpy(sac[k].header.kt1, "SH\0");
+            strcpy(sac[k].header.kt0, "SH\0");
         }
         else
         {
             sac[k].header.t1 = grns.timesv;
-            strcpy(sac[k].header.kt1, "SV\0");
+            strcpy(sac[k].header.kt0, "SV\0");
         }
         sac[k].header.cmpaz = cmpaz;
         sac[k].header.cmpinc = cmpinc;
