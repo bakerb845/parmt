@@ -487,6 +487,66 @@ int prepmt_prepData_setEventInformation(const double evla,
 }
 //============================================================================//
 /*!
+ * @brief Loads the H5 archived waveforms.
+ *
+ * @param[in] archiveFile    Name of archive file.
+ * @param[out] nobs          Number of observations read.
+ * @param[out] ierr          0 indicates success.
+ *
+ * @result An array of SAC structures with the input waveforms from the
+ *         archive file's /ObservedWaveforms directory.  The array is of
+ *         dimension [nobs] and can be freed with free.
+ *
+ * @author Ben Baker
+ *
+ */
+struct sacData_struct *prepmt_prepData_readArchivedWaveforms(
+    const char *archiveFile, int *nobs, int *ierr)
+{
+    const char *fcnm = "prepmt_prepData_readArchivedWaveforms\0";
+    char **sacFiles;
+    hid_t groupID, fileID;
+    int i, nfiles;
+    struct sacData_struct *sacData;
+    *nobs = 0; 
+    sacData = NULL;
+    if (!os_path_isfile(archiveFile))
+    {
+        printf("%s: Error archive file %s doesn't exist\n", fcnm, archiveFile);
+        *ierr = 1; 
+        return sacData;
+    }    
+    fileID = H5Fopen(archiveFile, H5F_ACC_RDONLY, H5P_DEFAULT); 
+    groupID = H5Gopen2(fileID, "/ObservedWaveforms", H5P_DEFAULT);
+    sacFiles = sacioh5_getFilesInGroup(groupID, &nfiles, ierr);
+    if (*ierr != 0 || sacFiles == NULL)
+    {
+        printf("%s: Error getting names of SAC flies\n", fcnm);
+        *ierr = 1; 
+        return sacData;
+    }    
+    sacData = sacioh5_readTimeSeriesList(nfiles, (const char **) sacFiles,
+                                         groupID, nobs, ierr);
+    if (*ierr != 0)
+    {    
+        printf("%s: Errors while reading SAC files\n", fcnm);
+    }    
+    if (*nobs != nfiles)
+    {
+        printf("%s: Warning - subset of data was read\n", fcnm);
+    }
+    // Clean up and close archive file
+    for (i=0; i<nfiles; i++)
+    {
+        if (sacFiles[i] != NULL){free(sacFiles[i]);}
+    }
+    free(sacFiles);
+    H5Gclose(groupID);
+    H5Fclose(fileID);
+    return sacData;
+}
+//============================================================================//
+/*!
  * @brief Writes the metadata and processed data to an H5 archive.
  *
  * @param[in] archiveFile   Name of HDF5 archive file.

@@ -79,6 +79,7 @@ ADD_EXECUTABLE(xgrnsTeleB prepmt/grnsTeleB.c)
 ADD_EXECUTABLE(hspec96 prepmt/hspec96.c)
 ADD_EXECUTABLE(xprepTeleP prepmt/prepTeleP.c)
 ADD_EXECUTABLE(xprepRegSW prepmt/prepRegSW.c)
+ADD_EXECUTABLE(xgrnsRegSW prepmt/grnsRegSW.c)
 ##ADD_EXECUTABLE(xmkgrns utils/mkgrns.c)
 #ADD_EXECUTABLE(utils_test utils/unit_tests.c)
 #ADD_EXECUTABLE(objfn_test src/unit_tests.c)
@@ -122,6 +123,7 @@ SET_TARGET_PROPERTIES(xgrnsTeleB PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BIN
 SET_TARGET_PROPERTIES(hspec96 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 SET_TARGET_PROPERTIES(xprepTeleP PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 SET_TARGET_PROPERTIES(xprepRegSW PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+SET_TARGET_PROPERTIES(xgrnsRegSW PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 ##SET_TARGET_PROPERTIES(xmkgrns PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 #SET_TARGET_PROPERTIES(utils_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_TESTING_OUTPUT_DIRECTORY})
 #SET_TARGET_PROPERTIES(objfn_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_TESTING_OUTPUT_DIRECTORY})
@@ -149,6 +151,9 @@ TARGET_LINK_LIBRARIES(hspec96
                       prepmt_shared parmt_shared parmtUtils_shared compearth_shared
                       ${LINK_LIB_ALL} ${ISPL_LIBRARY})
 TARGET_LINK_LIBRARIES(xprepTeleP
+                      prepmt_shared parmt_shared parmtUtils_shared compearth_shared
+                      ${LINK_LIB_ALL} ${ISPL_LIBRARY})
+TARGET_LINK_LIBRARIES(xgrnsRegSW
                       prepmt_shared parmt_shared parmtUtils_shared compearth_shared
                       ${LINK_LIB_ALL} ${ISPL_LIBRARY})
 ##TARGET_LINK_LIBRARIES(xmkgrns ${LINK_LIB_ALL})

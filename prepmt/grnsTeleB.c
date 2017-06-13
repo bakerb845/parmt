@@ -131,7 +131,7 @@ int main(int argc, char **argv)
 //memset(archiveFile, 0, PATH_MAX*sizeof(char));
 //strcpy(archiveFile, "windowedPData/observedWaveforms.h5\0");
     printf("%s: Loading data...\n", PROGRAM_NAME);
-    sacData = prepmt_grnsTeleB_readData(archiveFile, &nobs, &ierr);
+    sacData = prepmt_prepData_readArchivedWaveforms(archiveFile, &nobs, &ierr);
     if (ierr != 0)
     {
         printf("%s: Error loading data\n", PROGRAM_NAME);

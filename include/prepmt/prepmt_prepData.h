@@ -42,6 +42,8 @@ int prepmt_prepData_verifyRegionalDistance(const double *dminIn,
 int prepmt_prepData_archiveWaveforms(const char *archiveFile,
                                      const int nobs, 
                                      const struct sacData_struct *data);
+struct sacData_struct *prepmt_prepData_readArchivedWaveforms(
+    const char *archiveFile, int *nobs, int *ierr);
 /* Utilities for computing theoretical travel times. */
 int prepmt_prepData_setTheoreticalSurfaceWaveArrivalTime(
     const double vel, const bool lr,
