@@ -12,7 +12,7 @@
 #include "ttimes.h"
  
 #define PROGRAM_NAME "xprepRegSW"
-#define DO_P_PICKS true
+#define DO_RAYLEIGH_PICKS true
 static void printUsage(void);
 static int parseArguments(int argc, char *argv[],
                           char iniFile[PATH_MAX], char section[256]);
@@ -25,13 +25,12 @@ int prepmt_telep_intermediateFileOptions(const char *iniFile,
 int prepmt_telep_archiveWaveforms(const char *archiveFile,
                                   const int nobs,
                                   const struct sacData_struct *data);
-int prepmt_telep_readPickModel(const char *iniFile,
+int prepmt_regsw_readPickModel(const char *iniFile,
                                const char *section,
                                bool *lsetNewPicks,
                                bool *lusePickFile,
                                char pickFile[PATH_MAX],
-                               char ttimesTableDir[PATH_MAX],
-                               char ttimesModel[128]);
+                               double *surfaceWaveVelocity);
 
 int main(int argc, char **argv)
 {
@@ -44,10 +43,11 @@ int main(int argc, char **argv)
     struct prepmtCommands_struct cmds;
     struct prepmtModifyCommands_struct options;
     struct hpulse96_parms_struct hpulse96Parms;
+    double surfaceWaveVel;
     int ierr, k, nfiles;
     bool lsetNewPicks, lusePickFile, lwriteIntermediateFiles;
-    const double dmin = PREPMT_MIN_TELESEISMIC_DIST;
-    const double dmax = PREPMT_MAX_TELESEISMIC_DIST;
+    const double dmin = PREPMT_MIN_REGIONAL_DIST;
+    const double dmax = PREPMT_MAX_REGIONAL_DIST;
     const char *hpulseSection = "hpulse96\0";
     //------------------------------------------------------------------------// 
     // Initialize
@@ -59,10 +59,10 @@ int main(int argc, char **argv)
     ierr = prepmt_event_initializeFromIniFile(iniFile, &event);
     if (ierr != 0){return EXIT_FAILURE;}
     // Load the pick model
-    ierr = prepmt_telep_readPickModel(iniFile,
+    ierr = prepmt_regsw_readPickModel(iniFile,
                                       section,
                                       &lsetNewPicks, &lusePickFile,
-                                      pickFile, ttimesTableDir, ttimesModel);
+                                      pickFile, &surfaceWaveVel);
     if (ierr != 0){return EXIT_FAILURE;}
     // Figure out some sampling period and windowing info
     memset(&options, 0, sizeof(struct prepmtModifyCommands_struct));
@@ -137,8 +137,8 @@ int main(int argc, char **argv)
     printf("%s: Verifying data ranges...\n", PROGRAM_NAME);
     for (k=0; k<nfiles; k++)
     {
-        ierr = prepmt_prepData_verifyTeleseismicDistance(&dmin, &dmax,
-                                                         sacData[k]);
+        ierr = prepmt_prepData_verifyRegionalDistance(&dmin, &dmax,
+                                                     sacData[k]);
         if (ierr != 0)
         {
             printf("%s: Cannot verify distance - skipping\n", PROGRAM_NAME);
@@ -150,7 +150,12 @@ int main(int argc, char **argv)
     {
         if (!lusePickFile)
         {
-            printf("%s: Setting theoretical P picks\n", PROGRAM_NAME);
+            printf("%s: Setting theoretical surface wave picks\n",
+                   PROGRAM_NAME);
+            ierr = prepmt_prepData_setTheoreticalSurfaceWaveArrivalTime(
+                         surfaceWaveVel, DO_RAYLEIGH_PICKS,
+                         SAC_FLOAT_A, SAC_CHAR_KA, nfiles, sacData);
+/*
             ierr = prepmt_prepData_setPrimaryPorSPickFromTheoreticalTime(
                                                       NULL, "ak135", DO_P_PICKS,
                                                       SAC_FLOAT_A, SAC_CHAR_KA,
@@ -161,6 +166,7 @@ int main(int argc, char **argv)
                        PROGRAM_NAME);
                 return EXIT_FAILURE;
             }
+*/
         }
         else
         {
@@ -221,6 +227,7 @@ int main(int argc, char **argv)
             sacio_writeTimeSeriesFile(fname, sacData[k]);
         }
     }
+return 0;
     // Write the results to an h5 archive
     ierr = prepmt_telep_archiveWaveforms(archiveFile, nfiles, sacData);
     if (ierr != 0)
@@ -312,15 +319,6 @@ int prepmt_telep_archiveWaveforms(const char *archiveFile,
             goto ERROR;
         }
     }
-/*
- int nfilesRef;
- char **files;
-files = sacioh5_getFilesInGroup(groupID, &nfilesRef, &ierr);
-for (k=0; k<nfilesRef; k++)
-{
- printf("%s\n", files[k]);
-}
-*/
 ERROR:;
     H5Gclose(groupID);
     H5Fclose(fileID);
@@ -400,25 +398,21 @@ END:;
  * @param[out] lusePickFile      If true then picks are derived from a pick
  *                               file.  This is false if lsetNewPicks is false.
  * @param[out] pickFile          If lusePickFile is true then this is the pick
- *                               file from which to set the picks.
- * @param[out] ttimesTableDir    Directory where the ttimes precomputed
- *                               models reside.  This is not defined if
- *                               lusePickFile is true.
- * @param[out] ttimesModel       Name of ttimes model (e.g., ak135 or iasp91).
- *                               This is not defined if lusePickFile is true.
+ * @param[out] surfaceWaveVel    Default surface-wave velocity for making
+ *                               theoretical arrival time estimates.
+ *
  *
  * @result 0 indicates success.
  *
  * @author Ben Baker, ISTI
  *
  */
-int prepmt_telep_readPickModel(const char *iniFile,
+int prepmt_regsw_readPickModel(const char *iniFile,
                                const char *prefix,
                                bool *lsetNewPicks,
                                bool *lusePickFile,
                                char pickFile[PATH_MAX],
-                               char ttimesTableDir[PATH_MAX],
-                               char ttimesModel[128])
+                               double *surfaceWaveVel)
 {
     const char *fcnm = "prepmt_telep_readPickModel\0";
     const char *s;
@@ -429,9 +423,8 @@ int prepmt_telep_readPickModel(const char *iniFile,
     ierr = 0;
     *lsetNewPicks = false;
     *lusePickFile = false;
+    *surfaceWaveVel = 0.9*3.2;
     memset(pickFile, 0, PATH_MAX*sizeof(char));
-    memset(ttimesModel, 0, 128*sizeof(char)); 
-    memset(ttimesTableDir, 0, PATH_MAX*sizeof(char));
 
     if (!os_path_isfile(iniFile))
     {   
@@ -464,20 +457,14 @@ int prepmt_telep_readPickModel(const char *iniFile,
     else
     {
         memset(vname, 0, 256*sizeof(char));
-        sprintf(vname, "%s:ttimesModel", prefix);
-        s = iniparser_getstring(ini, vname, TTIMES_DEFAULT_MODEL);
-        strcpy(ttimesModel, s);
-
-        memset(vname, 0, 256*sizeof(char));
-        sprintf(vname, "%s:ttimesTableDir", prefix);
-        s = iniparser_getstring(ini, vname, TTIMES_DEFAULT_TABLE_DIRECTORY);
-        if (!os_path_isdir(s))
+        sprintf(vname, "%s:surfaceWaveVel", prefix);
+        *surfaceWaveVel = iniparser_getdouble(ini, vname, 3.2*0.9);
+        if (*surfaceWaveVel <= 0.0)
         {
-            printf("%s: ttimes table directory %s doesn't exist\n", fcnm, s);
+            printf("%s: surfaceWaveVel must be positive\n", fcnm);
             ierr = 1;
             goto END;
         }
-        strcpy(ttimesTableDir, s);
     }
 END:;
     iniparser_freedict(ini);
@@ -492,7 +479,7 @@ END:;
  *
  * @param[out] iniFile  If the result is 0 then this is the ini file.
  * @param[out] section  Section of ini file to read.  The default is
- *                      prepmt:prepTeleseismicData.
+ *                      prepmt:prepSurfaceWaveData
  *
  * @result 0 indicates success. \n
  *        -1 indicates the user inquired about the usage. \n
@@ -559,7 +546,7 @@ static int parseArguments(int argc, char *argv[],
             return EXIT_FAILURE;
         }
     }
-    if (!lsection){strcpy(section, "prepmt:prepTeleseismicData\0");} 
+    if (!lsection){strcpy(section, "prepmt:prepSurfaceWaveData\0");} 
     return 0;
 }
 //============================================================================//

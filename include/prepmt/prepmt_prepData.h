@@ -35,7 +35,15 @@ int prepmt_prepData_setEventInformation(const double evla,
 int prepmt_prepData_verifyTeleseismicDistance(const double *dminIn,
                                               const double *dmaxIn,
                                               const struct sacData_struct data);
+int prepmt_prepData_verifyRegionalDistance(const double *dminIn,
+                                           const double *dmaxIn,
+                                           const struct sacData_struct data);
 /* Utilities for computing theoretical travel times. */
+int prepmt_prepData_setTheoreticalSurfaceWaveArrivalTime(
+    const double vel, const bool lr,
+    const enum sacHeader_enum pickHeaderTime,
+    const enum sacHeader_enum pickHeaderName,
+    const int nobs, struct sacData_struct *data);
 int prepmt_prepData_setPrimaryPorSPickFromTheoreticalTime(
     const char *dirnm, const char *model,
     const bool ldop,

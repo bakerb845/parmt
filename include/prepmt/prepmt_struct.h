@@ -3,10 +3,10 @@
 #include <stdbool.h>
 #include <compearth.h>
 #include "sacio.h"
-//#include "preptm/prepmt_config.h"
+#include "prepmt/prepmt_config.h"
 
-#define PREPMT_MIN_TELESEISMIC_DIST 30.0
-#define PREPMT_MAX_TELESEISMIC_DIST 95.0
+//#define PREPMT_MIN_TELESEISMIC_DIST 30.0
+//#define PREPMT_MAX_TELESEISMIC_DIST 95.0
 
 enum prepmtGreens_enum
 {

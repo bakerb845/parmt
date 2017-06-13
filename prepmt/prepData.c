@@ -71,6 +71,63 @@ int prepmt_prepData_verifyTeleseismicDistance(const double *dminIn,
     if (gcarc >= dmin && gcarc <= dmax){return 0;}
     return -1;
 }
+/*!
+ * @brief Convenience function to check if SAC data is at a valid
+ *        regional distance.
+ *
+ * @param[in] dminIn   Minimum override distance (degrees).  If NULL then
+ *                     this will be set to 1.0.  Otherwise, MAX(1, dminIn)
+ *                     will be used.
+ * @param[in] dmaxIn   Maximum override distance (degrees).  If NULL then
+ *                     this will be set to 15.0.  Otherwise, MIN(15, dmaxIn)
+ *                     will be used.
+ * @param[in] data     Data with SAC gcarc header variable defined.
+ *
+ * @result -2 An internal error occurred and the distance couldn't be
+ *            verified. \n
+ *         -1 The data is out of range. \n
+ *          0 The data is in range. 
+ *
+ * @author Ben Baker, ISTI
+ *
+ */
+int prepmt_prepData_verifyRegionalDistance(const double *dminIn,
+                                           const double *dmaxIn,
+                                           const struct sacData_struct data)
+{
+    const char *fcnm = "prepmt_prepData_verifyTeleseismicDistance\0";
+    double az, baz, dmax, dmin, dist, evla, evlo, gcarc, stla, stlo;
+    int ierr;
+    dmin = PREPMT_MIN_REGIONAL_DIST;
+    dmax = PREPMT_MAX_REGIONAL_DIST;
+    if (dminIn != NULL){dmin = fmax(*dminIn, dmin);}
+    if (dmaxIn != NULL){dmax = fmin(*dmaxIn, dmax);}
+    if (dmin > dmax)
+    {
+        log_errorF("%s: Error - dmin %f > dmax %f\n", fcnm, dmin, dmax);
+        return -2;
+    }
+    ierr = sacio_getFloatHeader(SAC_FLOAT_GCARC, data.header, &gcarc);
+    if (ierr != 0)
+    {
+        ierr = 0;
+        ierr += sacio_getFloatHeader(SAC_FLOAT_EVLA, data.header, &evla);
+        ierr += sacio_getFloatHeader(SAC_FLOAT_EVLO, data.header, &evlo);
+        ierr += sacio_getFloatHeader(SAC_FLOAT_STLA, data.header, &stla);
+        ierr += sacio_getFloatHeader(SAC_FLOAT_STLO, data.header, &stlo);
+        if (ierr != 0)
+        {
+            log_errorF("%s: Unable to compute gcarc and it isnt on header\n",
+                       fcnm);
+            return -2;
+        }
+        // Compute the azimuth, back-azimuth, distances 
+        geodetic_gps2distanceAzimuth(evla, evlo, stla, stlo,
+                                     &dist, &gcarc, &az, &baz);
+    }
+    if (gcarc >= dmin && gcarc <= dmax){return 0;}
+    return -1;
+}
 //============================================================================//
 /*!
  * @brief Reads the SAC data files and SAC pole-zero files from the
@@ -395,6 +452,12 @@ int prepmt_prepData_setEventInformation(const double evla,
             log_warnF("%s: Overwriting event great-circle dist: %f\n",
                       fcnm, var);
         }
+        ierr1 = sacio_getFloatHeader(SAC_FLOAT_DIST, data[k].header, &var);
+        if (ierr1 == 0 && fabs(var - dist) > 1.e-3)
+        {
+            log_warnF("%s: Overwriting event distance: %f\n",
+                      fcnm, var);
+        }
         ierr1 = sacio_getFloatHeader(SAC_FLOAT_AZ, data[k].header, &var);
         if (ierr1 == 0 && fabs(var - az) > 1.e-3)
         {
@@ -415,6 +478,7 @@ int prepmt_prepData_setEventInformation(const double evla,
         sacio_setFloatHeader(SAC_FLOAT_EVLO,  evlo,  &data[k].header);
         sacio_setFloatHeader(SAC_FLOAT_EVDP,  evdp,  &data[k].header);
         sacio_setFloatHeader(SAC_FLOAT_GCARC, gcarc, &data[k].header);
+        sacio_setFloatHeader(SAC_FLOAT_DIST,  dist,  &data[k].header);
         sacio_setFloatHeader(SAC_FLOAT_AZ,    az,    &data[k].header);
         sacio_setFloatHeader(SAC_FLOAT_BAZ,   baz,   &data[k].header);
         sacio_setFloatHeader(SAC_FLOAT_O,     o,     &data[k].header);
@@ -639,12 +703,13 @@ int prepmt_prepData_setPrimaryPorSPickFromTheoreticalTime(
     ierr = 0; 
     ptimes = NULL;
     memset(phaseName, 0, 8*sizeof(char));
-    phaseName[0] = 'P'; 
+    phaseName[0] = 'P';
     if (nobs < 1 || data == NULL) 
     {    
         log_errorF("%s: Error - no data\n", fcnm);
         return -1;
-    }    
+    }
+    if (!ldop){phaseName[0] = 'S';}
     // Compute the theoretical primary arrival times
     ptimes = memory_calloc64f(nobs);
     ierr = prepmt_prepData_computeTheoreticalPorSPickTimes(dirnm, model, ldop,
@@ -671,6 +736,67 @@ int prepmt_prepData_setPrimaryPorSPickFromTheoreticalTime(
     }
 ERROR:;
     memory_free64f(&ptimes);
+    return ierr;
+}
+//============================================================================//
+int prepmt_prepData_setTheoreticalSurfaceWaveArrivalTime(
+    const double vel, const bool lr,
+    const enum sacHeader_enum pickHeaderTime,
+    const enum sacHeader_enum pickHeaderName,
+    const int nobs, struct sacData_struct *data)
+{
+    const char *fcnm = "prepmt_prepData_setTheoreticalSurfaceWaveArrivalTime\0";
+    char phaseName[8];
+    double dist, epoch, o, ptime;
+    int ierr, k;
+    // Initialize and get number of observations
+    ierr = 0;
+    memset(phaseName, 0, 8*sizeof(char));
+    phaseName[0] = 'R';
+    if (nobs < 1 || data == NULL)
+    {
+        log_errorF("%s: Error - no data\n", fcnm);
+        return -1;
+    }
+    if (vel <= 0.0)
+    {
+        log_errorF("%s: Error - velocity %f must be positive\n", fcnm, vel);
+        return -1;
+    }
+    if (!lr){phaseName[0] = 'L';}
+    for (k=0; k<nobs; k++)
+    {
+        ierr = sacio_getEpochalStartTime(data[k].header, &epoch);
+        if (ierr != 0)
+        {
+            log_errorF("%s: Failed to get start time\n", fcnm);
+            return -1;
+        }
+        ierr = sacio_getFloatHeader(SAC_FLOAT_O, data[k].header, &o);
+        if (ierr != 0)
+        {
+            log_errorF("%s: Origin time not set\n", fcnm);
+            return -1;
+        }
+        ierr = sacio_getFloatHeader(SAC_FLOAT_DIST,
+                                    data[k].header, &dist);
+        if (ierr != 0)
+        {
+            log_errorF("%s: Error event distance not set\n", fcnm);
+            return -1;
+        }
+        ptime = epoch + o + dist/vel;
+        ierr = sacio_setEpochalPickOnHeader(ptime, phaseName,
+                                            pickHeaderTime,
+                                            pickHeaderName,
+                                            &data[k].header);
+        if (ierr != 0)
+        {
+            log_errorF("%s: Failed to set pick time on header\n", fcnm);
+            goto ERROR;
+        }
+    }
+ERROR:;
     return ierr;
 }
 //============================================================================//
