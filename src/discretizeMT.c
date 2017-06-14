@@ -462,7 +462,7 @@ int parmt_discretizeMT64f(const int ng,
 {
     const char *fcnm = "parmt_discretizeMT64f\0";
     double lam[3], Muse[6], U[9] __attribute__ ((aligned (64)));
-    double *mtWork, deltaDeg, gammaDeg, kappaDeg, M0, sigmaDeg, thetaDeg;
+    double *mtWork, deltaDeg, gammaDeg, kappaDeg, sigmaDeg, thetaDeg;
     int i, ierr, ierr1, ib, ig, indx, im, imt, ik, is, it, nmtBase;
     const double pi180i = 180.0/M_PI;
     const double betaMin = 0.0;
@@ -475,6 +475,7 @@ int parmt_discretizeMT64f(const int ng,
     const double thetaMax = M_PI_2;
     const double sigmaMin =-M_PI_2;
     const double sigmaMax = M_PI_2;
+    const double sqrt2i = 1.0/sqrt(2.0); // unit magnitude MT
     //------------------------------------------------------------------------//
     ierr = 0;
     // Verify the inputs
@@ -561,7 +562,7 @@ int parmt_discretizeMT64f(const int ng,
     }
     #pragma omp parallel for collapse(5) \
      firstprivate (lam, Muse, U) \
-     private (deltaDeg, gammaDeg, kappaDeg, M0, \
+     private (deltaDeg, gammaDeg, kappaDeg, \
               sigmaDeg, thetaDeg, ierr1, imt, ib, ig, ik, is, it) \
      shared (fcnm, M0s, betas, gammas, kappas, sigmas, mtWork, thetas) \
      reduction (max:ierr) \
@@ -582,7 +583,7 @@ int parmt_discretizeMT64f(const int ng,
                     for (it=0; it<nt; it++)
                     {
                         // tape**2 space term
-                        M0 = 1.0;
+                        //M0 = sqrt2i;
                         deltaDeg = (M_PI/2.0 - betas[ib])*pi180i;
                         gammaDeg = gammas[ig]*pi180i;
                         kappaDeg = kappas[ik]*pi180i;
@@ -595,7 +596,7 @@ int parmt_discretizeMT64f(const int ng,
                             + is*nt
                             + it;
                         // Compute the corresponding moment tensor
-                        ierr1 = compearth_tt2cmt(gammaDeg, deltaDeg, M0,
+                        ierr1 = compearth_tt2cmt(gammaDeg, deltaDeg, sqrt2i,
                                                  kappaDeg, thetaDeg,
                                                  sigmaDeg,
                                                  Muse, lam, U);

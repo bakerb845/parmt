@@ -2,22 +2,24 @@
 #include <stdlib.h>
 #include "compearth.h"
 /*!
- * @brief Comptues matrix (Frobenius) onrm for symmetric matrix (moment tensor)
+ * @brief Comptues matrix (Frobenius) onrm for symmetric matrix (moment tensor).
  *
- * @param[in] n       number of moment tensors
- * @param[in] M       input symmetric matrix: {M11, M22, M33, M12, M13, M23}
- *                    [n*6]
- * @param[in] Lnorm   matrix norm
- *                      TWO_NORM (2)
- *                      ONE_NORM (1)
- *                      P_NORM (in this case must set p)
- *                      INFINITY_NORM
- *                      NEGATIVE_INFINITY_NORM
- * @param[in] p       if using a p-norm this is the value for p (> 0)
+ * @param[in] n       Number of moment tensors.
+ * @param[in] M       Input symmetric matrix: {M11, M22, M33, M12, M13, M23}.
+ *                    This is an array of dimension [n x 6] with leading
+ *                    dimension 6.
+ * @param[in] Lnorm   Matrix norm: \n
+ *                      TWO_NORM (2). \n
+ *                      ONE_NORM (1). \n
+ *                      P_NORM (in this case must set p). \n
+ *                      INFINITY_NORM. \n
+ *                      NEGATIVE_INFINITY_NORM. \n
+ * @param[in] p       If using a p-norm this is the value for p (> 0).
  *
- * @param[out] mnorm  matrix norms [n].
+ * @param[out] Mnorm  Matrix norms for each moment tensor.  This is an array
+ *                    of dimension [n].
  *
- * @result 0 indicates success 
+ * @result 0 indicates success.
  *
  */
 int compearth_normMT(const int n,
