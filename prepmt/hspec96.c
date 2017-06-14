@@ -81,6 +81,10 @@ int main(int argc, char **argv)
     double *depthr, *depths, *r, *tshift, *vred, dt;
     hid_t groupID, h5fl;
     int idep, idist, ierr, k, l, myid, ndeps, ndists, nprocs, npts, nwaves;
+    // Here's the idea: I want to input magnitudes with units of N-m so:
+    // N-m -> Dyne-dm (1.e+7)
+    // CPS internally scales from Dyne-cm to cm (1.e+20)
+    // Finally, I want outputs proprotional to m (1.e-2)
     const double xmom = 1.0;     // no confusing `relative' magnitudes 
     const double xcps = 1.e-20;  // convert dyne-cm mt to output cm
     const double cm2m = 1.e-2;   // cm to meters

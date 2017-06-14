@@ -332,6 +332,10 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
           SAC_CHAR_KT0, SAC_CHAR_KT1, SAC_CHAR_KT2, SAC_CHAR_KT3,
           SAC_CHAR_KT4, SAC_CHAR_KT5, SAC_CHAR_KT6, SAC_CHAR_KT7,
           SAC_CHAR_KT8, SAC_CHAR_KT9};
+    // Here's the idea: I want to input magnitudes with units of N-m so:
+    // N-m -> Dyne-dm (1.e+7)
+    // CPS internally scales from Dyne-cm to cm (1.e+20)
+    // Finally, I want outputs proprotional to m (1.e-2)
     const double xmom = 1.0;     // no confusing `relative' magnitudes 
     const double xcps = 1.e-20;  // convert dyne-cm mt to output cm
     const double cm2m = 1.e-2;   // cm to meters
