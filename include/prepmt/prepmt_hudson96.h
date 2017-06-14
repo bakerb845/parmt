@@ -2,6 +2,7 @@
 #define PREPMT_HUDSON96_H__
 #include <cps.h>
 #include <sacio.h>
+#include "prepmt/prepmt_config.h"
 
 #ifdef __cplusplus
 extern "C"
