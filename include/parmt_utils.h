@@ -263,6 +263,18 @@ int utils_dataArchive_loadGreensFunctions(const hid_t h5fl,
                                           struct sacData_struct *sacGyz);
 //--------------------------------special header variables--------------------//
 /* Gets and sets observation weight */
+int parmt_utils_setWeightInH5(const hid_t h5fl,
+                              const char *network, const char *station,
+                              const char *channel, const char *location,
+                              const double weight);
+int parmt_utils_setPolarityWeightInH5(const hid_t h5fl,
+                                      const char *network, const char *station,
+                                      const char *channel, const char *location,
+                                      const double weight);
+int parmt_utils_setAnyWeightInH5(const hid_t h5fl, const int job,
+                                 const char *network, const char *station,
+                                 const char *channel, const char *location,
+                                 const double weight);
 double parmt_utils_getWeight(const struct sacData_struct obs,
                              const double defaultWeight,
                              bool *ldefault);
@@ -274,6 +286,10 @@ double parmt_utils_getPolarityWeight(const struct sacData_struct obs,
                                      const double defaultWeight,
                                      bool *ldefault);
 /* Gets and sets observation max lag time */
+int parmt_utils_setLagTimeInH5(const hid_t h5fl,
+                               const char *network, const char *station,
+                               const char *channel, const char *location,
+                               const double maxLagTime);
 int parmt_utils_setLagTime(const double maxLagTime,
                            struct sacData_struct *obs);
 double parmt_utils_getLagTime(const struct sacData_struct obs,

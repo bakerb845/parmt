@@ -1,9 +1,193 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
 #include "parmt_utils.h"
 #include "sacio.h"
 #include "iscl/log/log.h"
 
+#define DATA_WEIGHT_JOB 1
+#define POLARITY_WEIGHT_JOB 2
+
+/*!
+ * @brief Utility for setting data weight in H5 file.
+ *
+ * @param[in] h5fl        HDF5 data file handle.  The file must be opened with
+ *                        H5F_ACC_RDWR.
+ * @param[in] network     Network name.
+ * @param[in] station     Station name.
+ * @param[in] channel     Channel name.
+ * @param[in] location    Location name.
+ * @param[in] weight      Data weight to be set in SAC header.
+ *                        This cannot be negative.
+ *
+ * @result 0 indicates success.
+ *
+ * @author Ben Baker, ISTI
+ *
+ */
+int parmt_utils_setWeightInH5(const hid_t h5fl,
+                              const char *network, const char *station,
+                              const char *channel, const char *location,
+                              const double weight)
+{
+    const char *fcnm = "parmt_utils_setWeightInH5\0";
+    const int job = DATA_WEIGHT_JOB;
+    int ierr;
+    ierr = parmt_utils_setAnyWeightInH5(h5fl, job,
+                                        network, station, channel, location,
+                                        weight);
+    if (ierr != 0)
+    {
+        log_errorF("%s: Error setting data weight\n", fcnm);
+    }
+    return ierr;
+}
+//============================================================================//
+/*!
+ * @brief Utility for setting polarity weight in H5 file.
+ *
+ * @param[in] h5fl        HDF5 data file handle.  The file must be opened with
+ *                        H5F_ACC_RDWR.
+ * @param[in] network     Network name.
+ * @param[in] station     Station name.
+ * @param[in] channel     Channel name.
+ * @param[in] location    Location name.
+ * @param[in] weight      Polarity weight to be set in SAC header.
+ *                        This cannot be negative.
+ *
+ * @result 0 indicates success.
+ *
+ * @author Ben Baker, ISTI
+ *
+ */
+int parmt_utils_setPolarityWeightInH5(const hid_t h5fl,
+                                      const char *network, const char *station,
+                                      const char *channel, const char *location,
+                                      const double weight)
+{
+    const char *fcnm = "parmt_utils_setPolarityWeightInH5\0";
+    const int job = POLARITY_WEIGHT_JOB;
+    int ierr;
+    ierr = parmt_utils_setAnyWeightInH5(h5fl, job,
+                                        network, station, channel, location,
+                                        weight);
+    if (ierr != 0)
+    {   
+        log_errorF("%s: Error setting data weight\n", fcnm);
+    }   
+    return ierr;
+}
+//============================================================================//
+/*!
+ * @brief Utility for setting data or polarity weight in H5 file.  It is
+ *        recommended one use setDataWeightInH5 or setPolarityWeightInH5 
+ *        instead of this function.
+ *
+ * @param[in] h5fl        HDF5 data file handle.  The file must be opened with
+ *                        H5F_ACC_RDWR.
+ * @param[in] job         If job == 1 then this sets the data weight.
+ *                        If job == 2 the nthis sets the polarity weight.
+ * @param[in] network     Network name.
+ * @param[in] station     Station name.
+ * @param[in] channel     Channel name.
+ * @param[in] location    Location name.
+ * @param[in] weight      Data weight to be set in SAC header.
+ *                        This cannot be negative.
+ *
+ * @result 0 indicates success.
+ *
+ * @author Ben Baker, ISTI
+ *
+ */
+int parmt_utils_setAnyWeightInH5(const hid_t h5fl, const int job,
+                                 const char *network, const char *station,
+                                 const char *channel, const char *location,
+                                 const double weight)
+{
+    const char *fcnm = "parmt_utils_setLagTimeInH5\0";
+    const char *sacFileName = "Observation";
+    char varname[256], knetwk[8], kstnm[8], kcmpnm[8], khole[8];
+    bool lupd;
+    struct sacData_struct sac;
+    hid_t obsGroup;
+    int ierr, ifound, iobs, nobs;
+    if (weight < 0.0)
+    {
+        log_errorF("%s: Error weight cannot be negative\n", fcnm);
+        return -1;
+    }
+    if (job < 1 || job > 2)
+    {
+        log_errorF("%s: job must be 1 or 2\n", fcnm);
+        return -1;
+    }
+    // Get number of objects in group
+    nobs = utils_dataArchive_getNumberOfObservations(h5fl);
+    if (nobs <= 0)
+    {   
+        log_errorF("%s: No observations\n", fcnm);
+        return -1; 
+    }   
+    lupd = false;
+    memset(&sac, 0, sizeof(struct sacData_struct));
+    // Loop on observations
+    for (iobs=0; iobs<nobs; iobs++)
+    {
+        // Open the group
+        sprintf(varname, "/Observations/Observation_%d", iobs);
+        obsGroup = H5Gopen(h5fl, "Observations", H5P_DEFAULT);
+        // Load the SAC file
+        ierr = sacioh5_readTimeSeries2("Observation\0", obsGroup, &sac);
+        if (ierr != 0)
+        {
+            log_errorF("%s: Error loading time series for obs %d\n",
+                       fcnm, iobs+1);
+        }
+        // Check if this station matches
+        ifound = 0;
+        sacio_getCharacterHeader(SAC_CHAR_KNETWK, sac.header, knetwk);
+        if (strcasecmp(network, knetwk) == 0){ifound = ifound + 1;}
+        sacio_getCharacterHeader(SAC_CHAR_KSTNM,  sac.header, kstnm);
+        if (strcasecmp(station, kstnm) == 0){ifound = ifound + 1;}
+        sacio_getCharacterHeader(SAC_CHAR_KCMPNM, sac.header, kcmpnm);
+        if (strcasecmp(channel, kcmpnm) == 0){ifound = ifound + 1;}
+        sacio_getCharacterHeader(SAC_CHAR_KHOLE, sac.header, khole);
+        if (strcasecmp(location, khole) == 0){ifound = ifound + 1;}
+        if (ifound == 4)
+        {
+            if (job == 1)
+            {
+                ierr = parmt_utils_setWeight(weight, &sac);
+            }
+            else
+            {
+                ierr = parmt_utils_setPolarityWeight(weight, &sac);
+            }
+            if (ierr != 0)
+            {
+                printf("%s: Failed to set weight for job %d\n", fcnm, job);
+            }
+            else
+            {
+                sacioh5_writeTimeSeries2("Observation\0", obsGroup, sac);
+            }
+            lupd = true;
+        }
+        sacio_free(&sac);
+        H5Gclose(obsGroup);
+        if (ierr != 0){return -1;}
+        if (lupd){break;}
+    }
+    if (!lupd)
+    {
+        log_errorF("%s: Couldn't find %s.%s.%s.%s in archive\n",
+                   network, station, channel, location);
+        return -1;
+    }
+    return 0;
+}
+//============================================================================//
 /*!
  * @brief Sets the weight for this observation.
  *
@@ -32,6 +216,7 @@ int parmt_utils_setWeight(const double weight,
     sacio_setFloatHeader(SAC_WEIGHT_HDR, weight, &obs->header);
     return 0;
 }
+//============================================================================//
 /*!
  * @brief Sets the weight for this observation.
  *

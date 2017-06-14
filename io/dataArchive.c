@@ -636,7 +636,7 @@ int utils_dataArchive_addObservation(const hid_t h5fl,
     sprintf(varname, "/Observations/Observation_%d", iobs);
     groupID = H5Gcreate2(h5fl, varname,
                          H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    ierr = sacioh5_writeTimeSeries2("Observation", groupID, obs);
+    ierr = sacioh5_writeTimeSeries2("Observation\0", groupID, obs);
     if (ierr != 0){printf("Failed to write observation\n");}
     H5Gclose(groupID);
     return ierr;
