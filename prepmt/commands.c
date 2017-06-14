@@ -120,6 +120,7 @@ struct prepmtCommands_struct
     {
         memset(vname, 0, 256*sizeof(char));
         sprintf(vname, "%s:processingList", section);
+        s = iniparser_getstring(ini, vname, NULL);
         if (!os_path_isfile(s))
         {
             printf("%s: Processing list file %s does not exist\n", fcnm, s);

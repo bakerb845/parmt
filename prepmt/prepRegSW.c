@@ -37,7 +37,7 @@ int main(int argc, char **argv)
     char **sacFiles, **sacpzFiles;
     char iniFile[PATH_MAX], pickFile[PATH_MAX], wfDir[PATH_MAX],
          ttimesTableDir[PATH_MAX], fname[PATH_MAX], archiveFile[PATH_MAX],
-         section[256], ttimesModel[128], wfSuffix[128];
+         section[256], wfSuffix[128];
     struct prepmtEventParms_struct event;
     struct sacData_struct *sacData;
     struct prepmtCommands_struct cmds;

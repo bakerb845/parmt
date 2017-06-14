@@ -208,7 +208,7 @@ int postmt_gmtHelper_writeThetaBoxes(const char *outputScript,
                                      const double *__restrict__ thetaHist)
 {
     FILE *ofl;
-    double *cumTheta, *h, dt, hAvg, thetaAvg, tmax;
+    double *cumTheta, *h, hAvg, thetaAvg, tmax;
     int i, ierr;
     const bool lwritePrior = true;
     tmax = array_max64f(nt, thetaHist);
@@ -284,13 +284,12 @@ int postmt_gmtHelper_writeSigmaBoxes(const char *outputScript,
                                      const double *__restrict__ sigmaHist)
 {
     FILE *ofl;
-    double *cumSigma, ds, sigmaAvg, smax;
+    double *cumSigma, ds, smax;
     int i, ierr;
     const bool lwritePrior = true;
     smax = array_max64f(ns, sigmaHist);
     // Take averages
     ds = 0.0;
-    sigmaAvg = 0.0;
     ofl = fopen(outputScript, "w");
     fprintf(ofl, "#!/bin/bash\n");
     fprintf(ofl, "psfl=%s\n", psFile);
@@ -358,13 +357,12 @@ int postmt_gmtHelper_writeKappaBoxes(const char *outputScript,
                                      const double *__restrict__ kappaHist)
 {
     FILE *ofl;
-    double *cumKappa, dk, kappaAvg, kmax;
+    double *cumKappa, dk, kmax;
     int i, ierr;
     const bool lwritePrior = true;
     kmax = array_max64f(nk, kappaHist);
     // Take averages
     dk = 0.0;
-    kappaAvg = 0.0;
     ofl = fopen(outputScript, "w");
     fprintf(ofl, "#!/bin/bash\n");
     fprintf(ofl, "psfl=%s\n", psFile);
@@ -810,14 +808,12 @@ int postmt_gmtHelper_makeRegularHistograms(
 static void getBaseAndExp(const double val, double *base, int *exp)
 {
     char cval[64], cexp[64], temp[64];
-    size_t lenos;
     int i, k, l;
     bool lp1;
     memset(cval, 0, 64*sizeof(char));
     memset(cexp, 0, 64*sizeof(char));
     memset(temp, 0, 64*sizeof(char));
     sprintf(temp, "%04.2e", val);
-    lenos = strlen(temp);
     lp1 = true;
     k = 0;
     l = 0;

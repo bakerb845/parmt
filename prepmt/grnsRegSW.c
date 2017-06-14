@@ -746,8 +746,8 @@ int prepmt_grnsRegSW_loadFFGreensTable(const char *grnsfl, const char *model,
     }
     memset(cdepths, 0, 512*sizeof(char));
     memset(cdists, 0, 512*sizeof(char));
-    sprintf(cdepths, "/%s/Depths\0", model);
-    sprintf(cdists, "/%s/Distances\0", model);
+    sprintf(cdepths, "/%s/Depths", model);
+    sprintf(cdists, "/%s/Distances", model);
     if (!H5Lexists(fid, cdepths, H5P_DEFAULT))
     {
         printf("%s: Depths does not exist\n", fcnm);

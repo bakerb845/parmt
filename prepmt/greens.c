@@ -839,7 +839,7 @@ int prepmt_greens_cutHudson96FromData(const int nobs,
     double cut0, dt, epoch, epochData;
     int i, ierr, idep, indx, iobs, it, npts;
     const int ncmds = 2;
-    const char *cmds[2] = {"cut\0", "demean\0"};
+    //const char *cmds[2] = {"cut\0", "demean\0"};
     struct prepmtCommands_struct prepMTcmds;
     newCmds = (char **) calloc(2, sizeof(char *));
     for (i=0; i<2; i++)

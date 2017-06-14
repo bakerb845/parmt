@@ -222,7 +222,6 @@ int parmt_utils_readMtSearch(const char *iniFile,
                              struct parmtMtSearchParms_struct *parms)
 {
     const char *fcnm = "parmt_utils_readMtSearch\0";
-    const char *s; 
     double betaLower, betaUpper, mw;
     int ierr;
     dictionary *ini;
