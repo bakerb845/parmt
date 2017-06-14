@@ -4,16 +4,17 @@
 #include "compearth.h"
 
 /*!
- * @brief Converts from scalar seismic moment to moment magnitude
+ * @brief Converts from scalar seismic moment to moment magnitude.
  *
- * @param[in] nm      number of scalar moments.
+ * @param[in] nm      Number of scalar moments.
  * @param[in] imag    KANAMORI_1978 (1) for Kanaomori 1977/1978 formula.
  *                    HARVARD_CMT (2) for GCMT formula.
- * @param[in] M0      scalar moments in N-m (not dyne-cm) [nm]
+ * @param[in] M0      Scalar moments in N-m (not dyne-cm).  This is an array
+ *                    of dimension [nm].
  *
- * @param[out] Mw     moment magnitudes [nm]
+ * @param[out] Mw     Moment magnitudes.  This is an arrya of dimension [nm].
  *
- * @result 0 indicates success
+ * @result 0 indicates success.
  *
  * @author Carl Tape (31-Oct-2007) and translated to C by Ben Baker (2017) 
  *
