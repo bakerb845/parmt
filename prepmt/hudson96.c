@@ -3,6 +3,11 @@
 #include <string.h>
 #include <iniparser.h>
 #include "prepmt/prepmt_hudson96.h"
+#ifdef PARMT_USE_INTEL
+#include <mkl_cblas.h>
+#else
+#include <cblas.h>
+#endif
 #include "cps.h"
 #include "iscl/array/array.h"
 #include "iscl/fft/fft.h"
@@ -327,6 +332,13 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
           SAC_CHAR_KT0, SAC_CHAR_KT1, SAC_CHAR_KT2, SAC_CHAR_KT3,
           SAC_CHAR_KT4, SAC_CHAR_KT5, SAC_CHAR_KT6, SAC_CHAR_KT7,
           SAC_CHAR_KT8, SAC_CHAR_KT9};
+    const double xmom = 1.0;     // no confusing `relative' magnitudes 
+    const double xcps = 1.e-20;  // convert dyne-cm mt to output cm
+    const double cm2m = 1.e-2;   // cm to meters
+    const double dcm2nm = 1.e+7; // magnitudes intended to be specified in
+                                 // Dyne-cm but I work in N-m
+    // Given a M0 in Newton-meters get a seismogram in meters
+    const double xscal = xmom*xcps*cm2m*dcm2nm;
     const char *cfaults[10] = {"ZDS\0", "ZSS\0", "ZDD", "ZEX\0",
                                "RDS\0", "RSS\0", "RDD", "REX\0",
                                "TDS\0", "TSS\0"};
@@ -606,6 +618,8 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
             {
                 array_set64f_work(ffGrns->npts, 0.0, sacFFGrns[kndx].data);
             }
+            // Handle scaling
+            cblas_dscal(sacFFGrns[kndx].npts, xscal, sacFFGrns[kndx].data, 1);
             dptr = NULL;
         }
 NEXT_OBS:;

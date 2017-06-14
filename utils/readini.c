@@ -64,9 +64,13 @@ int parmt_utils_readGeneralParms(const char *iniFile,
     s = iniparser_getstring(ini, "general:parmtArchive\0", NULL);
     if (s == NULL)
     {
- printf("not done yet\n");
+        //printf("no default archive file yet - not done yet\n");
+        strcpy(parms->parmtArchive, "parmtOutput.h5");
     } 
-    strcpy(parms->parmtArchive, s);
+    else
+    {
+        strcpy(parms->parmtArchive, s);
+    }
     dirName = os_dirname(parms->parmtArchive);
     if (!os_path_isdir(dirName))
     {   
@@ -82,9 +86,13 @@ int parmt_utils_readGeneralParms(const char *iniFile,
     s = iniparser_getstring(ini, "general:polarmtArchive\0", NULL);
     if (s == NULL)
     {
-printf("not done yet\n");
+        printf("no polarmt file not done yet\n");
+        strcpy(parms->polarmtArchive, "polarmtOutput.h5");
     }
-    strcpy(parms->polarmtArchive, s);
+    else
+    {
+        strcpy(parms->polarmtArchive, s);
+    }
     dirName = os_dirname(parms->polarmtArchive);
     if (!os_path_isdir(dirName))
     {

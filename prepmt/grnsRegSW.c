@@ -23,8 +23,13 @@ struct ffGreensTable_struct
 int prepmt_grnsRegSW_readParameters(const char *iniFile, const char *section,
                                     char archiveFile[PATH_MAX],
                                     char hspecFile[PATH_MAX],
+                                    char parmtDataFile[PATH_MAX],
                                     char modelName[64],
                                     double *surfaceWaveVel,
+                                    bool *lalignXC,
+                                    bool *luseEnvelope,
+                                    bool *lnormalizeXC,
+                                    double *maxXCtimeLag,
                                     int *ndepth, double **depths);
 
 static int parseArguments(int argc, char *argv[],
@@ -46,13 +51,16 @@ int prepmt_grnsRegSW_getDepthIndex(
 int main(int argc, char **argv)
 {
     char iniFile[PATH_MAX], archiveFile[PATH_MAX],
-         hspecFile[PATH_MAX], section[256], modelName[64];
+         hspecFile[PATH_MAX], parmtDataFile[PATH_MAX],
+         section[256], modelName[64];
     struct sacData_struct *ffGrns, *grns, *sacData;
+    struct prepmtEventParms_struct event;
     struct prepmtCommands_struct cmds;
     struct prepmtModifyCommands_struct options;
     struct ffGreensTable_struct ffGrnsTable;
-    double *depths, gcarc, surfaceWaveVel, ptime, o;
-    int ierr, id, indx, k, kndx, iobs, jdep, jdist, ndepths, nobs;
+    double *depths, gcarc, maxXCtimeLag, surfaceWaveVel, ptime, o;
+    int ierr, id, indx, k, kndx, iobs, jdep, jdist, ndepth, nobs;
+    bool lalignXC, luseEnvelope, lnormalizeXC;
     struct hpulse96_parms_struct hpulse96Parms;
     const char *hpulseSection = "hpulse96\0";
     //------------------------------------------------------------------------//
@@ -65,11 +73,21 @@ int main(int argc, char **argv)
         if (ierr ==-2){return EXIT_FAILURE;}
         return EXIT_SUCCESS;
     }
+    // Load the event
+    ierr = prepmt_event_initializeFromIniFile(iniFile, &event);
+    if (ierr != 0)
+    {
+        printf("%s: Error reading event info\n", PROGRAM_NAME);
+        return EXIT_FAILURE;
+    }
     // Read the program basics
     ierr = prepmt_grnsRegSW_readParameters(iniFile, section,
-                                           archiveFile, hspecFile, modelName,
+                                           archiveFile, hspecFile,
+                                           parmtDataFile, modelName,
                                            &surfaceWaveVel,
-                                           &ndepths, &depths);
+                                           &lalignXC, &luseEnvelope,
+                                           &lnormalizeXC, &maxXCtimeLag,
+                                           &ndepth, &depths);
     if (ierr != 0)
     {
         printf("%s: Failed to read ini file\n", PROGRAM_NAME);
@@ -123,7 +141,7 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
     ffGrns = (struct sacData_struct *)
-             calloc( (size_t) (nobs*ndepths*10), sizeof(struct sacData_struct));
+             calloc( (size_t) (nobs*ndepth*10), sizeof(struct sacData_struct));
     for (iobs=0; iobs<nobs; iobs++)
     {
         ierr = sacio_getFloatHeader(SAC_FLOAT_GCARC,
@@ -134,10 +152,10 @@ int main(int argc, char **argv)
             return EXIT_FAILURE;
         }
         jdist = prepmt_grnsRegSW_getDistanceIndex(gcarc, ffGrnsTable);
-        for (id=0; id<ndepths; id++)
+        for (id=0; id<ndepth; id++)
         {
             indx = prepmt_hudson96_observationDepthTstarToIndex(
-                       ndepths, 1, iobs, id, 0);
+                       ndepth, 1, iobs, id, 0);
             kndx = indx*10;                                              
             jdep = prepmt_grnsRegSW_getDepthIndex(depths[id], ffGrnsTable);
             //printf("%d %d %d %d\n", jdist, jdep, indx, kndx);
@@ -182,16 +200,16 @@ int main(int argc, char **argv)
     }
     printf("%s: Contextualizing Green's functions...\n", PROGRAM_NAME);
     grns = (struct sacData_struct *)
-           calloc((size_t) (6*ndepths*nobs),
+           calloc((size_t) (6*ndepth*nobs),
                   sizeof(struct sacData_struct));
     ierr = prepmt_greens_ffGreensToGreens(nobs, sacData,
-                                          ndepths, 1, ffGrns, grns);
+                                          ndepth, 1, ffGrns, grns);
     if (ierr != 0)
     {
         printf("%s: Error contextualizing Greens functions\n", PROGRAM_NAME);
         return EXIT_FAILURE;
     }
-    for (k=0; k<10*nobs*ndepths; k++)
+    for (k=0; k<10*nobs*ndepth; k++)
     {
         sacio_free(&ffGrns[k]);
     }
@@ -201,7 +219,7 @@ int main(int argc, char **argv)
            PROGRAM_NAME);
     for (k=0; k<cmds.nobs; k++)
     {
-        kndx = k*ndepths*6;
+        kndx = k*ndepth*6;
         options.targetDt = sacData[k].header.delta;
         if (fabs(sacData[k].header.delta - grns[kndx].header.delta) > 1.e-5)
         {
@@ -218,7 +236,7 @@ int main(int argc, char **argv)
         }
     }
     printf("%s: Processing Green's functions...\n", PROGRAM_NAME);
-    ierr = prepmt_greens_processHudson96Greens(nobs, 1, ndepths,
+    ierr = prepmt_greens_processHudson96Greens(nobs, 1, ndepth,
                                                cmds, grns);
     if (ierr != 0)
     {
@@ -226,16 +244,60 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
     // Align with cross-correlation
-
-    // And cut them
-
-sacio_writeTimeSeriesFile("test_gxx.sac", grns[3*ndepths*6+6]); 
-sacio_writeTimeSeriesFile("test_gyy.sac", grns[3*ndepths*6+7]);
-sacio_writeTimeSeriesFile("test_gzz.sac", grns[3*ndepths*6+8]);
-sacio_writeTimeSeriesFile("test_gxy.sac", grns[3*ndepths*6+9]);
-sacio_writeTimeSeriesFile("test_gxz.sac", grns[3*ndepths*6+10]);
-sacio_writeTimeSeriesFile("test_gyz.sac", grns[3*ndepths*6+11]);
- 
+    if (lalignXC)
+    {
+        printf("%s: Refining waveform alignment with cross-correlation\n",
+               PROGRAM_NAME);
+        for (iobs=0; iobs<nobs; iobs++)
+        {
+            for (k=0; k<ndepth; k++)
+            {
+                kndx = iobs*ndepth*6 + k*6;
+                ierr = prepmt_greens_xcAlignGreensToData(sacData[iobs],
+                                                         luseEnvelope,
+                                                         lnormalizeXC,
+                                                         maxXCtimeLag,
+                                                         &grns[kndx]);
+                if (ierr != 0)
+                {
+                    printf("%s: Error aligning with XC\n", PROGRAM_NAME);
+                    return EXIT_FAILURE;
+                }
+            }
+        }
+    }
+    // Trim
+    printf("%s: Windowing Green's functions to data\n", PROGRAM_NAME);
+    ierr = prepmt_greens_cutHudson96FromData(nobs, sacData,
+                                             ndepth, 1, grns);
+    if (ierr != 0)
+    {
+        printf("%s: Error trimming Green's functions\n", PROGRAM_NAME);
+        return EXIT_FAILURE;
+    }
+/*
+sacio_writeTimeSeriesFile("test_gxx.sac", grns[0*ndepth*6+6]); 
+sacio_writeTimeSeriesFile("test_gyy.sac", grns[0*ndepth*6+7]);
+sacio_writeTimeSeriesFile("test_gzz.sac", grns[0*ndepth*6+8]);
+sacio_writeTimeSeriesFile("test_gxy.sac", grns[0*ndepth*6+9]);
+sacio_writeTimeSeriesFile("test_gxz.sac", grns[0*ndepth*6+10]);
+sacio_writeTimeSeriesFile("test_gyz.sac", grns[0*ndepth*6+11]);
+*/
+    printf("%s: Writing archive: %s\n", PROGRAM_NAME, parmtDataFile);
+    ierr = prepmt_greens_writeArchive(parmtDataFile,
+                                      nobs, ndepth,
+                                      event.latitude, event.longitude,
+                                      depths, sacData, grns);
+    if (ierr != 0)
+    {
+        printf("%s: Failed to write archive\n", PROGRAM_NAME);
+        return EXIT_FAILURE;
+    }
+    // Clean up
+    for (k=0; k<6*ndepth*nobs; k++){sacio_freeData(&grns[k]);}
+    free(grns);
+    for (k=0; k<nobs; k++){sacio_freeData(&sacData[k]);}
+    free(sacData); 
     prepmt_grnsRegSW_freeFFGreensTable(&ffGrnsTable);
     memory_free64f(&depths);
     iscl_finalize();
@@ -245,21 +307,32 @@ sacio_writeTimeSeriesFile("test_gyz.sac", grns[3*ndepths*6+11]);
 int prepmt_grnsRegSW_readParameters(const char *iniFile, const char *section,
                                     char archiveFile[PATH_MAX],
                                     char hspecFile[PATH_MAX],
+                                    char parmtDataFile[PATH_MAX],
                                     char modelName[64],
                                     double *surfaceWaveVel,
+                                    bool *lalignXC,
+                                    bool *luseEnvelope,
+                                    bool *lnormalizeXC,
+                                    double *maxXCtimeLag,
                                     int *ndepth, double **depths)
 {
     const char *fcnm = "prepmt_grnsRegSW_readParameters\0";
     char vname[256];
     const char *s;
+    char *dirName;
     double *deps, dmax, dmin;
     int ierr;
 
     deps = NULL; 
+    *luseEnvelope = false;
+    *lalignXC = false;
+    *lnormalizeXC = false;
+    *maxXCtimeLag =-1.0;
     *ndepth = 0;
     memset(archiveFile, 0, PATH_MAX*sizeof(char));
     memset(hspecFile, 0, PATH_MAX*sizeof(char));
     memset(modelName, 0, 64*sizeof(char));
+    memset(parmtDataFile, 0, PATH_MAX*sizeof(char));
 
     dictionary *ini;
     if (!os_path_isfile(iniFile))
@@ -279,6 +352,24 @@ int prepmt_grnsRegSW_readParameters(const char *iniFile, const char *section,
         goto ERROR;
     }
     strcpy(archiveFile, s);
+
+    memset(vname, 0, 256*sizeof(char));
+    sprintf(vname, "%s:parmtDataFile", section);
+    s = iniparser_getstring(ini, vname, "bodyWave.h5"); 
+    strcpy(parmtDataFile, s);
+
+    dirName = os_dirname(parmtDataFile);
+    if (!os_path_isdir(dirName))
+    {    
+        ierr = os_makedirs(dirName);
+        if (ierr != 0)
+        {
+            printf("%s: Failed to make directory: %s\n", fcnm, dirName);
+            goto ERROR;
+        }
+    }    
+    if (dirName != NULL){free(dirName);}
+
 
     memset(vname, 0, 256*sizeof(char));
     sprintf(vname, "%s:hspecArchiveFile", section);
@@ -338,6 +429,22 @@ int prepmt_grnsRegSW_readParameters(const char *iniFile, const char *section,
         goto ERROR;
     }    
     deps = array_linspace64f(dmin, dmax, *ndepth, &ierr);
+
+    memset(vname, 0, 256*sizeof(char));
+    sprintf(vname, "%s:lalignXC", section);
+    *lalignXC = iniparser_getboolean(ini, vname, false);
+
+    memset(vname, 0, 256*sizeof(char));
+    sprintf(vname, "%s:luseEnvelope", section);
+    *luseEnvelope = iniparser_getboolean(ini, vname, false);
+
+    memset(vname, 0, 256*sizeof(char));
+    sprintf(vname, "%s:lnormalizeXC", section);
+    *lnormalizeXC = iniparser_getboolean(ini, vname, false);
+
+    memset(vname, 0, 256*sizeof(char));
+    sprintf(vname, "%s:maxXCtimeLag", section);
+    *maxXCtimeLag = iniparser_getdouble(ini, vname, -1.0);
 
 ERROR:;
     *depths = deps; 

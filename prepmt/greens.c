@@ -69,6 +69,7 @@ int prepmt_greens_ffGreensToGreens(const int nobs,
     int indices[6], i, icomp, id, ierr, idx, iobs, it, kndx, l, npts;
     const char *kcmpnms[6] = {"GXX\0", "GYY\0", "GZZ\0",
                               "GXY\0", "GXZ\0", "GYZ\0"};
+/*
     const double xmom = 1.0;     // no confusing `relative' magnitudes 
     const double xcps = 1.e-20;  // convert dyne-cm mt to output cm
     const double cm2m = 1.e-2;   // cm to meters
@@ -76,6 +77,7 @@ int prepmt_greens_ffGreensToGreens(const int nobs,
                                  // Dyne-cm but I work in N-m
     // Given a M0 in Newton-meters get a seismogram in meters
     const double xscal = xmom*xcps*cm2m*dcm2nm;
+*/
     const int nTimeVars = 11; 
     const enum sacHeader_enum pickVars[11]
        = {SAC_FLOAT_A,
@@ -258,12 +260,15 @@ int prepmt_greens_ffGreensToGreens(const int nobs,
                     log_errorF("%s: Failed to rotate Greens functions\n", fcnm);
                 }
                 // Fix the characteristic magnitude scaling in CPS 
+                // N.B. this is done early now
+                /*
                 for (i=0; i<6; i++)
                 {
                     cblas_dscal(npts, xscal, grns[indices[i]].data, 1); 
                     //printf("%d %d %e\n", kndx, indices[i],
                     //          array_max64f(npts,grns[indices[i]].data));
                 }
+                */
             }
         }
     }
@@ -831,11 +836,18 @@ int prepmt_greens_cutHudson96FromData(const int nobs,
     const char *fcnm = "prepmt_greens_cutHudson96FromData\0";
     char **newCmds;
     struct prepmtModifyCommands_struct options;
-    double cut0, dt, epoch;
+    double cut0, dt, epoch, epochData;
     int i, ierr, idep, indx, iobs, it, npts;
     const int ncmds = 2;
     const char *cmds[2] = {"cut\0", "demean\0"};
     struct prepmtCommands_struct prepMTcmds;
+    newCmds = (char **) calloc(2, sizeof(char *));
+    for (i=0; i<2; i++)
+    {
+        newCmds[i] = (char *) calloc(MAX_CMD_LEN, sizeof(char));
+    }
+    strcpy(newCmds[1], "demean\0");
+
     prepMTcmds.cmds = (struct prepmtCommandsChars_struct *)
                       calloc(1, sizeof(struct prepmtCommandsChars_struct)); 
     prepMTcmds.cmds[0].ncmds = ncmds;
@@ -849,6 +861,7 @@ int prepmt_greens_cutHudson96FromData(const int nobs,
             log_errorF("%s: Error getting start time\n", fcnm);
             break;
         }
+        epochData = epoch;
         sacio_getFloatHeader(SAC_FLOAT_DELTA, data[iobs].header, &dt);
         sacio_getIntegerHeader(SAC_INT_NPTS, data[iobs].header, &npts); 
         cut0 = epoch;
@@ -868,22 +881,41 @@ int prepmt_greens_cutHudson96FromData(const int nobs,
                 }
                 options.cut0 = fmax(0.0, cut0 - epoch);
                 options.cut1 = options.cut0 + dt*(double) (npts - 1);
+/*
                 newCmds = prepmt_commands_modifyCommands(ncmds, cmds,
                                                          options, grns[indx],
                                                          &ierr);
+*/
+                ierr = cut_cutEpochalTimesToString(grns[indx].header.delta,
+                                                   0.0,
+                                                   options.cut0,
+                                                   options.cut1,
+                                                   newCmds[0]);
+                //strcpy(newCmds[1], "demean");
+                //printf("%s %f\n", newCmds[0], grns[indx].header.delta);
                 prepMTcmds.cmds[0].cmds = newCmds;
                 ierr = prepmt_greens_processHudson96Greens(1, 1, 1,
                                                            prepMTcmds,
                                                            &grns[indx]);
+                // Enforce the epochal time
+                for (i=0; i<6; i++)
+                {
+                    sacio_setEpochalStartTime(epochData, &grns[indx+i].header);
+                }
 //printf("%d %e\n", indx, array_max64f(grns[indx].npts, grns[indx].data));
                 for (i=0; i<ncmds; i++)
                 {
-                    free(newCmds[i]);
+               //     free(newCmds[i]);
                 }
-                free(newCmds);
+                //free(newCmds);
             }
         }
     } 
+    for (i=0; i<2; i++)
+    {
+        free(newCmds[i]);
+    }
+    free(newCmds[i]);
     free(prepMTcmds.cmds);
     return 0; 
 }
@@ -942,8 +974,9 @@ int prepmt_greens_xcAlignGreensToData(const struct sacData_struct data,
                                       struct sacData_struct *grns)
 {
     const char *fcnm = "prepmt_greens_xcAlignGreensToData\0";
-    double *Gxx, *Gyy, *Gzz, *Gxy, *Gxz, *Gyz, *xc, dt, dtGrns;
-    int ierr, lxc, maxShift, npts, npgrns;
+    double *dataPad, *Gxx, *Gyy, *Gzz, *Gxy, *Gxz, *Gyz, *xc,
+           dt, dtGrns, epochData, epochGrns;
+    int ierr, insertData, lxc, maxShift, npadData, npts, npgrns;
     ierr = 0;
     sacio_getIntegerHeader(SAC_INT_NPTS, data.header, &npts);
     sacio_getIntegerHeader(SAC_INT_NPTS, grns[0].header, &npgrns);
@@ -963,7 +996,32 @@ int prepmt_greens_xcAlignGreensToData(const struct sacData_struct data,
             printf("%s: dt is inconsistent\n", fcnm);
         }
         return -1;
-    } 
+    }
+    // Need a common reference - choose the start time
+    ierr = sacio_getEpochalStartTime(data.header,    &epochData);
+    if (ierr != 0)
+    {
+        printf("%s; Error getting data start time\n", fcnm);
+        return -1;
+    }
+    ierr = sacio_getEpochalStartTime(grns[0].header, &epochGrns);
+    if (ierr != 0)
+    {
+        printf("%s: Error getting grns start time\n", fcnm);
+        return -1;
+    }
+    if (epochData < epochGrns)
+    {
+        printf("%s: epochData < epochGrns not programmed\n", fcnm);
+        return -1;
+    }
+    // Insert the data in a epochal time aligned array
+    insertData = (int) ((epochData - epochGrns)/dt + 0.5);
+    npadData = insertData + npts;
+    //printf("%d %d\n", insertData, npts);
+    dataPad = memory_calloc64f(npadData);
+    array_copy64f_work(npts, data.data, &dataPad[insertData]);
+    // Create pointers to Green's functions 
     Gxx = grns[0].data;
     Gyy = grns[1].data;
     Gzz = grns[2].data;
@@ -975,15 +1033,16 @@ int prepmt_greens_xcAlignGreensToData(const struct sacData_struct data,
     if (maxTimeLag >= 0.0){maxShift = (int) (maxTimeLag/dt + 0.5);}
 //printf("%d %f %f\n", maxShift, maxTimeLag/dt, maxTimeLag);
     // Align
-    lxc = npts + npgrns - 1;
+    lxc = npadData + npgrns - 1; //npts + npgrns - 1;
     xc = memory_calloc64f(lxc);
-    ierr = prepmt_greens_xcAlignGreensToData_work(npts, data.data,
+    ierr = prepmt_greens_xcAlignGreensToData_work(npadData, dataPad, //data.data,
                                                   npgrns, luseEnvelope, lnorm,
                                                   maxShift,
                                                   Gxx, Gyy, Gzz,
                                                   Gxy, Gxz, Gyz,
                                                   lxc, xc);
     memory_free64f(&xc);
+    memory_free64f(&dataPad);
     // Dereference pointers
     Gxx = NULL;
     Gyy = NULL;
@@ -1150,6 +1209,22 @@ int prepmt_greens_xcAlignGreensToData_work(
     }
     lag =-npgrns + lag;
     //printf("%d %d %d\n", lag, npgrns, npts);
+/*
+for (i=0; i<npts; i++)
+{
+printf("%e\n", data[i]);
+}
+for (i=0; i<npgrns; i++)
+{
+printf("%e %e %e %e %e %e\n", Gxx[i], Gyy[i], Gzz[i], Gxy[i], Gxz[i], Gyz[i]); 
+}
+for (i=0; i<lcref; i++)
+{
+printf("%d %e\n",-npgrns+i, xc[i]); 
+}
+printf("%d\n", lag);
+*/
+//getchar();
     // Shift the greens' functions
     array_zeros64f_work(lcref, xcorrWork);
     shiftGreens(npgrns, lag, Gxx, xcorrWork);

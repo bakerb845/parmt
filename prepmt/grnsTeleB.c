@@ -81,7 +81,11 @@ int main(int argc, char **argv)
     }
     // Load the event
     ierr = prepmt_event_initializeFromIniFile(iniFile, &event);
-    if (ierr != 0){return EXIT_FAILURE;}
+    if (ierr != 0)
+    {
+        printf("%s: Error reading event info\n", PROGRAM_NAME);
+        return EXIT_FAILURE;
+    }
     // Read the forward modeling parameters
     ierr = prepmt_hudson96_readHudson96Parameters(iniFile, hudsonSection,
                                                   &hudson96Parms);
@@ -292,14 +296,13 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
     // Dump archive
-
 /*
-sacio_writeTimeSeriesFile("test_gxx.sac", grns[19*ndepth*6+6]);
-sacio_writeTimeSeriesFile("test_gyy.sac", grns[19*ndepth*6+7]);
-sacio_writeTimeSeriesFile("test_gzz.sac", grns[19*ndepth*6+8]);
-sacio_writeTimeSeriesFile("test_gxy.sac", grns[19*ndepth*6+9]);
-sacio_writeTimeSeriesFile("test_gxz.sac", grns[19*ndepth*6+10]);
-sacio_writeTimeSeriesFile("test_gyz.sac", grns[19*ndepth*6+11]);
+sacio_writeTimeSeriesFile("test_gxx.sac", grns[11*ndepth*6+6]);
+sacio_writeTimeSeriesFile("test_gyy.sac", grns[11*ndepth*6+7]);
+sacio_writeTimeSeriesFile("test_gzz.sac", grns[11*ndepth*6+8]);
+sacio_writeTimeSeriesFile("test_gxy.sac", grns[11*ndepth*6+9]);
+sacio_writeTimeSeriesFile("test_gxz.sac", grns[11*ndepth*6+10]);
+sacio_writeTimeSeriesFile("test_gyz.sac", grns[11*ndepth*6+11]);
 */
     printf("%s: Writing archive: %s\n", PROGRAM_NAME, parmtDataFile);
     ierr = prepmt_greens_writeArchive(parmtDataFile, //"./", "pwave",

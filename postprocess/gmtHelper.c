@@ -76,7 +76,7 @@ int postmt_gmtHelper_writeGlobalMap(
                                     globalMap.evdp, "Optimum\0", line);
     if (globalMap.lwantMT)
     {
-        fprintf(ofl, "gmt psmeca $J $R -Sm8.5i -N -Gblack -W0.5p,black -O -K << EOF >> ${outps}\n");
+        fprintf(ofl, "gmt psmeca $J $R -Sm0.15i -M -N -Gblack -W0.5p,black -O -K << EOF >> ${outps}\n");
         fprintf(ofl, "%s", line);
         fprintf(ofl, "EOF\n");
     }
