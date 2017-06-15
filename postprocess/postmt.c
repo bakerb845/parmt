@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <limits.h>
 #include <getopt.h>
+#include <mpi.h>
 #include "compearth.h"
 #include "parmt_utils.h"
 #ifdef PARMT_USE_INTEL
@@ -11,6 +12,7 @@
 #else
 #include <cblas.h>
 #endif
+#include "parmt_polarity.h"
 #include "parmt_postProcess.h"
 #include "parmt_mtsearch.h"
 #include "iscl/memory/memory.h"
@@ -28,17 +30,26 @@ int main(int argc, char *argv[])
 {
     struct parmtGeneralParms_struct parms;
     struct parmtData_struct data;
+    struct parmtPolarityParms_struct polarityParms;
+    struct polarityData_struct polarityData;
     FILE *ofl;
     char fname[PATH_MAX];
     char iniFile[PATH_MAX];
     char programNameIn[256];
+    bool lpol;
     double U[9], Muse[6], Mned[6], lam[3], *betas, *deps, *depMPDF, *depMagMPDF,
            *G, *gammas, *kappas,
            *sigmas, *thetas, *M0s, *phi, *var, dip, epoch,
            lagTime, Mw, phiLoc, xnorm, xsum;
     int ierr, iobs, imtopt, jb, jg, jk, jloc, jm, joptLoc, 
-        js, jt, k, lag, nb, ng, nk, nlags, nlocs, nm, nmt, npmax, npts, ns, nt;
+        js, jt, k, lag, myid, nb, ng, nk, nlags, nlocs,
+        nm, nmt, npmax, npts, nprocs, ns, nt,
+        provided;
     bool ldefault;
+    // Start MPI
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
+    MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+    MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     // Initialize
     depMPDF = NULL; 
     depMagMPDF = NULL;
@@ -52,6 +63,8 @@ int main(int argc, char *argv[])
     phi = NULL;
     memset(&parms, 0, sizeof(struct parmtGeneralParms_struct));
     memset(&data, 0, sizeof(struct parmtData_struct));
+    memset(&polarityParms, 0, sizeof(struct parmtPolarityParms_struct));
+    memset(&polarityData, 0, sizeof(struct polarityData_struct));
     // Parse the input arguments 
     ierr = parseArguments(argc, argv, iniFile);
     if (ierr != 0)
@@ -73,6 +86,8 @@ int main(int argc, char *argv[])
                PROGRAM_NAME, parms.postmtFile);
         return EXIT_FAILURE;
     }
+    ierr += parmt_utils_readPolarityParms(iniFile, &polarityParms);
+
     // TODO make this a config
     if (!os_path_isdir(OUTDIR))
     {
@@ -162,6 +177,7 @@ return 0;
            +                  js*nt
            +                     jt;
     compearth_m02mw(1, KANAMORI_1978, &M0s[jm], &Mw);
+//betas[jb] = 0.0;
     joptLoc = jloc;
     printf("%s: Optimum information:\n", PROGRAM_NAME);
     printf("        Value: %f\n", phi[imtopt]);
@@ -174,8 +190,8 @@ return 0;
     printf("        Dip: %f (deg)\n", thetas[jt]*180.0/M_PI);
     // Display the moment tensor in USE format which is useful for obspy and gmt
     compearth_tt2cmt(gammas[jg]*180.0/M_PI,
-                     90.0 - betas[jb]*180.0/M_PI,
-                     M0s[jm],
+                     (M_PI/2.0 - betas[jb])*180.0/M_PI,
+                     M0s[jm]/sqrt(2.0),
                      kappas[jk]*180.0/M_PI,
                      thetas[jt]*180.0/M_PI,
                      sigmas[js]*180.0/M_PI,
@@ -191,6 +207,47 @@ return 0;
            Muse[0], Muse[1], Muse[2], Muse[3], Muse[4], Muse[5]);
     printf("mtNED =[%.6e,%.6e,%.6e,%.6e,%.6e,%.6e]\n",
            Mned[0], Mned[1], Mned[2], Mned[3], Mned[4], Mned[5]);
+    // Compute the polarities
+    lpol = true;
+    ierr = parmt_polarity_computeTTimesGreens(MPI_COMM_WORLD, polarityParms,
+                                              data, &polarityData);
+    if (ierr != 0)
+    {   
+        printf("%s: Error computing polarity Green's functions\n",
+               PROGRAM_NAME);
+        ierr = 1;
+        lpol = false;
+    }
+    if (lpol && polarityData.nPolarity > 0)
+    {
+        double *Gpol = memory_calloc64f(6*polarityData.nPolarity);
+        double *est = memory_calloc64f(polarityData.nPolarity);
+        double phiPol;
+        int ipol, kt;
+        kt = jloc*polarityData.nPolarity;
+printf("G\n");
+        for (ipol=0; ipol<polarityData.nPolarity; ipol++)
+        {
+            Gpol[6*ipol+0] = polarityData.Gxx[kt+ipol];
+            Gpol[6*ipol+1] = polarityData.Gyy[kt+ipol];
+            Gpol[6*ipol+2] = polarityData.Gzz[kt+ipol];
+            Gpol[6*ipol+3] = polarityData.Gxy[kt+ipol];
+            Gpol[6*ipol+4] = polarityData.Gxz[kt+ipol];
+            Gpol[6*ipol+5] = polarityData.Gyz[kt+ipol];
+printf("%f %f %f %f %f %f\n", Gpol[6*ipol+0], Gpol[6*ipol+1], Gpol[6*ipol+2],
+                     Gpol[6*ipol+3], Gpol[6*ipol+4], Gpol[6*ipol+5]);
+        }
+        cblas_dgemv(CblasRowMajor, CblasNoTrans,
+                    polarityData.nPolarity, 6, 1.0, Gpol, 6,
+                    Mned, 1, 0.0, est, 1);
+        for (ipol=0; ipol<polarityData.nPolarity; ipol++)
+        {
+            est[ipol] = copysign(1.0, est[ipol]);
+            printf("Polarity: obs %f; est %f\n",
+                   polarityData.polarity[ipol], est[ipol]);
+        }
+        
+    }
     // Write the output file
 
     struct globalMapOpts_struct globalMap;
@@ -447,6 +504,7 @@ ERROR:;
     memory_free64f(&thetas);
     memory_free64f(&phi);
     iscl_finalize();
+    MPI_Finalize();
     return ierr;
 }
 //============================================================================//

@@ -47,7 +47,7 @@ int parmt_polarity_computeTTimesGreens(
     struct polarityData_struct *polarityData)
 {
     const char *fcnm = "parmt_polarity_computeTTimesGreens64f\0";
-    char kt0[8], kcmpnm[8];
+    char kt0[8], kcmpnm[8], stat[8];
     double G6[6], *cmpazs, *cmpincs, *deps, *evlas, *evlos,
            *GxxBuf, *GyyBuf, *GzzBuf, *GxyBuf, *GxzBuf, *GyzBuf,
            *stlas, *stlos, cmpinc, cmpaz, stla, stlo;
@@ -214,7 +214,12 @@ int parmt_polarity_computeTTimesGreens(
                     printf("%s: could not classify polarity %s\n", fcnm, kt0);
                     continue;
                 }
-                // save information for modeling 
+                // let user know something happened 
+                sacio_getCharacterHeader(SAC_CHAR_KSTNM,
+                                         data.data[iobs].header, stat);
+                printf("%s: Polarity for %s is %d\n", fcnm, stat, ipol); 
+//printf("%f %f %f %f %d %d %d %d\n", stla, stlo, cmpinc, cmpaz, icomp, iobs, iwav, ipol);
+                // save information for modeling
                 stlas[nPolarity] = stla;
                 stlos[nPolarity] = stlo;
                 cmpincs[nPolarity] = cmpinc;
@@ -505,6 +510,7 @@ int parmt_polarity_computeGreensRowFromTtimes(
     azSrc  = az;
     bazRec = baz;
     aoiRec = ttime.aoi;
+    //printf("%f %f %f %f %f %f %f\n", delta, stla, stlo, toaSrc, azSrc, aoiRec, bazRec);
     ierr = parmt_polarity_computeGreensMatrixRow(wavetype, icomp,
                                                  azSrc, toaSrc, bazRec, aoiRec,
                                                  cmpinc, cmpaz, G);
@@ -576,9 +582,9 @@ int parmt_polarity_computeGreensMatrixRow(const int wavetype,
            sinba, sin_cmpaz,
            sint_rec,
            t1, t2, t3, theta, xsign, u1, u2, ue, un, uz;
-    int i, k;
+    int k;
     const double pi180 = M_PI/180.0;
-    const bool lrot = false;
+    const bool lrot = true;//false;
     const int P_WAVE = 1;
     const int S_WAVE = 2;
     //------------------------------------------------------------------------//
@@ -609,8 +615,9 @@ int parmt_polarity_computeGreensMatrixRow(const int wavetype,
     }
     // Fill the basis at the receiver - notice the basis uses the forward
     // azimuth from the receiver to the source 
-    fillBasis(aoiRec, (bazRec - 180.0), lhat, phat, phihat); 
+    fillBasis(aoiRec, (bazRec + 180.0), lhat, phat, phihat); 
     // Compute geometric factors at receiver 
+//printf("%f %f %f %f %f\n", toaSrc, azSrc, bazRec, aoiRec, cmpaz);
     theta = aoiRec*pi180;
     cosba     = cos(bazRec*pi180);
     cost_rec  = cos(theta);
@@ -631,13 +638,17 @@ int parmt_polarity_computeGreensMatrixRow(const int wavetype,
     // Compute 6 x 3 subforward modeling matrix with row for up (1 channel)
     if (wavetype == P_WAVE)
     {
+        // Flip sign for receivers that acquire positive down 
+        xsign = 1.0;
+        if (fabs(cmpinc - 90.0) < 1.e-4){xsign =-1.0;}
         // Loop on mts terms
-        for (i=0; i<6; i++)
+        for (k=0; k<6; k++)
         {
             // Extract the (north, east, down) component
-            t3 =-up[i]*lhat[0]; // z-down -> z-up
-            t2 = up[i]*lhat[1]; // east
-            t1 = up[i]*lhat[2]; // north 
+            t3 =-up[k]*lhat[0]; // z-down -> z-up
+            //t3 = up[k]*lhat[0]; // z-up
+            t2 = up[k]*lhat[1]; // east
+            t1 = up[k]*lhat[2]; // north 
             // Not sure if i have to rotate LQT -> ZNE
             if (lrot)
             {
@@ -654,25 +665,23 @@ int parmt_polarity_computeGreensMatrixRow(const int wavetype,
             // Rotate into (1, 2)
             u1 = un*cos_cmpaz + ue*sin_cmpaz;
             u2 =-un*sin_cmpaz + ue*cos_cmpaz;
-            // Flip sign for receivers that acquire positive down 
-            xsign = 1.0;
-            if (fabs(cmpinc - 90.0) < 1.e-4){xsign =-1.0;}
             // Finish
-            G63[i*3+0] = xsign*uz;
-            G63[i*3+1] = u1;
-            G63[i*3+2] = u2;
+            G63[k*3+0] = xsign*uz;
+            //G63[k*3+0] =-xsign*uz;
+            G63[k*3+1] = u1;
+            G63[k*3+2] = u2;
         }
     }
     // SH wave
     else
     {
         // Loop on mts terms
-        for (i=0; i<6; i++)
+        for (k=0; k<6; k++)
         {
             // Extract the (north, east, down) component
-            t3 =-usv[i]*phat[0] - ush[i]*phihat[0]; // z-down -> z-up
-            t2 = usv[i]*phat[1] + ush[i]*phihat[1]; // east
-            t1 = usv[i]*phat[2] + ush[i]*phihat[2]; // north
+            t3 =-usv[k]*phat[0] - ush[k]*phihat[0]; // z-down -> z-up
+            t2 = usv[k]*phat[1] + ush[k]*phihat[1]; // east
+            t1 = usv[k]*phat[2] + ush[k]*phihat[2]; // north
             // Not sure if i have to rotate LQT -> ZNE
             if (lrot)
             {
@@ -693,33 +702,33 @@ int parmt_polarity_computeGreensMatrixRow(const int wavetype,
             xsign = 1.0;
             if (fabs(cmpinc - 90.0) < 1.e-4){xsign =-1.0;}
             // Finish
-            G63[i*3+0] = xsign*uz;
-            G63[i*3+1] = u1;
-            G63[i*3+2] = u2;
+            G63[k*3+0] = xsign*uz;
+            G63[k*3+1] = u1;
+            G63[k*3+2] = u2;
         }
     }
     // Copy the result - vertical
     if (icomp == 1)
     {
-        for (i=0; i<6; i++)
+        for (k=0; k<6; k++)
         {
-            G[i] = G63[i*3+0];
+            G[k] = G63[k*3+0];
         }
     }
     // 1 component
     else if (icomp == 2)
     {
-        for (i=0; i<6; i++)
+        for (k=0; k<6; k++)
         {
-            G[i] = G63[i*3+1];
+            G[k] = G63[k*3+1];
         }
     }
     // 2 component
     else if (icomp == 3)
     {
-        for (i=0; i<6; i++)
+        for (k=0; k<6; k++)
         {
-            G[i] = G63[i*3+2];
+            G[k] = G63[k*3+2];
         }
     }
     return 0;
@@ -760,6 +769,40 @@ static void fillBasis(const double i, const double phi,
 static void setM3x3(const int k, double *__restrict__ M)
 {
     memset(M, 0, 9*sizeof(double));
+    // mxx (fill mtt)
+    if (k == 0)
+    {
+        M[4] = 1.0; //M[0][0] = 1.0;
+    }
+    // myy (fill mpp)
+    else if (k == 1)
+    {
+        M[8] = 1.0; //M[1][1] = 1.0;
+    }
+    // mzz (fill mrr)
+    else if (k == 2)
+    {
+        M[0] = 1.0; //M[2][2] = 1.0;
+    }
+    // mxy and myz (fill mtp)
+    else if (k == 3)
+    {
+        M[5] =-1.0; //M[0][1] = 1.0;
+        M[7] =-1.0; //M[1][0] = 1.0;
+    }
+    // mxz and mzx (fill mrp)
+    else if (k == 4)
+    {
+        M[1] = 1.0; //M[0][2] = 1.0;
+        M[3] = 1.0; //M[2][0] = 1.0;
+    }
+    // myz and mzy (fill mrp)
+    else
+    {
+       M[2] =-1.0; //M[1][2] = 1.0;
+       M[6] =-1.0; //M[2][1] = 1.0;
+    }
+/*
     // mxx
     if (k == 0)
     {
@@ -793,6 +836,7 @@ static void setM3x3(const int k, double *__restrict__ M)
        M[5] = 1.0; //M[1][2] = 1.0;
        M[7] = 1.0; //M[2][1] = 1.0;
     }
+*/
     return;
 }
 /*!
