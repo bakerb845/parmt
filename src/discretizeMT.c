@@ -595,8 +595,14 @@ int parmt_discretizeMT64f(const int ng,
                             + ik*ns*nt
                             + is*nt
                             + it;
-                        // Compute the corresponding moment tensor
-                        ierr1 = compearth_tt2cmt(gammaDeg, deltaDeg, sqrt2i,
+                        // Compute the corresponding moment tensor.
+                        // Silver and Jordan compute M0 = 1/sqrt(2)norm(M)
+                        // hence, if it is the scalar moment computation
+                        // that handles the 1/sqrt(2) which means I should
+                        // use unity here.  This has been verified b/c
+                        // apply CMT2m0 on this moment tensor will yield
+                        // the input M0.
+                        ierr1 = compearth_tt2cmt(gammaDeg, deltaDeg, 1.0, //sqrt2i,
                                                  kappaDeg, thetaDeg,
                                                  sigmaDeg,
                                                  Muse, lam, U);

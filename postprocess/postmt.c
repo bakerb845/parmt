@@ -177,7 +177,6 @@ return 0;
            +                  js*nt
            +                     jt;
     compearth_m02mw(1, KANAMORI_1978, &M0s[jm], &Mw);
-//betas[jb] = 0.0;
     joptLoc = jloc;
     printf("%s: Optimum information:\n", PROGRAM_NAME);
     printf("        Value: %f\n", phi[imtopt]);
@@ -191,7 +190,7 @@ return 0;
     // Display the moment tensor in USE format which is useful for obspy and gmt
     compearth_tt2cmt(gammas[jg]*180.0/M_PI,
                      (M_PI/2.0 - betas[jb])*180.0/M_PI,
-                     M0s[jm]/sqrt(2.0),
+                     M0s[jm],
                      kappas[jk]*180.0/M_PI,
                      thetas[jt]*180.0/M_PI,
                      sigmas[js]*180.0/M_PI,
@@ -207,6 +206,10 @@ return 0;
            Muse[0], Muse[1], Muse[2], Muse[3], Muse[4], Muse[5]);
     printf("mtNED =[%.6e,%.6e,%.6e,%.6e,%.6e,%.6e]\n",
            Mned[0], Mned[1], Mned[2], Mned[3], Mned[4], Mned[5]);
+//printf("%e\n", M0s[jm]);
+//compearth_CMT2m0(1, 1, Mned, &M0s[jm]);
+//printf("%e\n", M0s[jm]);
+//getchar();
     // Compute the polarities
     lpol = true;
     ierr = parmt_polarity_computeTTimesGreens(MPI_COMM_WORLD, polarityParms,
