@@ -31,10 +31,17 @@ void compearth_lune2rect(const int ng, double *__restrict__ gamma,
     const double pi180 = M_PI/180.0;
 #if __STDC_VERSION__ >= 201112L 
     size_t nbytes;
+#ifdef USE_POSIX
+    nbytes = (size_t) ng*sizeof(double);
+    posix_memalign((void **) &gammaRad, 64, nbytes);
+    nbytes = (size_t) nd*sizeof(double);
+    posix_memalign((void **) &betaRad, 64, nbytes);
+#else
     nbytes = (size_t) ng*sizeof(double);
     gammaRad = (double *) aligned_alloc(64, nbytes);
     nbytes = (size_t) nd*sizeof(double);
     betaRad  = (double *) aligned_alloc(64, nbytes);
+#endif
 #else
     gammaRad = (double *) calloc((size_t) ng, sizeof(double));
     betaRad  = (double *) calloc((size_t) nd, sizeof(double));

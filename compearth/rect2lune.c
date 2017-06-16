@@ -46,7 +46,11 @@ int compearth_rect2lune(const int nv, const double *__restrict__ v,
 #if __STDC_VERSION__ >= 201112L 
     size_t nbytes;
     nbytes = (size_t) nu*sizeof(double);
+#ifdef USE_POSIX
+    posix_memalign((void **) &u, 64, nbytes);
+#else
     u = (double *) aligned_alloc(64, nbytes);
+#endif
 #else
     u = (double *) calloc((size_t) nu, sizeof(double));
 #endif
