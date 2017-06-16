@@ -560,6 +560,7 @@ int parmt_discretizeMT64f(const int ng,
     {
         mtWork = memory_calloc64f(nmtBase*ldm);
     }
+#ifdef _OPENMP
     #pragma omp parallel for collapse(5) \
      firstprivate (lam, Muse, U) \
      private (deltaDeg, gammaDeg, kappaDeg, \
@@ -567,6 +568,7 @@ int parmt_discretizeMT64f(const int ng,
      shared (fcnm, M0s, betas, gammas, kappas, sigmas, mtWork, thetas) \
      reduction (max:ierr) \
      default (none)
+#endif
     // Loop on colatitudes
     for (ib=0; ib<nb; ib++)
     {
