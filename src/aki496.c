@@ -8,23 +8,25 @@
 #define M_SQRT2 1.41421356237309504880
 #endif
 
+static double dot3(const double *__restrict__ a,
+                   const double *__restrict__ b);
 static void setM3x3(const int k, double *__restrict__ M);
 static void fillBasis(const double i, const double phi,
-                      double *__restrict__ gam,
-                      double *__restrict__ that,
-                      double *__restrict__ phihat);
+                      double *__restrict__ gamHat,
+                      double *__restrict__ tHat,
+                      double *__restrict__ phiHat);
 static double computeContraction3x3(const double *__restrict__ a,
                                     const double *__restrict__ M,
                                     const double *__restrict__ b);
 
 int main()
 {
-    double M[9], gam[3], phi[3], theta[3], c, xsum;
+    double M[9], gamHat[3], phi[3], theta[3], c, xsum;
     int i, k;
     double toa = 22.0;
     double az = 99.0;
     // Set the basis
-    fillBasis(toa, az, gam, theta, phi);
+    fillBasis(toa, az, gamHat, theta, phi);
     // Check normalization; p1
     for (k=0; k<6; k++)
     {
@@ -35,8 +37,8 @@ int main()
            xsum = xsum + M[i]*M[i];
        }
        xsum = sqrt(xsum)/sqrt(2.0);
-       c = computeContraction3x3(gam, M, gam);
-       //printf("%f %f %f\n", c, xsum, sqrt(2.0)*gam[2]*gam[2]); 
+       c = computeContraction3x3(gamHat, M, gamHat);
+       //printf("%f %f %f\n", c, xsum, sqrt(2.0)*gamHat[2]*gam[2]); 
     } 
     return 0;
 }
@@ -96,7 +98,7 @@ int parmt_polarity_computeGreensMatrixRow(const int wavetype,
 {
     const char *fcnm = "parmt_polarity_computeGreensMatrixRow\0"; 
     double M[9], G63[18], G63ned[18], up[6], ush[6], usv[6],
-           gam[3], lhat[3], that[3], phihat[3],
+           gamHat[3], lhat[3], tHat[3], phiHat[3],
            azRec, cosba, cos_cmpaz, cost_rec,
            r11, r12, r13, r21, r22, r23, r31, r32, r33, 
            sinba, sin_cmpaz,
@@ -122,7 +124,7 @@ int parmt_polarity_computeGreensMatrixRow(const int wavetype,
         return -1;
     }
     // Fill the basis at the source (Udias pg 78)
-    fillBasis(toaSrc, azSrc, gam, that, phihat);
+    fillBasis(toaSrc, azSrc, gamHat, tHat, phiHat);
     // Compute the dot-products for u_p, u_sv, and u_sh (A&R Eqn 4.97)
     // for all 6 individual moment tensor terms at the source location
     for (k=0; k<6; k++)
@@ -130,17 +132,17 @@ int parmt_polarity_computeGreensMatrixRow(const int wavetype,
         // Set the moment tensor with the k'th MT term in USE coordinates.
         setM3x3(k, M);
         // Compute contraction
-        up[k]  = computeContraction3x3(gam,    M, gam);
-        usv[k] = computeContraction3x3(that,   M, gam);
-        ush[k] = computeContraction3x3(phihat, M, gam);
+        up[k]  = computeContraction3x3(gamHat, M, gamHat);
+        usv[k] = computeContraction3x3(tHat,   M, gamHat);
+        ush[k] = computeContraction3x3(phiHat, M, gamHat);
     }
     // Fill the basis at the receiver.  Here we flip the back-azimuth 
-    // (i.e. the receiver to source angle) so that it points in the direction
+    // (i.e. the receiver to source angle) so tHat it points in the direction
     // of the source to the receiver.  This basis should point in the LQT 
     // direction.
     azRec = bazRec + 180.0;
     if (azRec >= 360.0){azRec = azRec - 360.0;}
-    fillBasis(aoiRec, azRec, lhat, that, phihat);
+    fillBasis(aoiRec, azRec, lhat, tHat, phiHat);
     // Compute geometric factors at receiver 
     //printf("%f %f %f %f %f\n", toaSrc, azSrc, bazRec, aoiRec, cmpaz);
     theta = aoiRec*pi180;
@@ -161,7 +163,7 @@ int parmt_polarity_computeGreensMatrixRow(const int wavetype,
     r13 =-sint_rec*cosba;
     r23 = cost_rec*cosba;
     r33 =          sinba;
-    // Flip sign for receivers that acquire positive down 
+    // Flip sign for receivers tHat acquire positive down 
     xsign = 1.0;
     if (fabs(cmpinc - 90.0) < 1.e-4){xsign =-1.0;}
     // Initalize USE 6 x 3 Greens functions 
@@ -200,15 +202,15 @@ int parmt_polarity_computeGreensMatrixRow(const int wavetype,
                 // Set the vector in Eqn 4.96
                 if (i == 0)
                 {
-                    tl = up[k]*that[0]; // Radial (L - longitudinal)
-                    tq = up[k]*that[1]; // SV (Q - polarized with L)
-                    tt = up[k]*that[2]; // SH (T - transverse)
+                    tl = up[k]*tHat[0]; // Radial (L - longitudinal)
+                    tq = up[k]*tHat[1]; // SV (Q - polarized with L)
+                    tt = up[k]*tHat[2]; // SH (T - transverse)
                 }
                 else
                 {
-                    tl = up[k]*phihat[0]; // Radial (L - longitudinal)
-                    tq = up[k]*phihat[1]; // SV (Q - polarized with L)
-                    tt = up[k]*phihat[2]; // SH (T - transverse)
+                    tl = up[k]*phiHat[0]; // Radial (L - longitudinal)
+                    tq = up[k]*phiHat[1]; // SV (Q - polarized with L)
+                    tt = up[k]*phiHat[2]; // SH (T - transverse)
                 }
                 // Rotate into observation coordinates (Z, E, N) where Z is up
                 uz = tl*r11 + tq*r21 + tt*r31; // L -> Z
@@ -259,26 +261,108 @@ int parmt_polarity_computeGreensMatrixRow(const int wavetype,
 }
 //============================================================================//
 /*!
- * @brief Fills in the basis vectors - Aki and Richards pg 98 or Udias
- *        page 78-79.  This is
+ * @brief Computes the radiation patterns for double-couples specified in
+ *        terms of strike, dip, and rake.  This is mainly for debugging and
+ *        of little use to the general application.  The requisite equations
+ *        are detailed in Aki and Richards 4.89-4.91 pgs 108-109 and Udias
+ *        pg 78-79.
+ *
+ * @param[in] strike     Fault strike angle (degrees). This is measured
+ *                       positive clockwise from north.
+ * @param[in] dip        Fault dip angle (degrees).  This is measured positive
+ *                       down from horizontal.
+ * @param[in] rake       Fault rake angle (degrees).
+ * @param[in] toa        Source take-off angle (degrees).  This is measured
+ *                       positive from z+ down.
+ * @param[in] phi        Source to receiver azimuth (degrees).  This is measured
+ *                       positive clockwise from north.
+ *
+ * @param[out] frp       Fault radiation pattern for P, SV, and SH waves
+ *                       respectively.  This is an array of dimension [3].
+ *                       Note, these do not involve the average slip or any
+ *                       material properties at the source.
+ * 
+ * @author Ben Baker
+ *
+ * @copyright ISTI distributed under Apache 2.
+ *
+ */
+void parmt_polarity_computeAki488to491(
+    const double strike, const double dip, const double rake,
+    const double toa, const double phi,
+    double *__restrict__ frp)
+{
+    double gamHat[3], nu[3],  uSlip[3], phiHat[3], tHat[3];
+    double cosDelta, cosDelta_sinLambda,
+           cosLambda, cosPhis, delta, gamHat_nu, gamHat_uSlip, lambda, phis,
+           sinDelta, sinLambda, sinPhis;
+    const double pi180 = M_PI/180.0;
+    phis   = pi180*strike;
+    lambda = pi180*rake; 
+    delta  = pi180*dip;
+
+    cosLambda = cos(lambda);
+    cosPhis   = cos(phis);
+    cosDelta  = cos(delta);
+    sinLambda = sin(lambda);
+    sinPhis   = sin(phis);
+    sinDelta  = sin(delta); 
+    cosDelta_sinLambda = cosDelta*sinLambda; 
+    // Slip vector in (North, East, Down)
+    uSlip[0] = cosLambda*cosPhis + cosDelta_sinLambda*sinPhis;
+    uSlip[1] = cosLambda*sinPhis - cosDelta_sinLambda*cosPhis;
+    uSlip[2] =-sinLambda*sinDelta;
+    // Fault normal in (North, East, Down)
+    nu[0] =-sinDelta*sinPhis;
+    nu[1] = sinDelta*cosPhis;
+    nu[2] =-cosDelta;
+    // P wave direction; SV wave direction; SH wave direction in USE.
+    fillBasis(toa, phi, gamHat, tHat, phiHat);
+    // Compute the radiation patterns for P, SV, and SH (respectively).
+    // Aki and Richards 4.89-4.91 make use of angle addition/subtraction
+    // identities to show the compatibility of the two coordinate systems
+    // but the dot product requires computation of many fewer trigonometric
+    // terms.
+    gamHat_nu = dot3(gamHat, nu);
+    gamHat_uSlip = dot3(gamHat, uSlip);
+    frp[0] = 2.0*gamHat_nu*gamHat_uSlip;
+    frp[1] = gamHat_nu*dot3(uSlip, tHat)   + gamHat_uSlip*dot3(nu, gamHat);
+    frp[2] = gamHat_nu*dot3(uSlip, phiHat) + gamHat_uSlip*dot3(nu, phiHat);
+    return;
+}
+//============================================================================//
+static double dot3(const double *__restrict__ a,
+                   const double *__restrict__ b)
+{
+    double dp;
+    dp = a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+    return dp;
+}
+//============================================================================//
+/*!
+ * @brief Fills in the basis vectors - Aki and Richards pg 98 or pg 108 Eqn 4.88
+ *        or Udias page 78-79.  This is
  *        oriented in \$ \{ \mathbf{r}, \mathbf{\theta}, \mathbf{\phi} \} \$
  *        i.e. the radial then the two transverse directions.
  *
- * @param[in] i        Incidence angle (degrees).  This is measured from
- *                     \f$ x_3 \$.  In ray coordinates this can be taken
- *                     as the take-off angle measured from the downward
- *                     vertical. 
- * @param[in] phi      Azimuth (degrees) measured from \f$ x_1 \f$.
- *                     Aki and Richards take \f$ x_1 \f$ to be in the
- *                     direction of the slip.  In ray coordinates this
- *                     can be taken as the the azimuth measured positive
- *                     from north which means that \f$ x_1 \f$ is oriented
- *                     positive north.
+ * @param[in] i           Incidence angle (degrees).  This is measured from
+ *                        \f$ x_3 \$.  In ray coordinates this can be taken
+ *                        as the take-off angle measured from the downward
+ *                        vertical. 
+ * @param[in] phi         Azimuth (degrees) measured from \f$ x_1 \f$.
+ *                        Aki and Richards take \f$ x_1 \f$ to be in the
+ *                        direction of the slip.  In ray coordinates this
+ *                        can be taken as the the azimuth measured positive
+ *                        from north which means tHat \f$ x_1 \f$ is oriented
+ *                        positive north.
  *
- * @param[out] gam     Unit vector in \f$ \hat{\textbf{r}} \f$ or 
- *                     (alternatively written as \f$ \hat{\mathbf{\gamma}} \f$).
- * @param[out] that    Unit vector in \f$ \hat{\mathbf{\theta}} \f$.
- * @param[out] phihat  Unit vector in \f$ \hat{\mathbf{\phi}} \f$.
+ * @param[out] gamHat     Unit vector in \f$ \hat{\textbf{r}} \f$ or 
+ *                        (alternatively written as \f$ \hat{\mathbf{\gamma}} \f$).
+ *                        In the context of 4.88 this is the P-wave direction.
+ * @param[out] tHat       Unit vector in \f$ \hat{\mathbf{\theta}} \f$.
+ *                        In the context of 4.88 this is the SV-wave direction.
+ * @param[out] phiHat     Unit vector in \f$ \hat{\mathbf{\phi}} \f$.
+ *                        In the context of 4.88 this is the SH-wave direction.
  *
  * @author Ben Baker
  *
@@ -286,9 +370,9 @@ int parmt_polarity_computeGreensMatrixRow(const int wavetype,
  *
  */
 static void fillBasis(const double i, const double phi, 
-                      double *__restrict__ gam, 
-                      double *__restrict__ that,
-                      double *__restrict__ phihat)
+                      double *__restrict__ gamHat,
+                      double *__restrict__ tHat,
+                      double *__restrict__ phiHat)
 {
     double cosi, sini, cosp, sinp;
     const double pi180 = M_PI/180.0;
@@ -296,17 +380,18 @@ static void fillBasis(const double i, const double phi,
     sini = sin(i*pi180);
     cosp = cos(phi*pi180);
     sinp = sin(phi*pi180);
-    gam[0] = sini*cosp;
-    gam[1] = sini*sinp;
-    gam[2] = cosi;
-
-    that[0] = cosi*cosp;
-    that[1] = cosi*sinp;
-    that[2] =-sini; 
-
-    phihat[0] =-sinp;
-    phihat[1] = cosp;
-    phihat[2] = 0.0; 
+    // P
+    gamHat[0] = sini*cosp;
+    gamHat[1] = sini*sinp;
+    gamHat[2] = cosi;
+    // SV 
+    tHat[0] = cosi*cosp;
+    tHat[1] = cosi*sinp;
+    tHat[2] =-sini; 
+    // SH
+    phiHat[0] =-sinp;
+    phiHat[1] = cosp;
+    phiHat[2] = 0.0; 
     return;
 }
 //============================================================================//

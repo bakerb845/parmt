@@ -11,14 +11,14 @@ SET(IPP_FOUND "NO")
 
 FIND_PATH(IPP_INCLUDE_DIR
     NAMES ipps.h
-    HINTS /opt/intel/ipp/include /usr/include /usr/ipp/include /usr/local/include /usr/local/include/ipp
+    HINTS /opt/intel/ipp/include /usr/include /usr/ipp/include /usr/local/include /usr/local/include/ipp $ENV{IPP_DIR}/include
 )
 
 SET(IPP_NAMES ${IPP_NAMES} libipps.a libippvm.a libippcore.a)
 FOREACH (IPP_NAME ${IPP_NAMES})
    FIND_LIBRARY(${IPP_NAME}_LIBRARY
        NAMES ${IPP_NAME} 
-       PATHS /opt/intel/ipp/lib/intel64
+       PATHS /opt/intel/ipp/lib/intel64 $ENV{IPP_DIR}/lib/intel64
    )
    SET(TMP_LIBRARY ${${IPP_NAME}_LIBRARY})
 

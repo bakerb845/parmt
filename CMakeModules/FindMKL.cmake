@@ -14,6 +14,7 @@ FOREACH (MKL_NAME ${MKL_NAMES})
        NAMES ${MKL_NAME} 
        PATHS
        /opt/intel/mkl/lib/intel64
+       $ENV{MKL_DIR}/lib/intel64
    )
    SET(TMP_LIBRARY ${${MKL_NAME}_LIBRARY})
 
