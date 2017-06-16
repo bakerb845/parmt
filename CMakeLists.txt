@@ -117,7 +117,7 @@ ADD_LIBRARY(parmt_static STATIC ${SRCS_PARMT})
 SET(LINK_LIB_ALL ${INIPARSER_LIBRARY} ${CPS_LIBRARY} ${TTIMES_LIBRARY} ${SACIO_LIBRARY}
                  ${ISCL_LIBRARY} ${MPI_C_LIBRARIES} ${H5_LIBRARY}
                  -Wl,--start-group ${MKL_LIBRARY} -Wl,--end-group 
-                 ${IPP_LIBRARY} -lm -ldl -lpthread -lpng -lstdc++)
+                 ${IPP_LIBRARY} -lm -ldl -lpthread -lpng)
 
 SET_TARGET_PROPERTIES(xgrnsTeleB PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 SET_TARGET_PROPERTIES(hspec96 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
