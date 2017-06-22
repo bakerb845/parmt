@@ -178,6 +178,9 @@ return 0;
            +                     jt;
     compearth_m02mw(1, KANAMORI_1978, &M0s[jm], &Mw);
     joptLoc = jloc;
+//printf("%d %d %d %d %d %d %d\n", jloc, jm, jg, jb, jk, js, jt);
+//jloc =4; jm = 5; jg =1; jb=0; jk=11; js=2; jt=4;
+
     printf("%s: Optimum information:\n", PROGRAM_NAME);
     printf("        Value: %f\n", phi[imtopt]);
     printf("        Depth: %f (km)\n", deps[jloc]);
@@ -344,20 +347,22 @@ Mned[5] =-2.756277e+17;
         printf("%f %f\n", thetas[i]*180.0/M_PI, thetaHist[i]);
     }
 */
-ierr = postmt_gmtHelper_writeBetaBoxes("gmtScripts/betaBox.sh", "betaBox.ps",
-                                       nb, betas, betaHist);
-ierr = postmt_gmtHelper_writeGammaBoxes("gmtScripts/gammaBox.sh", "gammaBox.ps",
-                                        ng, gammas, gammaHist);
-ierr = postmt_gmtHelper_writeKappaBoxes("gmtScripts/kappaBox.sh", "kappaBox.ps",
-                                        nk, kappas, kappaHist);
-ierr = postmt_gmtHelper_writeSigmaBoxes("gmtScripts/sigmaBox.sh", "sigmaBox.ps",
-                                        ns, sigmas, sigmaHist);
-ierr = postmt_gmtHelper_writeThetaBoxes("gmtScripts/thetaBox.sh", "thetaBox.ps",
-                                        nt, thetas, thetaHist);
-ierr = postmt_gmtHelper_writeMagnitudeBoxes("gmtScripts/magBox.sh", "magBox.ps",
-                                            nm, M0s, magHist);
-ierr = postmt_gmtHelper_writeDepthBoxes("gmtScripts/depBox.sh", "depBox.ps",
-                                        nlocs, deps, locHist);
+const char *scriptFile = "gmtScripts/boxes.sh";
+const char *psFile = "boxes.ps";
+ierr = postmt_gmtHelper_writeBetaBoxes(false, false, scriptFile, psFile,
+                                       nb, jb, betas, betaHist);
+ierr = postmt_gmtHelper_writeGammaBoxes(true, false, scriptFile, psFile,
+                                        ng, jg, gammas, gammaHist);
+ierr = postmt_gmtHelper_writeKappaBoxes(true, false, scriptFile, psFile,
+                                        nk, jk, kappas, kappaHist);
+ierr = postmt_gmtHelper_writeSigmaBoxes(true, false, scriptFile, psFile,
+                                        ns, js, sigmas, sigmaHist);
+ierr = postmt_gmtHelper_writeThetaBoxes(true, false, scriptFile, psFile,
+                                        nt, jt, thetas, thetaHist);
+ierr = postmt_gmtHelper_writeMagnitudeBoxes(true, false, scriptFile, psFile,
+                                            nm, jm, M0s, magHist);
+ierr = postmt_gmtHelper_writeDepthBoxes(true, true, scriptFile, psFile,
+                                        nlocs, joptLoc, deps, locHist);
 
     // Start the post-processing - compute the depgh magnitude mPDFs
     printf("%s: Computing the depth MPDF's\n", PROGRAM_NAME);

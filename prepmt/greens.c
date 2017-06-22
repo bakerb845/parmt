@@ -104,8 +104,6 @@ int prepmt_greens_ffGreensToGreens(const int nobs,
                                      obs[iobs].header, &stla);
         ierr += sacio_getFloatHeader(SAC_FLOAT_STLO,
                                      obs[iobs].header, &stlo);
-        ierr += sacio_getFloatHeader(SAC_FLOAT_STEL,
-                                     obs[iobs].header, &stel);
         ierr += sacio_getCharacterHeader(SAC_CHAR_KNETWK,
                                          obs[iobs].header, knetwk);
         ierr += sacio_getCharacterHeader(SAC_CHAR_KSTNM,
@@ -117,6 +115,9 @@ int prepmt_greens_ffGreensToGreens(const int nobs,
             log_errorF("%s: Error reading header variables\n", fcnm);
             break;
         }
+        // This one isn't critical but it would be nice to have
+        sacio_getFloatHeader(SAC_FLOAT_STEL,
+                             obs[iobs].header, &stel);
         // Station location code is not terribly important
         sacio_getCharacterHeader(SAC_CHAR_KHOLE, obs[iobs].header, khole);
         cmpincSEED = cmpinc - 90.0; // SAC to SEED convention
@@ -539,6 +540,7 @@ int prepmt_greens_repickGreensWithSTALTA(
     memory_free64f(&gxzPad);
     memory_free64f(&gyzPad);
     memory_free64f(&charFn);
+    stalta_free(&stalta);
     return ierr;
 }
 //============================================================================//
