@@ -215,7 +215,7 @@ int nsorted = 0;
             //cblas_dcopy(npts, &R[ic], mblock, res, 1);
             // Apply the old permutation
             sorting_applyPermutation64f_work(npts, perm, res, resSort);
-            lsorted = sorting_issorted64f(npts, resSort, SORT_ASCENDING);
+            lsorted = sorting_issorted64f(npts, resSort, SORT_ASCENDING, &ierr);
             if (!lsorted)
             {
                 sorting_argsort64f_work(npts, res, SORT_ASCENDING, perm);
