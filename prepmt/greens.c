@@ -400,7 +400,7 @@ int prepmt_greens_repickGreensWithSTALTA(
     // Define the windows
     nsta = (int) (sta/dt + 0.5);
     nlta = (int) (lta/dt + 0.5);
-    prePad = MAX(64, fft_nextpow2(nlta));
+    prePad = MAX(64, fft_nextpow2(nlta, &ierr));
     npad = prePad + npts;
     // Set space
     gxxPad = memory_calloc64f(npad);

@@ -459,7 +459,7 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
         hudson96ParmsWork.dt = dt;
         hudson96ParmsWork.gcarc = gcarc;
         hudson96ParmsWork.utstar = tstars[it];
-        hudson96ParmsWork.npts = MAX(256, MIN(2048, 2*fft_nextpow2(MAX(1, npts))));
+        hudson96ParmsWork.npts = MAX(256, MIN(2048, 2*fft_nextpow2(MAX(1, npts), ierr)));
         hudson96ParmsWork.offset = fmin(pickTime, offset0); //TODO: fmin or fmax?
 //printf("%s %f\n", phaseName, pickTime);
         // Try to pad this out a little
