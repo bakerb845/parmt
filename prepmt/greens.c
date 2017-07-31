@@ -489,7 +489,7 @@ int prepmt_greens_repickGreensWithSTALTA(
         g = NULL;
     }
     // Compute the pick time
-    charMax = array_max64f(npts, &charFn[prePad]);
+    charMax = array_max64f(npts, &charFn[prePad], &ierr);
     tpick =-1.0;
     for (k=prePad; k<npad; k++)
     {
@@ -501,7 +501,7 @@ int prepmt_greens_repickGreensWithSTALTA(
     }
     if (tpick ==-1.0)
     {
-        tpick = (double) (array_argmax64f(npad, charFn) - prePad)*dt;
+        tpick = (double) (array_argmax64f(npad, charFn, &ierr) - prePad)*dt;
     }
     // Overwrite the pick
     pickHeader = SAC_UNKNOWN_HDRVAR;
@@ -1200,14 +1200,14 @@ int prepmt_greens_xcAlignGreensToData_work(
     // lag = npgrns is the unlagged cross-correlation. 
     if (maxShift < 0)
     {
-        lag = array_argmax64f(lcref, xc);
+        lag = array_argmax64f(lcref, xc, &ierr);
     }
     else
     {
         l1 = MAX(0, npgrns - maxShift);
         l2 = MIN(lcref - 1, npgrns + maxShift);
         nlag = l2 - l1 + 1;
-        lag = l1 + array_argmax64f(nlag, &xc[l1]); 
+        lag = l1 + array_argmax64f(nlag, &xc[l1], &ierr); 
     }
     lag =-npgrns + lag;
     //printf("%d %d %d\n", lag, npgrns, npts);

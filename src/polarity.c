@@ -949,7 +949,7 @@ int polarity_performLocationSearch64f(const MPI_Comm locComm,
                         &phiWork[jndx], mtloc.nmtProc, mtloc.offset,
                         MPI_DOUBLE, master, mtloc.comm);
         }
-printf("%f %f\n", array_min64f(nmt, phiLoc), array_max64f(nmt, phiLoc));
+printf("%f %f\n", array_min64f(nmt, phiLoc, &ierr), array_max64f(nmt, phiLoc, &ierr));
 
     }
     // Reduce the search onto the master

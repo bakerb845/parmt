@@ -216,7 +216,7 @@ int postmt_gmtHelper_writeThetaBoxes(const bool lappend, const bool lclose,
     double *cumTheta, *h, hAvg, thetaAvg, tmax;
     int i, ierr;
     const bool lwritePrior = true;
-    tmax = array_max64f(nt, thetaHist);
+    tmax = array_max64f(nt, thetaHist, &ierr);
     // Compute h
     h = memory_calloc64f(nt);
     compearth_theta2h(nt, thetas, h);
@@ -324,7 +324,7 @@ int postmt_gmtHelper_writeSigmaBoxes(const bool lappend, const bool lclose,
     double *cumSigma, ds, smax;
     int i, ierr;
     const bool lwritePrior = true;
-    smax = array_max64f(ns, sigmaHist);
+    smax = array_max64f(ns, sigmaHist, &ierr);
     // Take averages
     ds = 0.0;
     memset(app, 0, 8*sizeof(char));
@@ -429,7 +429,7 @@ int postmt_gmtHelper_writeKappaBoxes(const bool lappend, const bool lclose,
     double *cumKappa, dk, kmax;
     int i, ierr;
     const bool lwritePrior = true;
-    kmax = array_max64f(nk, kappaHist);
+    kmax = array_max64f(nk, kappaHist, &ierr);
     // Take averages
     dk = 0.0;
     memset(app, 0, 8*sizeof(char));
@@ -534,7 +534,7 @@ int postmt_gmtHelper_writeDepthBoxes(const bool lappend, const bool lclose,
     int i, ierr;
     const bool lwritePrior = true;
     // Compute moment magnitudes 
-    dmax = array_max64f(nd, depHist);
+    dmax = array_max64f(nd, depHist, &ierr);
     dd = 0.1;
     if (nd > 1){dd = deps[1] - deps[0];};
     depMin = fmax(0.0, deps[0]    - dd/2.0);
@@ -641,7 +641,7 @@ int postmt_gmtHelper_writeMagnitudeBoxes(const bool lappend, const bool lclose,
     const bool lwritePrior = true;
     // Compute moment magnitudes 
     Mw = memory_calloc64f(nm);
-    mmax = array_max64f(nm, magHist);
+    mmax = array_max64f(nm, magHist, &ierr);
     compearth_m02mw(nm, KANAMORI_1978, M0s, Mw);
     dm = 0.1;
     if (nm > 1){dm = Mw[1] - Mw[0];};
@@ -748,7 +748,7 @@ int postmt_gmtHelper_writeGammaBoxes(const bool lappend, const bool lclose,
     double *cumGamma, *v, gmax, gammaAvg, vAvg;
     int i, ierr;
     const bool lwritePrior = true;
-    gmax = array_max64f(ng, gammaHist);
+    gmax = array_max64f(ng, gammaHist, &ierr);
     // Compute v
     v = memory_calloc64f(ng);
     compearth_gamma2v(ng, gammas, v);
@@ -857,7 +857,7 @@ int postmt_gmtHelper_writeBetaBoxes(const bool lappend, const bool lclose,
     double *betaCum, *u, bmax, betaAvg, uAvg;
     int i, ierr;
     const bool lwritePrior = true;
-    bmax = array_max64f(nb, betaHist);
+    bmax = array_max64f(nb, betaHist, &ierr);
     // Compute u
     u = memory_calloc64f(nb);
     compearth_beta2u(nb, betas, u);

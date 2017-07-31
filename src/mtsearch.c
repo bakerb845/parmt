@@ -371,7 +371,7 @@ int parmt_mtSearchXC64f(const int ldm, const int nmt,
             {
                 imt = jmt + ic;
                 // Compute the lag where the times range from [-npts+1:npts-1]
-                maxxc = array_argmax64f(lcref, &DUmatT[ic*mpts]);
+                maxxc = array_argmax64f(lcref, &DUmatT[ic*mpts], &ierr);
                 if (lwantLag){lags[imt] =-npts + 1 + maxxc;}
                 // Compute the normalized cross-correlation
                 phi[imt] = DUmatT[ic*mpts+maxxc]/(dNorm*uN[ic]);
@@ -387,7 +387,7 @@ int parmt_mtSearchXC64f(const int ldm, const int nmt,
                 imt = jmt + ic;
                 // Compute the lag where the times range from 
                 // [lhalf-maxlag:half+maxlag]
-                maxxc = l1 + array_argmax64f(nlag, &DUmatT[ic*mpts+l1]);
+                maxxc = l1 + array_argmax64f(nlag, &DUmatT[ic*mpts+l1], &ierr);
                 if (lwantLag){lags[imt] =-npts + 1 + maxxc;}
                 phi[imt] = DUmatT[ic*mpts+maxxc]/(dNorm*uN[ic]);
                 // Convert from [-1,1] to [0,1]

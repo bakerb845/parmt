@@ -23,8 +23,9 @@ int marginal_getOptimum(const int nloc, const int nm, const int nb,
                         int *jk, int *js, int *jt)
 {
     int ib, ig, ik, iloc, imax, im, imt, indx, is, it, nmt;
+    enum isclError_enum ierr;
     nmt = nm*nb*ng*nk*ns*nt;
-    imax = array_argmax64f(nmt*nloc, phi);
+    imax = array_argmax64f(nmt*nloc, phi, &ierr);
     for (iloc=0; iloc<nloc; iloc++)
     {
         for (im=0; im<nm; im++)
@@ -311,12 +312,12 @@ array_set64f_work(nm, 1.0, dm);
         printf("%s: Failed to compute cell spacing\n", fcnm);
         return -1;
     }
-    if (array_min64f(nm, dm) <= 0.0 ||
-        array_min64f(nb, db) <= 0.0 ||
-        array_min64f(ng, dg) <= 0.0 ||
-        array_min64f(nk, dk) <= 0.0 ||
-        array_min64f(ns, ds) <= 0.0 ||
-        array_min64f(nt, dt) <= 0.0)
+    if (array_min64f(nm, dm, &ierr) <= 0.0 ||
+        array_min64f(nb, db, &ierr) <= 0.0 ||
+        array_min64f(ng, dg, &ierr) <= 0.0 ||
+        array_min64f(nk, dk, &ierr) <= 0.0 ||
+        array_min64f(ns, ds, &ierr) <= 0.0 ||
+        array_min64f(nt, dt, &ierr) <= 0.0)
     {
         printf("%s: Negative jacobian\n", fcnm);
         return -1;
@@ -337,9 +338,9 @@ array_set64f_work(nm, 1.0, dm);
     {
         cos3g[ig] = cos(3.0*gammas[ig]);
     }
-    if (array_min64f(nb, twoSinB4) <= 0.0 ||
-        array_min64f(nt, sint) <= 0.0 ||
-        array_min64f(ng, cos3g) <= 0.0)
+    if (array_min64f(nb, twoSinB4, &ierr) <= 0.0 ||
+        array_min64f(nt, sint, &ierr) <= 0.0 ||
+        array_min64f(ng, cos3g, &ierr) <= 0.0)
     {
         printf("%s: Warning negative jacobian from geometric factors\n", fcnm);
     }
@@ -441,13 +442,13 @@ array_set64f_work(nloc, 1.0, dl);
         printf("%s; Error computing normalization\n", fcnm);
         return sum;
     }
-    if (array_min64f(nloc, dl) <= 0.0 ||
-        array_min64f(nm, dm) <= 0.0 ||
-        array_min64f(nb, db) <= 0.0 || 
-        array_min64f(ng, dg) <= 0.0 ||
-        array_min64f(nk, dk) <= 0.0 ||
-        array_min64f(ns, ds) <= 0.0 ||
-        array_min64f(nt, dt) <= 0.0)
+    if (array_min64f(nloc, dl, ierr) <= 0.0 ||
+        array_min64f(nm, dm, ierr) <= 0.0 ||
+        array_min64f(nb, db, ierr) <= 0.0 || 
+        array_min64f(ng, dg, ierr) <= 0.0 ||
+        array_min64f(nk, dk, ierr) <= 0.0 ||
+        array_min64f(ns, ds, ierr) <= 0.0 ||
+        array_min64f(nt, dt, ierr) <= 0.0)
     {
         printf("%s: Negative jacobian\n", fcnm);
         *ierr = 1;

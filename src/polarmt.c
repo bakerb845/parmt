@@ -284,7 +284,7 @@ INIT_ERROR:;
         {
             printf("%s: Error initializing file\n", PROGRAM_NAME);
         }
-printf("Max: %f\n", array_max64f(mtloc.nmtAll, phi));
+printf("Max: %f\n", array_max64f(mtloc.nmtAll, phi, &ierr));
         ierr = parmt_io_writeObjectiveFunction64f(
                    //parms.resultsDir, parms.projnm, parms.polarityFileSuffix,
                    parms.polarmtArchive,

@@ -401,7 +401,7 @@ int nlags = 0;
             goto FINISH;
         }
         int jloc, jm, jb, jg, jk, js, jt; 
-        int imtopt = array_argmax64f(data.nlocs*mtloc.nmtAll, phi);
+        int imtopt = array_argmax64f(data.nlocs*mtloc.nmtAll, phi, &ierr);
         marginal_getOptimum(data.nlocs, mtsearch.nm, mtsearch.nb,
                             mtsearch.ng, mtsearch.nk, mtsearch.ns,
                             mtsearch.nt, phi,

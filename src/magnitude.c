@@ -71,7 +71,7 @@ int parmt_computeL1Magnitude64f(const int ldm,
     if (lags != NULL)
     {
         luseLag = true;
-        maxlag = lags[array_absArgmax32i(nobs, lags)];
+        maxlag = lags[array_absArgmax32i(nobs, lags, &ierr)];
     }
     if (maxlag == 0){luseLag = false;}
     nptsPad = nptsAll + nobs*maxlag;

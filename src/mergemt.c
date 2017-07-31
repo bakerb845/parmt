@@ -198,8 +198,8 @@ NEXT:;
             printf("%s: Inconsistent grid search sizes\n", PROGRAM_NAME);
             return -1;
         }
-        printf("%f\n", array_max64f(nmt0, phi0));
-        printf("%f\n", array_max64f(nmt1, phi1)); 
+        printf("%f\n", array_max64f(nmt0, phi0, &ierr));
+        printf("%f\n", array_max64f(nmt1, phi1, &ierr)); 
         printf("%s: Stacking polarities into waveforms...\n", PROGRAM_NAME);
 /*
         for (i=0; i<nm0; i++)
@@ -220,7 +220,7 @@ NEXT:;
                 cblas_daxpy(ncopy,  1.0, &phi1[jndx], 1, &phi0[indx], 1); 
             }
         }
-printf("%f\n", array_max64f(nmt0, phi0));
+printf("%f\n", array_max64f(nmt0, phi0, &ierr));
         printf("%s: Writing joint archive\n", PROGRAM_NAME);
         ierr = parmt_io_createObjfnArchive64f(PROGRAM_NAME, parms.archiveFile,
                                               1, //data.nobs, TODO - read and fix
