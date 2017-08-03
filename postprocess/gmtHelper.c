@@ -49,7 +49,7 @@ int postmt_gmtHelper_writeGlobalMap(
             return -1;
         }
     }
-    if (dirName != NULL){free(dirName);}
+    memory_free8c(&dirName);
 
     ofl = fopen(globalMap.outputScript, "w"); 
     fprintf(ofl, "#!/bin/bash\n");

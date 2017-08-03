@@ -368,8 +368,7 @@ int prepmt_grnsRegSW_readParameters(const char *iniFile, const char *section,
             goto ERROR;
         }
     }    
-    if (dirName != NULL){free(dirName);}
-
+    memory_free8c(&dirName);
 
     memset(vname, 0, 256*sizeof(char));
     sprintf(vname, "%s:hspecArchiveFile", section);

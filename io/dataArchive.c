@@ -451,6 +451,7 @@ int utils_dataArchive_initialize(const char *fname, //const char *dirnm, const c
             return -1;
         }
     }
+    memory_free8c(&dirnm);
     // Make the filename
 /*
     ierr = utils_dataArchive_setFileName(dirnm, projnm, fname);

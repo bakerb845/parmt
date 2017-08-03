@@ -294,7 +294,7 @@ int parmt_io_createObjfnArchive64f(
             return -1; 
         }
     }
-    if (dirName != NULL){free(dirName);}
+    memory_free8c(&dirName);
     if (os_path_isfile(flname))
     {   
         printf("%s: Over-writing file %s\n", fcnm, flname);

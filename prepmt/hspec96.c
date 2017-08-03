@@ -515,7 +515,7 @@ int prepmt_hspec96_readParameters(const char *iniFile,
             return -1;
         }
     }
-    free(dirName);
+    memory_free8c(&dirName);
     strcpy(precompute->hspecArchiveFile, s);
 
     //memset(vname, 0, 128*sizeof(char));

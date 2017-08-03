@@ -772,7 +772,7 @@ int prepmt_grnsTeleB_readParameters(const char *iniFile,
             goto ERROR;
         }
     }
-    if (dirName != NULL){free(dirName);}
+    memory_free8c(&dirName);
 
     memset(vname, 0, 256*sizeof(char));
     sprintf(vname, "%s:lrepickGrns", section);

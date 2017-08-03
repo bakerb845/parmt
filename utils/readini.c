@@ -7,6 +7,7 @@
 #include "parmt_utils.h"
 #include "ttimes_config.h"
 #include "iscl/log/log.h"
+#include "iscl/memory/memory.h"
 #include "iscl/os/os.h"
 #include "compearth.h"
 
@@ -81,7 +82,7 @@ int parmt_utils_readGeneralParms(const char *iniFile,
             goto END;
         }
     }
-    free(dirName);
+    memory_free8c(&dirName);
 
     s = iniparser_getstring(ini, "general:polarmtArchive\0", NULL);
     if (s == NULL)
@@ -103,7 +104,7 @@ int parmt_utils_readGeneralParms(const char *iniFile,
             goto END;
         }
     }
-    free(dirName);
+    memory_free8c(&dirName);
 
     s = iniparser_getstring(ini, "general:postmtFile\0", NULL);
     strcpy(parms->postmtFile, s);
