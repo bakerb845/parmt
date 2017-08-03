@@ -441,7 +441,7 @@ int utils_dataArchive_initialize(const char *fname, //const char *dirnm, const c
     const hsize_t dims[1] = {nlocs};
     hid_t attribute, dataSet, dataSpace, fid, groupID, locID;
     // Check that there is a directory to hold the output archive
-    dirnm = os_dirname(fname);
+    dirnm = os_dirname(fname, &ierr);
     if (!os_path_isdir(dirnm))
     {
         ierr = os_makedirs(dirnm);

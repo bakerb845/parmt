@@ -358,7 +358,7 @@ int prepmt_grnsRegSW_readParameters(const char *iniFile, const char *section,
     s = iniparser_getstring(ini, vname, "bodyWave.h5"); 
     strcpy(parmtDataFile, s);
 
-    dirName = os_dirname(parmtDataFile);
+    dirName = os_dirname(parmtDataFile, &ierr);
     if (!os_path_isdir(dirName))
     {    
         ierr = os_makedirs(dirName);

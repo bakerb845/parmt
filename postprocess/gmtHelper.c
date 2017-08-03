@@ -39,7 +39,7 @@ int postmt_gmtHelper_writeGlobalMap(
           SAC_CHAR_KT4, SAC_CHAR_KT5, SAC_CHAR_KT6, SAC_CHAR_KT7,
           SAC_CHAR_KT8, SAC_CHAR_KT9};
 
-    dirName = os_dirname(globalMap.outputScript);
+    dirName = os_dirname(globalMap.outputScript, &ierr);
     if (!os_path_isdir(dirName))
     {
         ierr = os_makedirs(dirName); 

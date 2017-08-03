@@ -505,7 +505,7 @@ int prepmt_hspec96_readParameters(const char *iniFile,
     memset(vname, 0, 128*sizeof(char));
     sprintf(vname, "%s:hspecArchiveFile", section);
     s = iniparser_getstring(ini, vname, "hspecFFgreens.h5");
-    dirName = os_dirname(s);
+    dirName = os_dirname(s, &ierr);
     if (!os_path_isdir(dirName))
     {
         ierr = os_makedirs(dirName);

@@ -72,7 +72,7 @@ int parmt_utils_readGeneralParms(const char *iniFile,
     {
         strcpy(parms->parmtArchive, s);
     }
-    dirName = os_dirname(parms->parmtArchive);
+    dirName = os_dirname(parms->parmtArchive, &ierr);
     if (!os_path_isdir(dirName))
     {   
         ierr = os_makedirs(dirName);
@@ -94,7 +94,7 @@ int parmt_utils_readGeneralParms(const char *iniFile,
     {
         strcpy(parms->polarmtArchive, s);
     }
-    dirName = os_dirname(parms->polarmtArchive);
+    dirName = os_dirname(parms->polarmtArchive, &ierr);
     if (!os_path_isdir(dirName))
     {
         ierr = os_makedirs(dirName);

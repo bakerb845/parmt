@@ -762,7 +762,7 @@ int prepmt_grnsTeleB_readParameters(const char *iniFile,
     s = iniparser_getstring(ini, vname, "bodyWave.h5"); 
     strcpy(parmtDataFile, s);
 
-    dirName = os_dirname(parmtDataFile);
+    dirName = os_dirname(parmtDataFile, &ierr);
     if (!os_path_isdir(dirName))
     {
         ierr = os_makedirs(dirName);

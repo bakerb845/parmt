@@ -284,7 +284,7 @@ int parmt_io_createObjfnArchive64f(
         return -1;
     }
 */
-    dirName = os_dirname(flname);
+    dirName = os_dirname(flname, &ierr);
     if (!os_path_isdir(dirName))
     {   
         ierr = os_makedirs(dirName);
