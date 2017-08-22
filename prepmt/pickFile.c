@@ -272,8 +272,8 @@ int prepmt_pickFile_sacToNonLinLocLine(const struct sacData_struct data,
         printf("%s: Error - could not get phase\n", fcnm);
         return -1;
     }
-    if (phase[0] != 'P' || phase[0] != 'p' ||
-        phase[0] != 'S' || phase[0] != 's')
+    if (phase[0] != 'P' && phase[0] != 'p' && 
+        phase[0] != 'S' && phase[0] != 's')
     {
         printf("%s: Warning - I don't know what type of phase this is\n", fcnm);
     }

@@ -166,7 +166,8 @@ int main(int argc, char **argv)
         {
             printf("%s: Attaching picks from NLL file: %s\n",
                    PROGRAM_NAME, pickFile);
-            ierr = prepmt_pickFile_nonLinLoc2sac(pickFile,
+            ierr = prepmt_pickFile_nonLinLoc2sac(pickFile, 
+                                                 SAC_FLOAT_A, SAC_CHAR_KA,
                                                  nfiles, sacData);
             if (ierr != 0)
             {
