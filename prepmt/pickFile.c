@@ -275,7 +275,7 @@ int prepmt_pickFile_sacToNonLinLocLine(const struct sacData_struct data,
     if (phase[0] != 'P' && phase[0] != 'p' && 
         phase[0] != 'S' && phase[0] != 's')
     {
-        printf("%s: Warning - I don't know what type of phase this is\n", fcnm);
+        printf("%s: Warning - phase=%s is not a P or S pick\n", fcnm, phase);
     }
     pid[0] = '?'; //phase[0];
     // Figure out first motion and remove it from string
