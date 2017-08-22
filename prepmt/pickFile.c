@@ -7,9 +7,30 @@
 #include "iscl/os/os.h"
 #include "iscl/time/time.h"
 
+/*!
+ * @brief Reads a NonLinLoc hyp pick file and populates the SAC headers.
+ *
+ * @param[in] pickFile     Name of file with picks.
+ * @param[in] pickVar      SAC float header variable to which the pick will be
+ *                         written.  For example, this could be SAC_FLOAT_A.
+ * @param[in] pickNameVar  SAC character header variable to which the phase
+ *                         name, and possibly, polarity will be written. 
+ *                         For example, this could be SAC_CHAR_KA.
+ * @param[in] nobs         Number of waveforms.
+ * @param[out] data        Contains the first arrival picks corresponding to
+ *                         the picks in the pick file.  The waveforms are
+ *                         matched by SNCL.  This is an array of dimension
+ *                         [nobs].
+ *
+ * @result 0 indicates success.
+ *
+ * @author Ben Baker, ISTI
+ *
+ */
 int prepmt_pickFile_nonLinLoc2sac(const char *pickFile,
-                                  const int nobs,
-                                  struct sacData_struct *data)
+                                  const enum sacHeader_enum pickVar, 
+                                  const enum sacHeader_enum pickNameVar,
+                                  const int nobs, struct sacData_struct *data)
 {
     const char *fcnm = "prepmt_pickFile_nonLinLoc2sac\0";
     double *epochs, epoch, errMag, codaDuration, amplitude, period,
@@ -127,8 +148,11 @@ int prepmt_pickFile_nonLinLoc2sac(const char *pickFile,
             {
 
                 pick = epochs[i] - epoch;
-                sacio_setFloatHeader(SAC_FLOAT_A, pick, &data[k].header);
-                sacio_setCharacterHeader(SAC_CHAR_KA, phases[i],
+                //sacio_setFloatHeader(SAC_FLOAT_A, pick, &data[k].header);
+                //sacio_setCharacterHeader(SAC_CHAR_KA, phases[i],
+                //                         &data[k].header);
+                sacio_setFloatHeader(pickVar, pick, &data[k].header);
+                sacio_setCharacterHeader(pickNameVar, phases[i], 
                                          &data[k].header);
                 lfound = true;
                 break;
@@ -157,7 +181,45 @@ ERROR:;
     free(epochs);
     return ierr;
 }
+//============================================================================//
 /*!
+ * @brief Writes a line which can be written to a NonLinLoc *hyp pick file.
+ *
+ * @param[in] data         SAC data from which to extract pick information.
+ * @param[in] pickVar      SAC float header variable to extract the pick time.
+ *                         For example this could be SAC_FLOAT_A.  This
+ *                         must be defined.
+ * @param[in] pickNameVar  SAC float header variables to extract the pick
+ *                         phase.  For example this could be SAC_CHAR_KA.
+ *                         This must be specified.  If a polarity is associated
+ *                         with the phase then this should end in + or - for
+ *                         positive or negative polarity, respectively.
+ * @param[in] errMagVar    SAC float header variable containing the 
+ *                         magnitude error in seconds.  For example
+ *                         this could be SAC_FLOAT_USER0.  This variable
+ *                         does not need to be defined in the SAC header.
+ * @param[in] codaDurVar   SAC float header variable containing the 
+ *                         coda duration.  For example, this could be
+ *                         SAC_FLOAT_USER1.  This variable does not need
+ *                         to be defined in the SAC header.
+ * @param[in] ampVar       SAC float header variable with the maximum 
+ *                         peak-to-peak amplitude. For example, this could be
+ *                         SAC_FLOAT_USER2.  This variable does not need
+ *                         to be defined in the SAC header.
+ * @param[in] periodVar    SAC float header variable with the period of the
+ *                         amplitude reading.   For example, this could be
+ *                         SAC_FLOAT_USER3.  This variable does not need to
+ *                         be defined.
+ * @param[in] weightVar    SAC float header with the prior weight for this
+ *                         observation.  This variable does not need to be
+ *                         defined.
+ *
+ * @param[out] line        On successful exit this line can be safely written
+ *                         to a hyp file.
+ *
+ * @result 0 indicates success.
+ *
+ * @author Ben Baker, ISTI
  *
  */
 int prepmt_pickFile_sacToNonLinLocLine(const struct sacData_struct data,

@@ -9,8 +9,9 @@ extern "C"
 
 /*! Reads NonLinLoc phase arrivals onto SAC data */
 int prepmt_pickFile_nonLinLoc2sac(const char *pickFile,
-                                  const int nobs,
-                                  struct sacData_struct *data);
+                                  const enum sacHeader_enum pickVar,
+                                  const enum sacHeader_enum pickNameVar,
+                                  const int nobs, struct sacData_struct *data);
 /* SAC data to line in NonLinLoc phase arrival file */
 int prepmt_pickFile_sacToNonLinLocLine(const struct sacData_struct data,
                                        const enum sacHeader_enum pickVar,
