@@ -12,7 +12,7 @@ Below is a list of dependencies.  It is strongly recommended to use vendor BLAS/
   - [LAPACK(E)](http://www.netlib.org/lapack/) and [(C)BLAS](http://www.netlib.org/blas/).  If using Intel then the [MKL](https://software.intel.com/en-us/mkl) should be used instead of the libraries available through a package manager.  If using IBM Power architecture then the [ESSL](https://www-03.ibm.com/systems/power/software/essl/) library should be used.
   - [HDF5](https://support.hdfgroup.org/HDF5/)
   - The initializing parser library [iniparser](https://github.com/ndevilla/iniparser) 
-  - ISTI's scientific computing library [ISCL](https://github.com/bakerb845/libiscl) 
+  - ISTI's scientific computing library [ISCL](https://github.com/bakerb845/libiscl).  This must have been compiled with [GeographicLib](https://geographiclib.sourceforge.io/)
   - ISTI's signals processing library [ISPL](https://github.com/bakerb845/ispl)
   - The 1D global earth [travel-times library](https://github.com/bakerb845/libttimes) to [iaspei-tau](https://seiscode.iris.washington.edu/projects/iaspei-tau)
   - The SAC input/output library [sacio](https://github.com/bakerb845/sacio)
