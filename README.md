@@ -7,7 +7,6 @@ Below is a list of dependencies.  It is strongly recommended to use vendor BLAS/
 
   - CMake v2.6
   - A C11 compiler
-  - A C++11 compiler
   - [Message Passing Interface](https://www.open-mpi.org/)
   - [Intel Performance Primitives](https://software.intel.com/en-us/intel-ipp)
   - [LAPACK(E)](http://www.netlib.org/lapack/) and [(C)BLAS](http://www.netlib.org/blas/).  If using Intel then the [MKL](https://software.intel.com/en-us/mkl) should be used instead of the libraries available through a package manager.  If using IBM Power architecture then the [ESSL](https://www-03.ibm.com/systems/power/software/essl/) library should be used.
