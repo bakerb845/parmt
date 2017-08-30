@@ -10,7 +10,7 @@ Below is a list of dependencies.  It is strongly recommended to use vendor BLAS/
   - [Message Passing Interface](https://www.open-mpi.org/)
   - [Intel Performance Primitives](https://software.intel.com/en-us/intel-ipp)
   - [LAPACK(E)](http://www.netlib.org/lapack/) and [(C)BLAS](http://www.netlib.org/blas/).  If using Intel then the [MKL](https://software.intel.com/en-us/mkl) should be used instead of the libraries available through a package manager.  If using IBM Power architecture then the [ESSL](https://www-03.ibm.com/systems/power/software/essl/) library should be used.
-  - [HDF5](https://support.hdfgroup.org/HDF5/)
+  - The high performance self describing file format [HDF5](https://support.hdfgroup.org/HDF5/).  This build will likely require [zlib](https://zlib.net/).
   - The initializing parser library [iniparser](https://github.com/ndevilla/iniparser) 
   - ISTI's scientific computing library [ISCL](https://github.com/bakerb845/libiscl).  This must have been compiled with [GeographicLib](https://geographiclib.sourceforge.io/)
   - ISTI's signals processing library [ISPL](https://github.com/bakerb845/ispl)
