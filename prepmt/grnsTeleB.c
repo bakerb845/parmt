@@ -822,6 +822,7 @@ int prepmt_grnsTeleB_readParameters(const char *iniFile,
             ierr = 1;
             goto ERROR;
         }
+        strcpy(tstarTable, s);
     }
 
     memset(vname, 0, 256*sizeof(char));
