@@ -4,11 +4,11 @@
     set(COMPEARTH_FIND_QUIETLY TRUE)
   endif (COMPEARTH_INCLUDE_DIR AND COMPEARTH_LIBRARY)
   find_path(COMPEARTH_INCLUDE_DIR
-    NAMES iscl_shared iscl_static
+    NAMES compearth.h
     HINTS /usr/include /usr/local/include $ENV{COMPEARTH_DIR}/include
   )
   find_library(COMPEARTH_LIBRARY
-    NAMES iscl
+    NAMES compearth compearth_shared compearth_static
     HINTS /usr/lib /usr/lib64 /usr/local/lib /usr/local/lib64 $ENV{COMPEARTH_DIR}/lib
   )
   if (COMPEARTH_INCLUDE_DIR)

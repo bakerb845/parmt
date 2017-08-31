@@ -4,11 +4,11 @@
     set(ISCL_FIND_QUIETLY TRUE)
   endif (ISCL_INCLUDE_DIR AND ISCL_LIBRARY)
   find_path(ISCL_INCLUDE_DIR
-    NAMES iscl_shared iscl_static
+    NAMES iscl
     HINTS /usr/include /usr/local/include $ENV{ISCL_DIR}/include
   )
   find_library(ISCL_LIBRARY
-    NAMES iscl
+    NAMES iscl iscl_shared iscl_static
     HINTS /usr/lib /usr/lib64 /usr/local/lib /usr/local/lib64 $ENV{ISCL_DIR}/lib
   )
   if (ISCL_INCLUDE_DIR)
