@@ -45,6 +45,7 @@ int main(int argc, char **argv)
     double surfaceWaveVel;
     int ierr, k, nfiles;
     bool lsetNewPicks, lusePickFile, lwriteIntermediateFiles;
+    char khole[8];
     const double dmin = PREPMT_MIN_REGIONAL_DIST;
     const double dmax = PREPMT_MAX_REGIONAL_DIST;
     const char *hpulseSection = "hpulse96\0";
@@ -92,6 +93,7 @@ int main(int argc, char **argv)
               calloc((size_t) nfiles, sizeof(struct sacData_struct));
     for (k=0; k<nfiles; k++)
     {
+        // Read the data
         ierr = sacio_readTimeSeriesFile(sacFiles[k], &sacData[k]); 
         if (ierr != 0)
         {
@@ -99,6 +101,15 @@ int main(int argc, char **argv)
                    PROGRAM_NAME, sacFiles[k]);
             return EXIT_FAILURE;
         }
+        // Fix the location code
+        ierr = sacio_getCharacterHeader(SAC_CHAR_KHOLE, sacData[k].header,
+                                        khole);
+        if (ierr != 0 || strcasecmp(khole, "-12345\0") == 0)
+        {
+            sacio_setCharacterHeader(SAC_CHAR_KHOLE, "--\0",
+                                     &sacData[k].header);
+        }
+        // Get the metadata
         if (os_path_isfile(sacpzFiles[k]))
         {
             ierr = sacio_readPoleZeroFile(sacpzFiles[k], &sacData[k].pz);
