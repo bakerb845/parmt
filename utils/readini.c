@@ -411,9 +411,9 @@ int parmt_utils_readMtSearch(const char *iniFile,
         //parms->m0Lower = pow(10.0, 1.5*parms->m0Lower + 9.1);
         //parms->m0Upper = pow(10.0, 1.5*parms->m0Upper + 9.1);
         mw = parms->m0Lower; 
-        compearth_mw2m0(1, KANAMORI_1978, &mw, &parms->m0Lower);
+        compearth_mw2m0(1, CE_KANAMORI_1978, &mw, &parms->m0Lower);
         mw = parms->m0Upper;
-        compearth_mw2m0(1, KANAMORI_1978, &mw, &parms->m0Upper);
+        compearth_mw2m0(1, CE_KANAMORI_1978, &mw, &parms->m0Upper);
     }
     parms->luseLog = iniparser_getboolean(ini, "mtsearch:luseLog", false);
 

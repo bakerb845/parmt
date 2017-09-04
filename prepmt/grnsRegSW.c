@@ -7,6 +7,7 @@
 #include <iniparser.h>
 #include "prepmt/prepmt.h"
 #include "iscl/iscl/iscl.h"
+#include "iscl/array/array.h"
 #include "iscl/memory/memory.h"
 #include "iscl/os/os.h"
 

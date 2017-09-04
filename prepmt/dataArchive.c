@@ -20,12 +20,11 @@
  */
 int prepmt_dataArchive_closeArchive(const hid_t h5fl)
 {
-    const char *fcnm = "prepmt_dataArchive_closeArchive\0";
     hid_t status;
     status = H5Fclose(h5fl);
     if (status != 0)
     {
-        printf("%s: Failed to close archive\n", fcnm);
+        fprintf(stderr, "%s: Failed to close archive\n", __func__);
         return -1;
     }
     return 0;
@@ -79,7 +78,6 @@ int prepmt_dataArchive_createArchive(
 hid_t prepmt_dataArchive_openArchive(
     const char *fname, int *ierr) //const char *dirnm, const char *projnm, int *ierr)
 {
-    const char *fcnm = "prepmt_dataArchive_openArchive\0";
     hid_t h5fl = 0;
 /*
     char fname[PATH_MAX];
@@ -87,14 +85,14 @@ hid_t prepmt_dataArchive_openArchive(
     *ierr = utils_dataArchive_setFileName(dirnm, projnm, fname);
     if (*ierr != 0)
     {
-        printf("%s: Failed to set file name\n", fcnm);
+        fprintf(stderr, "%s: Failed to set file name\n", __func__);
         return -1;
     }
 */
     // archive doesn't exist
     if (!os_path_exists(fname))
     {
-        printf("%s: Archive %s doesn't exist\n", fcnm, fname);
+        fprintf(stderr, "%s: Archive %s doesn't exist\n", __func__, fname);
         *ierr = 1;
         return h5fl;
     }
@@ -116,12 +114,11 @@ hid_t prepmt_dataArchive_openArchive(
 int prepmt_dataArchive_addObservation(
     const hid_t h5fl, const struct sacData_struct obs)
 {
-    const char *fcnm = "prepmt_dataArchive_addObservation\0";
     int ierr;
     ierr = utils_dataArchive_addObservation(h5fl, obs);
     if (ierr != 0)
     {
-        printf("%s: Failed to add observation\n", fcnm);
+        fprintf(stderr, "%s: Failed to add observation\n", __func__);
         return -1;
     }
     return 0;
@@ -161,7 +158,6 @@ int prepmt_dataArchive_addGreensFunctions(const hid_t h5fl,
                                           const struct sacData_struct sacGyz)
 {
     //char varname[256];
-    const char *fcnm = "prepmt_dataArchive_addGreensFunctions\0";
     double evla, evlo, evdp;
     int ierr, locationID, waveformID;
     sacio_getFloatHeader(SAC_FLOAT_EVLA, sacGxx.header, &evla);
@@ -172,8 +168,8 @@ int prepmt_dataArchive_addGreensFunctions(const hid_t h5fl,
                                                  evla, evlo, evdp);
     if (locationID < 0)
     {
-        printf("%s: Couldn't find location %f %f %f\n",
-               fcnm, evla, evlo, evdp);
+        fprintf(stderr, "%s: Couldn't find location %f %f %f\n",
+                __func__, evla, evlo, evdp);
         return -1;
     }
     waveformID = utils_dataArchive_getObservationID(h5fl, sac);
@@ -182,7 +178,7 @@ int prepmt_dataArchive_addGreensFunctions(const hid_t h5fl,
         ierr = utils_dataArchive_addObservation(h5fl, sac);
         if (ierr != 0)
         {
-            printf("%s: Couldn't add observation\n", fcnm);
+            fprintf(stderr, "%s: Couldn't add observation\n", __func__);
             return -1;
         }
         waveformID = utils_dataArchive_getObservationID(h5fl, sac);
@@ -193,7 +189,7 @@ int prepmt_dataArchive_addGreensFunctions(const hid_t h5fl,
                                                 sacGxy, sacGxz, sacGyz);
     if (ierr != 0)
     {
-        printf("%s: Couldn't add Green's function\n", fcnm);
+        fprintf(stderr, "%s: Couldn't add Green's function\n", __func__);
         return -1;
     }
     return 0;

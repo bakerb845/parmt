@@ -642,7 +642,7 @@ int postmt_gmtHelper_writeMagnitudeBoxes(const bool lappend, const bool lclose,
     // Compute moment magnitudes 
     Mw = memory_calloc64f(nm);
     mmax = array_max64f(nm, magHist, &ierr);
-    compearth_m02mw(nm, KANAMORI_1978, M0s, Mw);
+    compearth_m02mw(nm, CE_KANAMORI_1978, M0s, Mw);
     dm = 0.1;
     if (nm > 1){dm = Mw[1] - Mw[0];};
     mwMin = Mw[0] - dm/2.0;
@@ -1099,7 +1099,7 @@ int postmt_gmtHelper_makePsmecaLine(const enum compearthCoordSystem_enum basis,
     double mtUSE[6], mtGMT[6];
     int exp, ierr;
     memset(line, 0, 128*sizeof(char));
-    ierr = compearth_convertMT(basis, USE, mt, mtUSE);
+    ierr = compearth_convertMT(1, basis, CE_USE, mt, mtUSE);
     if (ierr != 0)
     {
         printf("%s: Error switching basis\n", fcnm);

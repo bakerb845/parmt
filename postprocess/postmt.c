@@ -15,6 +15,7 @@
 #include "parmt_polarity.h"
 #include "parmt_postProcess.h"
 #include "parmt_mtsearch.h"
+#include "iscl/array/array.h"
 #include "iscl/memory/memory.h"
 #include "iscl/os/os.h"
 
@@ -176,7 +177,7 @@ return 0;
            +               jk*ns*nt
            +                  js*nt
            +                     jt;
-    compearth_m02mw(1, KANAMORI_1978, &M0s[jm], &Mw);
+    compearth_m02mw(1, CE_KANAMORI_1978, &M0s[jm], &Mw);
     joptLoc = jloc;
 //printf("%d %d %d %d %d %d %d\n", jloc, jm, jg, jb, jk, js, jt);
 //jloc =4; jm = 5; jg =1; jb=0; jk=11; js=2; jt=4;
@@ -261,7 +262,7 @@ printf("%f %f %f %f %f %f\n", Gpol[6*ipol+0], Gpol[6*ipol+1], Gpol[6*ipol+2],
     strcpy(globalMap.outputScript, "gmtScripts/globalMap.sh");
     strcpy(globalMap.psFile, "globalMap.ps");
     array_copy64f_work(6, Muse, globalMap.mts);
-    globalMap.basis = USE;
+    globalMap.basis = CE_USE;
     globalMap.evla = data.data[0].header.evla;
     globalMap.evlo = data.data[0].header.evlo;
     globalMap.evdp = deps[jloc]; 
@@ -316,7 +317,7 @@ Mned[5] =-2.756277e+17;
     printf("Magnitudes\n");
     for (i=0; i<nm; i++)
     {
-        compearth_m02mw(1, KANAMORI_1978, &M0s[i], &Mw);
+        compearth_m02mw(1, CE_KANAMORI_1978, &M0s[i], &Mw);
         printf("%f %f\n", Mw, magHist[i]);
     }
     printf("Gammas\n");
@@ -391,7 +392,7 @@ ierr = postmt_gmtHelper_writeDepthBoxes(true, true, scriptFile, psFile,
 int im, iloc;
     for (im=0; im<nm; im++)
     {
-        compearth_m02mw(1, KANAMORI_1978, &M0s[im], &Mw);
+        compearth_m02mw(1, CE_KANAMORI_1978, &M0s[im], &Mw);
         printf("Writing magnitude: %f\n", Mw);
         memset(fname, 0, PATH_MAX*sizeof(char));
         sprintf(fname, "%s/%s_dep.%d.txt", OUTDIR, parms.projnm, im+1);

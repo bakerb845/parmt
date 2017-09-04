@@ -7,11 +7,21 @@
 #include "sacio.h"
 #include "ispl/process.h"
 #include "iscl/array/array.h"
-#include "iscl/log/log.h"
 #include "iscl/memory/memory.h"
 #include "iscl/os/os.h"
 #include "iscl/string/string.h"
 
+/*!
+ * @brief Frees memory on the commands structure.
+ *
+ * @param[out] cmds   On exit all memory has been released and variables
+ *                    set to 0.
+ *
+ * @result 0 indicates success.
+ *
+ * @author Ben Baker
+ *
+ */
 int prepmt_commands_freePrepmtCommands(struct prepmtCommands_struct *cmds)
 {
     int i, k;
@@ -33,7 +43,26 @@ int prepmt_commands_freePrepmtCommands(struct prepmtCommands_struct *cmds)
     memset(cmds, 0, sizeof(struct prepmtCommands_struct));
     return 0;
 }
-
+//============================================================================//
+/*!
+ * @brief Reads the processing commands from the initialization file.
+ *
+ * @param[in] iniFile   Name of initialization file.
+ * @param[in] section   Section of ini file to read commands from.
+ * @param[in] nobs      Number of observed waveforms.
+ * @param[in] data      Waveforms for which the commands will be read.
+ *                      If reading a processing list then the SNCL's
+ *                      will be required to match the waveform to the
+ *                      processing work flow.  This is an array of dimension
+ *                      [nobs].
+ *
+ * @param[out] ierr     0 indicates success.
+ *
+ * @result The processing commands for each observed waveform.
+ *
+ * @author Ben Baker, ISTI
+ *
+ */
 struct prepmtCommands_struct
     prepmt_commands_readFromIniFile(const char *iniFile,
                                      const char *section,
@@ -41,7 +70,6 @@ struct prepmtCommands_struct
                                      const struct sacData_struct *data,
                                      int *ierr) 
 {
-    const char *fcnm = "prepmt_commands_readFromIniFile\0";
     FILE *pfl;
     const char *s;
     char **cwork, vname[256], cline[MAX_CMD_LEN];
@@ -57,7 +85,8 @@ struct prepmtCommands_struct
     memset(&cmds, 0, sizeof(struct prepmtCommands_struct));
     if (!os_path_isfile(iniFile))
     {
-        printf("%s: Error - ini file %s does not exist\n", fcnm, iniFile);
+        fprintf(stderr, "%s: Error - ini file %s does not exist\n",
+                __func__, iniFile);
         *ierr = 1;
         return cmds;
     }
@@ -123,7 +152,8 @@ struct prepmtCommands_struct
         s = iniparser_getstring(ini, vname, NULL);
         if (!os_path_isfile(s))
         {
-            printf("%s: Processing list file %s does not exist\n", fcnm, s);
+            fprintf(stderr, "%s: Processing list file %s does not exist\n",
+                    __func__, s);
             *ierr = 1;
             return cmds;
         }
@@ -175,7 +205,9 @@ struct prepmtCommands_struct
                         {
                             if (strcasecmp(khole, loc) != 0)
                             {
-                                printf("%s: Location code mismatch\n", fcnm);
+                                fprintf(stdout,
+                                        "%s: Location code mismatch %s %s\n",
+                                        __func__, loc, khole);
                             }
                             ncmds = indx[i+1] - indx[i];
                             cmds.cmds[k].lgeneric = false;
@@ -200,8 +232,8 @@ struct prepmtCommands_struct
             }
             if (!lfound)
             {
-                printf("%s: Warning - no commands for: %s.%s.%s.%s\n",
-                       fcnm, knetwk, kstnm, kcmpnm, khole);
+                fprintf(stdout, "%s: Warning - no commands for: %s.%s.%s.%s\n",
+                       __func__, knetwk, kstnm, kcmpnm, khole);
             }
             rewind(pfl);
         } // Loop on stations
@@ -217,14 +249,13 @@ int prepmt_commands_modifyCommandsCharsStruct(
     const struct sacData_struct data,
     struct prepmtCommandsChars_struct *cmds)
 {
-    const char *fcnm = "prepmt_commands_modifyCommandsCharsStruct\0";
     char **cwork;
     int i, ierr;
     size_t lenos;
     if (cmds->ncmds < 1){return 0;}
     if (cmds->cmds == NULL)
     {
-        printf("%s: Commands are NULL\n", fcnm);
+        fprintf(stderr, "%s: Commands are NULL\n", __func__);
         return -1;
     }
     if (!cmds->lgeneric){return 0;}
@@ -233,7 +264,7 @@ int prepmt_commands_modifyCommandsCharsStruct(
                                            options, data, &ierr); 
     if (ierr != 0)
     {
-        printf("%s: Failed to modify commands\n", fcnm);
+        fprintf(stderr, "%s: Failed to modify commands\n", __func__);
         return -1;
     }
     for (i=0; i<cmds->ncmds; i++)
@@ -254,14 +285,36 @@ int prepmt_commands_modifyCommandsCharsStruct(
     free(cwork);
     return 0;
 }
-                                    
+//============================================================================//
+/*!
+ * @brief Modifies a generic processing command list to conform with the 
+ *        input station.
+ *
+ * @param[in] ncmds      Number of commands.
+ * @param[in] cmds       Commands to modify.  This is char * array of dimension
+ *                       [ncmds] where each command is NULL terminated.
+ * @param[in] options    Options such as the cut start/end time, the
+ *                       target sampling period, a flag indicating whether
+ *                       transfer should indicate convolution or deconvolution,
+ *                       and the output units of the output commands.
+ * @param[in] data       Provides context (e.g., the sampling period) to the
+ *                       generic processing command.
+ *
+ * @param[out] ierr      0 indicates success. 
+ *
+ * @result On successful exit this is an array of char * processing commands
+ *         which are now consistent with the input data and the inversion.  
+ *         This is an array of dimension [ncmds].
+ * 
+ * @author Ben Baker, ISTI
+ *
+ */
 char **prepmt_commands_modifyCommands(
     const int ncmds, const char **cmds,
     const struct prepmtModifyCommands_struct options,
     const struct sacData_struct data,
     int *ierr)
 {
-    const char *fcnm = "prepmt_commands_modifyCommands\0";
     char **newCmds, **cmdSplit, cwork[MAX_CMD_LEN], c64[64], cmd1[64], cmd2[64];
     double *freqs, cut0, cut1, dt0, epoch, gainFix, ptime, t0, t1, targetDt;
     struct signalZPK_struct zpkFrom, zpkTo;
@@ -280,7 +333,9 @@ char **prepmt_commands_modifyCommands(
     iodva = options.iodva;
     if (iodva < 0 || iodva > 3)
     {
-        printf("%s: No idea what iodva=%d means\n", fcnm, iodva);
+        fprintf(stderr, "%s: No idea what iodva=%d means\n", __func__, iodva);
+        *ierr = 1;
+        return NULL;
     }
     newCmds = NULL;
     if (ncmds < 1){return 0;} // Nothing to do
@@ -393,7 +448,7 @@ char **prepmt_commands_modifyCommands(
                 }
                 else if (data.pz.inputUnits == SAC_UNKNOWN_UNITS)
                 {
-                    printf("%s: Unknown input units\n", fcnm);
+                    fprintf(stderr, "%s: Unknown input units\n", __func__);
                     *ierr = 1;
                     break;
                 }
@@ -445,7 +500,8 @@ char **prepmt_commands_modifyCommands(
             memory_free64z(&zpkFrom.z);
             if (*ierr != 0)
             {
-                log_errorF("%s: Error setting transfer command\n", fcnm);
+                fprintf(stderr, "%s: Error setting transfer command\n",
+                        __func__);
                 goto ERROR;
             }
 /*
@@ -461,6 +517,7 @@ transfer_poleZeroInstrumentResponsesToString(
 //printf("%s\n", cwork);
 //getchar();
         }
+        // TODO - remove
         else if (strcasecmp(cmd1, "lowpass\0") == 0 ||
                  strcasecmp(cmd1, "highpas\0") == 0)
         {
@@ -485,6 +542,7 @@ transfer_poleZeroInstrumentResponsesToString(
             for (l=0; l<nsplit; l++){free(cmdSplit[l]);}
             free(cmdSplit);
         }
+        // TODO - remove
         else if (strcasecmp(cmd1, "bandpas\0") == 0 ||
                  strcasecmp(cmd1, "bandrej\0") == 0)
         {
@@ -510,7 +568,8 @@ transfer_poleZeroInstrumentResponsesToString(
             for (l=0; l<nsplit; l++){free(cmdSplit[l]);}
             free(cmdSplit);
         }
-        else if (strcasecmp(cmd2, "sos\0") == 0)
+        else if (strcasecmp(cmd2, "sos\0") == 0 ||
+                 strcasecmp(cmd2, "iir\0") == 0)
         {
             oneCorner = false;
             cmdSplit = string_rsplit(NULL, cmds[i], &nsplit);
@@ -564,14 +623,14 @@ transfer_poleZeroInstrumentResponsesToString(
             *ierr = sacio_getEpochalStartTime(data.header, &epoch);
             if (*ierr != 0)
             {
-                log_errorF("%s: Failed to get start time\n", fcnm);
+                fprintf(stderr, "%s: Failed to get start time\n", __func__);
                 goto ERROR;
             }
             *ierr = sacio_getFloatHeader(SAC_FLOAT_A, data.header,
                                          &ptime);
             if (*ierr != 0)
             {
-                log_errorF("%s: Failed to get pick time\n", fcnm);
+                fprintf(stderr, "%s: Failed to get pick time\n", __func__);
                 goto ERROR;
             }
             t0 = epoch + ptime + cut0; // superfluous; epoch will be removed
@@ -579,7 +638,7 @@ transfer_poleZeroInstrumentResponsesToString(
             *ierr = cut_cutEpochalTimesToString(dt0, epoch, t0, t1, cwork);
             if (*ierr != 0)
             {
-                log_errorF("%s: Failed to modify cut command\n", fcnm);
+                fprintf(stderr, "%s: Failed to modify cut command\n", __func__);
                 goto ERROR;
             }
         }
@@ -590,8 +649,8 @@ transfer_poleZeroInstrumentResponsesToString(
                                                         cwork);
             if (*ierr != 0)
             {
-                log_errorF("%s: Couldn't modify the decimate command\n",
-                           fcnm);
+                fprintf(stderr, "%s: Couldn't modify the decimate command\n",
+                        __func__);
                 goto ERROR;
             }
             dt0 = targetDt;
@@ -602,8 +661,8 @@ transfer_poleZeroInstrumentResponsesToString(
                         dt0, targetDt, cwork);
             if (*ierr != 0)
             {
-                log_errorF("%s: Couldn't modify downsample command\n",
-                           fcnm);
+                fprintf(stderr, "%s: Couldn't modify downsample command\n",
+                        __func__);
                 goto ERROR;
             }
             dt0 = targetDt;

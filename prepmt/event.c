@@ -74,7 +74,7 @@ int prepmt_event_setDefaults(struct prepmtEventParms_struct *event)
     event->m12 = M12;
     event->m13 = M13;
     event->m23 = M23;
-    event->basis = NED;
+    event->basis = CE_NED;
     event->latitude = EVLA;
     event->longitude = EVLO;
     event->depth = EVDP;
@@ -124,15 +124,15 @@ int prepmt_event_initializeFromIniFile(
         if (strcasecmp(s, "USE\0") == 0)
         {
             lread = true;
-            event->basis = USE;
+            event->basis = CE_USE;
         }
         if (strcasecmp(s, "NED\0") == 0)
         {
             lread = true;
-            event->basis = NED;
+            event->basis = CE_NED;
         }
     }
-    if (lread && event->basis == USE)
+    if (lread && event->basis == CE_USE)
     {
         event->m11 = iniparser_getdouble(ini, "eventInfo:mrr\0", M11);
         event->m22 = iniparser_getdouble(ini, "eventInfo:mtt\0", M22);
@@ -141,7 +141,7 @@ int prepmt_event_initializeFromIniFile(
         event->m13 = iniparser_getdouble(ini, "eventInfo:mrp\0", M13);
         event->m23 = iniparser_getdouble(ini, "eventInfo:mtp\0", M23);
     }
-    if (lread && event->basis == NED)
+    if (lread && event->basis == CE_NED)
     {
         event->m11 = iniparser_getdouble(ini, "eventInfo:mxx\0", M11);
         event->m22 = iniparser_getdouble(ini, "eventInfo:myy\0", M22);

@@ -14,6 +14,7 @@
 #include <lapacke.h>
 #include <cblas.h>
 #endif
+#include "iscl/array/array.h"
 #include "iscl/linalg/linalg.h"
 #include "iscl/log/log.h"
 #include "iscl/memory/memory.h"
@@ -123,7 +124,7 @@ int parmt_computeL1Magnitude64f(const int ldm,
                                    est, obs, &xmag, wts);
         mags[imt] = xmag;
  double xmagMw;
-compearth_m02mw(1, KANAMORI_1978, &xmag, &xmagMw);
+compearth_m02mw(1, CE_KANAMORI_1978, &xmag, &xmagMw);
 printf("%f\n", xmagMw);
     }
     memory_free64f(&wts);
@@ -230,7 +231,7 @@ int nsorted = 0;
             //compearth_CMT2mw(1, 1, &mts[8*imt], &xmag);
             compearth_CMT2m0(1, 1, &mts[8*imt], &xmag);
             xopt = xopt*xmag;
-            compearth_m02mw(1, KANAMORI_1978, &xopt, &mags[imt]);
+            compearth_m02mw(1, CE_KANAMORI_1978, &xopt, &mags[imt]);
         }
     }
 printf("%d %d\n", nsorted, nmt);

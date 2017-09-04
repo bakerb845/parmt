@@ -12,6 +12,7 @@
 #include <ipps.h>
 #endif
 #include "compearth.h"
+#include "iscl/array/array.h"
 #include "iscl/iscl/iscl.h"
 #include "iscl/memory/memory.h"
 

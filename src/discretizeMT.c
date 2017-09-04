@@ -207,11 +207,11 @@ int parmt_discretizeCells64f(
         */
         // TODO: An alternative to doing math is just discretizing on a 
         // the magnitude scale
-        compearth_m02mw(1, KANAMORI_1978, &m0Lower, &mwll);
-        compearth_m02mw(1, KANAMORI_1978, &m0Upper, &mwul);
+        compearth_m02mw(1, CE_KANAMORI_1978, &m0Lower, &mwll);
+        compearth_m02mw(1, CE_KANAMORI_1978, &m0Upper, &mwul);
         mwl = array_linspace64f(mwll, mwul, nm, &ierr);
         *M0s = memory_calloc64f(nm);
-        ierr = compearth_mw2m0(nm, KANAMORI_1978, mwl, *M0s);
+        ierr = compearth_mw2m0(nm, CE_KANAMORI_1978, mwl, *M0s);
         memory_free64f(&mwl);
     }
     *kappas = array_linspace64f(kappaLower+dk2, kappaUpper-dk2, nk, &ierr);
@@ -609,7 +609,7 @@ int parmt_discretizeMT64f(const int ng,
                                                  sigmaDeg,
                                                  Muse, lam, U);
                         // Convert from USE to our NED estimation basis
-                        ierr1 = compearth_convertMT(USE, NED, Muse,
+                        ierr1 = compearth_convertMT(1, CE_USE, CE_NED, Muse,
                                                     &mtWork[imt*ldm]);
                         if (ierr1 != 0)
                         {

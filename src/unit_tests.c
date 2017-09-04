@@ -282,7 +282,7 @@ printf("%e %e %e %e\n", xfact, sigma, d[14], dn[14]);
         printf("Failed calling mtSearch64f 1\n");
         return EXIT_FAILURE;
     }
-    imt = array_argmin64f(nmt, phi);
+    imt = array_argmin64f(nmt, phi, &ierr);
     if (imt != imtopt)
     {
         printf("Failed to recover optimal index in test 1\n");
@@ -303,13 +303,13 @@ printf("%e %e %e %e\n", xfact, sigma, d[14], dn[14]);
         printf("Failed calling mtSearch64f 2\n");
         return EXIT_FAILURE;
     }
-    imt = array_argmin64f(nmt, phi);
+    imt = array_argmin64f(nmt, phi, &ierr);
     if (imt != imtopt)
     {   
         printf("Failed to recover optimal index in test 2 %d %d\n", imt, imtopt);
         //return EXIT_FAILURE;
     }
-imt = array_argmin64f(nmt, phi);
+imt = array_argmin64f(nmt, phi, &ierr);
     printf("est + true optimal indices: %d %d %e\n", imt, imtopt, phi[imt]);
     printf("Unlagged time: %f (s)\n", time_toc());
     lags = memory_calloc32i(nmt);
@@ -322,7 +322,7 @@ imt = array_argmin64f(nmt, phi);
                                &G[0*npgrns], &G[1*npgrns], &G[2*npgrns],
                                &G[3*npgrns], &G[4*npgrns], &G[5*npgrns],
                                eye, mts, d, phi, var, lags);
-    imt = array_argmax64f(nmt, phi);
+    imt = array_argmax64f(nmt, phi, &ierr);
     printf("L1 est + true optimal indices: %d %d %e %e\n",
            imt, imtopt, phi[imt], phi[imtopt]);
     printf("Unlagged general matrix time: %f (s)\n", time_toc());
@@ -333,7 +333,7 @@ omp_set_num_threads(1);
                                &G[0*npgrns], &G[1*npgrns], &G[2*npgrns],
                                &G[3*npgrns], &G[4*npgrns], &G[5*npgrns],
                                eye, mts, d, phi, var, lags);
-    imt = array_argmax64f(nmt, phi);
+    imt = array_argmax64f(nmt, phi, &ierr);
     printf("L1 lagged est + true optimal indices: %d %d %d %e %e\n",
            imt, imtopt, lags[imt], phi[imt], phi[imtopt]);
     printf("Lagged time: %f (s)\n", time_toc());
@@ -347,7 +347,7 @@ omp_set_num_threads(1);
                                &G[0*npgrns], &G[1*npgrns], &G[2*npgrns],
                                &G[3*npgrns], &G[4*npgrns], &G[5*npgrns],
                                eye, mts, d, phi, var, lags);
-    imt = array_argmax64f(nmt, phi);
+    imt = array_argmax64f(nmt, phi, &ierr);
     printf("L1 est + true optimal indices: %d %d %e %d\n", imt, imtopt, phi[imt], lags[imt]);
     printf("Unlagged general matrix time: %f (s)\n", time_toc());
 */
@@ -371,7 +371,7 @@ omp_set_num_threads(1);
         printf("Failed calling mtSearchKL64f unlagged\n");
         return EXIT_FAILURE;
     }
-    imt = array_argmax64f(nmt, phi);
+    imt = array_argmax64f(nmt, phi, &ierr);
 */
 /*
     if (imt != imtopt)
@@ -536,7 +536,7 @@ int testBlockSize(void)
     memory_free64f(&thetas);
     memory_free64f(&sigmas);
     // make some random data for testing
-    npmax = array_max32i(nps, pSizes); 
+    npmax = array_max32i(nps, pSizes, &ierr);
     G = random_rand64f(6*npmax, &ierr);
     // set space
     phiOri = memory_calloc64f(nmt);
@@ -574,14 +574,14 @@ int testBlockSize(void)
                 ierr = array_copy64f_work(nmt, phi, phiOri);
             }
             dnorm = array_normDiff64f(nmt, phi, phiOri, ONE_NORM, 1.0, &ierr);
-            xmin = array_min64f(nmt, phi);
+            xmin = array_min64f(nmt, phi, &ierr);
             if (dnorm > DBL_EPSILON*(double) nmt)
             {
                 printf("Error computing blocksize\n");
                 ierr = 1; 
                 goto ERROR;
             }
-            imt = array_argmax64f(nmt, phi);
+            imt = array_argmax64f(nmt, phi, &ierr);
             if (imt != imtopt)
             {
                 printf("Failed to locate optimum\n");
