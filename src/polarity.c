@@ -635,12 +635,12 @@ int parmt_polarity_computeGreensMatrixRow(const int wavetype,
     r13 =-sint_rec*cosba;
     r23 = cost_rec*cosba;
     r33 =          sinba;
+    // Flip sign for receivers that acquire positive down 
+    xsign = 1.0; 
+    if (fabs(cmpinc - 90.0) < 1.e-4){xsign =-1.0;}
     // Compute 6 x 3 subforward modeling matrix with row for up (1 channel)
     if (wavetype == P_WAVE)
     {
-        // Flip sign for receivers that acquire positive down 
-        xsign = 1.0;
-        if (fabs(cmpinc - 90.0) < 1.e-4){xsign =-1.0;}
         // Loop on mts terms
         for (k=0; k<6; k++)
         {
@@ -698,9 +698,6 @@ int parmt_polarity_computeGreensMatrixRow(const int wavetype,
             // Rotate into (1, 2)
             u1 = un*cos_cmpaz + ue*sin_cmpaz;
             u2 =-un*sin_cmpaz + ue*cos_cmpaz;
-            // Flip sign for receivers that acquire positive down 
-            xsign = 1.0;
-            if (fabs(cmpinc - 90.0) < 1.e-4){xsign =-1.0;}
             // Finish
             G63[k*3+0] = xsign*uz;
             G63[k*3+1] = u1;
