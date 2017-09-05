@@ -5,7 +5,6 @@
 #include <iniparser.h>
 #include <mpi.h>
 #include "prepmt/prepmt_event.h"
-#include "iscl/log/log.h"
 #include "iscl/os/os.h"
 #include "iscl/time/time.h"
 
@@ -99,7 +98,6 @@ int prepmt_event_initializeFromIniFile(
     const char *fname,
     struct prepmtEventParms_struct *event)
 {
-    const char *fcnm = "prepmt_event_initializeFromIniFile\0";
     const char *s;
     double second;
     int dom, month, nzhour, nzmin, nzsec, nzmusec, nzyear;
@@ -112,7 +110,8 @@ int prepmt_event_initializeFromIniFile(
     // Verify the file exists
     if (!os_path_isfile(fname))
     {
-        log_errorF("%s: Error ini file %s doesn't exist\n", fcnm, fname);
+        fprintf(stderr, "%s: Error ini file %s doesn't exist\n",
+                __func__, fname);
         return -1;
     }
     ini = iniparser_load(fname);

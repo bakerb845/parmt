@@ -10,7 +10,6 @@
 #include <cblas.h>
 #endif
 #include "iscl/array/array.h"
-#include "iscl/log/log.h"
 #include "iscl/memory/memory.h"
 #include "iscl/random/random.h"
 #include "iscl/signal/convolve.h"
@@ -39,15 +38,17 @@ int parmt_utils_makeKLNoise(const int rank,
                             const struct parmtNoiseBasis_struct basis,
                             double *__restrict__ xn)
 {
-    const char *fcnm = "parmt_utils_makeKLNoise\0";
     double *r, xscal;
     int ir, ierr, ldz, rankUse;
     if (rank < 1 || npts < 1 || basis.npts != npts || xn == NULL)
     {
-        if (rank < 1){log_errorF("%s: rank is too small\n", fcnm);}
-        if (npts < 1){log_errorF("%s: no points\n", fcnm);}
-        if (basis.npts != npts){log_errorF("%s: npts != basis.npts\n", fcnm);}
-        if (xn == NULL){log_errorF("%s: error x is NULL\n", fcnm);}
+        if (rank < 1){fprintf(stderr, "%s: rank is too small\n", __func__);}
+        if (npts < 1){fprintf(stderr, "%s: no points\n", __func__);}
+        if (basis.npts != npts)
+        {
+            fprintf(stderr, "%s: npts != basis.npts\n", __func__);
+        }
+        if (xn == NULL){fprintf(stderr, "%s: error x is NULL\n", __func__);}
         return -1;
     }
     rankUse = MAX(1, MIN(basis.nvals, rank));
@@ -106,7 +107,6 @@ int parmt_utils_getNoiseBasis64f(const int npts,
                                  const double *__restrict__ data,
                                  struct parmtNoiseBasis_struct *basis)
 {
-    const char *fcnm = "parmt_utils_getNoiseBasis64f\0";
     double *C, *CtC, *s, xnorm;
     int i, ierr, j, ldc, ldctc, m, n, nrows;
     const enum corrMatrixType_enum type = CORRMTX_AUTOCORRELATION;
@@ -117,8 +117,14 @@ int parmt_utils_getNoiseBasis64f(const int npts,
     memset(basis, 0, sizeof(struct parmtNoiseBasis_struct));
     if (npts < 1 || data == NULL)
     {   
-        if (npts < 1){log_errorF("%s: No points in noise signal\n", fcnm);}
-        if (data == NULL){log_errorF("%s; Noise signal is NULL\n", fcnm);}
+        if (npts < 1)
+        {
+            fprintf(stderr, "%s: No points in noise signal\n", __func__);
+        }
+        if (data == NULL)
+        {
+            fprintf(stderr, "%s; Noise signal is NULL\n", __func__);
+        }
         return -1; 
     }   
     C = NULL;
@@ -127,7 +133,7 @@ int parmt_utils_getNoiseBasis64f(const int npts,
     xnorm = cblas_dnrm2(npts, data, 1);
     if (fabs(xnorm) < 1.e-15)
     {
-        log_errorF("%s: Error division by zero\n", fcnm);
+        fprintf(stderr, "%s: Error division by zero\n", __func__);
         return -1;
     }
     xnorm = 1.0/xnorm;
@@ -144,7 +150,7 @@ int parmt_utils_getNoiseBasis64f(const int npts,
     }
     else
     {
-        log_errorF("%s: Invalid correlation matrix type\n", fcnm);
+        fprintf(stderr, "%s: Invalid correlation matrix type\n", __func__);
         return -1;
     }
     ldctc = n;
@@ -155,13 +161,13 @@ int parmt_utils_getNoiseBasis64f(const int npts,
                                     type, true, ldctc, CtC);
     if (ierr != 0)
     {
-        log_errorF("%s: Failed to compute correlation matrix\n", fcnm);
+        fprintf(stderr, "%s: Failed to compute correlation matrix\n", __func__);
         goto ERROR;
     }
     ierr = parmt_utils_getNoiseBasisFromCtC64f(npts, ldctc, CtC, basis);
     if (ierr != 0)
     {
-        log_errorF("%s: Failed to compute noise basis\n", fcnm);
+        fprintf(stderr, "%s: Failed to compute noise basis\n", __func__);
     }
 ERROR:;
     memory_free64f(&C);
@@ -173,7 +179,6 @@ int parmt_utils_getNoiseBasisFromCtC64f(const int npts, const int ldctc,
                                         const double *__restrict__ CtC,
                                         struct parmtNoiseBasis_struct *basis)
 {
-    const char *fcnm = "parmt_utils_getNoiseBasisFromCtC64f\0";
     double *CtCw, *w;
     int ierr, i, info, j;
     ierr = 0;
@@ -191,12 +196,12 @@ int parmt_utils_getNoiseBasisFromCtC64f(const int npts, const int ldctc,
         ierr = 1;
         if (info > 0)
         {
-            log_errorF("%s: Failure to converge on %d'th element\n",
-                       fcnm, info);
+            fprintf(stderr, "%s: Failure to converge on %d'th element\n",
+                    __func__, info);
         }
         else
         {
-            log_errorF("%s: %d'th parameter is invalid\n", fcnm, info);
+            fprintf(stderr, "%s: %d'th parameter is invalid\n", __func__, info);
         }
         goto ERROR;
     }

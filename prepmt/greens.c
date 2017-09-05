@@ -14,7 +14,6 @@
 #endif
 #include "ispl/process.h"
 #include "iscl/array/array.h"
-#include "iscl/log/log.h"
 #include "iscl/fft/fft.h"
 #include "iscl/memory/memory.h"
 #include "iscl/os/os.h"
@@ -61,7 +60,6 @@ int prepmt_greens_ffGreensToGreens(const int nobs,
                                    const struct sacData_struct *ffGrns,
                                    struct sacData_struct *grns)
 {
-    const char *fcnm = "prepmt_greens_ffGreenToGreens\0";
     char knetwk[8], kstnm[8], kcmpnm[8], khole[8], phaseName[8],
          phaseNameGrns[8];
     double az, baz, cmpaz, cmpinc, cmpincSEED, epoch, epochNew,
@@ -112,7 +110,7 @@ int prepmt_greens_ffGreensToGreens(const int nobs,
                                          obs[iobs].header, kcmpnm);
         if (ierr != 0)
         {
-            log_errorF("%s: Error reading header variables\n", fcnm);
+            fprintf(stderr, "%s: Error reading header variables\n", __func__);
             break;
         }
         // This one isn't critical but it would be nice to have
@@ -125,7 +123,7 @@ int prepmt_greens_ffGreensToGreens(const int nobs,
         ierr = sacio_getEpochalStartTime(obs[iobs].header, &epoch);
         if (ierr != 0)
         {
-            log_errorF("%s: Error getting start time\n", fcnm);
+            fprintf(stderr, "%s: Error getting start time\n", __func__);
             break;
         }
         ierr += getPrimaryArrivalNoPolarity(obs[iobs].header, &pickTime,
@@ -133,7 +131,7 @@ int prepmt_greens_ffGreensToGreens(const int nobs,
         //ierr += getPrimaryArrival(obs[iobs].header, &pickTime, phaseName);
         if (ierr != 0)
         {
-            log_errorF("%s: Error getting primary pick\n", fcnm);
+            fprintf(stderr, "%s: Error getting primary pick\n", __func__);
             break;
         }
         // Need to figure out the component
@@ -152,7 +150,8 @@ int prepmt_greens_ffGreensToGreens(const int nobs,
         }
         else
         {
-            log_errorF("%s: Can't classify component: %s\n", fcnm, kcmpnm);
+            fprintf(stderr, "%s: Can't classify component: %s\n",
+                    __func__, kcmpnm);
         }
         // Process all Green's functions in this block
         for (id=0; id<ndepth; id++)
@@ -167,8 +166,8 @@ int prepmt_greens_ffGreensToGreens(const int nobs,
                                   &pickTimeGrns, phaseNameGrns);
                 if (strcasecmp(phaseNameGrns, phaseName) != 0)
                 {
-                    log_warnF("%s: Phase name mismatch %s %s\n",
-                              fcnm, phaseName, phaseNameGrns);
+                    fprintf(stdout, "%s: Phase name mismatch %s %s\n",
+                            __func__, phaseName, phaseNameGrns);
                 }
                 npts = ffGrns[kndx].npts;
                 ierr = prepmt_greens_getHudson96GreensFunctionsIndices(
@@ -258,7 +257,8 @@ int prepmt_greens_ffGreensToGreens(const int nobs,
                                                   grns[indices[5]].data);
                 if (ierr != 0)
                 {
-                    log_errorF("%s: Failed to rotate Greens functions\n", fcnm);
+                    fprintf(stderr, "%s: Failed to rotate Greens functions\n",
+                            __func__);
                 }
                 // Fix the characteristic magnitude scaling in CPS 
                 // N.B. this is done early now
@@ -301,14 +301,14 @@ int prepmt_greens_getHudson96GreensFunctionIndex(
     const int nobs, const int ntstar, const int ndepth,
     const int iobs, const int itstar, const int idepth)
 {
-    const char *fcnm = "prepmt_greens_getGreensHudson96FunctionIndex\0";
     int igx, indx, ngrns;
     ngrns = 6*nobs*ntstar*ndepth;
     indx =-1;
     igx = (int) GMT_TERM - 1;
     if (igx < 0 || igx > 5)
     {
-        log_errorF("%s: Can't classify Green's functions index\n", fcnm);
+        fprintf(stderr, "%s: Can't classify Green's functions index\n",
+                __func__);
         return indx;
     }
     indx = iobs*(6*ntstar*ndepth)
@@ -317,7 +317,8 @@ int prepmt_greens_getHudson96GreensFunctionIndex(
          + igx;
     if (indx < 0 || indx >= ngrns)
     {
-        log_warnF("%s: indx out of bounds - segfault is coming\n", fcnm);
+        fprintf(stderr, "%s: indx out of bounds - segfault is coming\n",
+                __func__);
         return -1;
     }
     return indx;
@@ -352,7 +353,6 @@ int prepmt_greens_repickGreensWithSTALTA(
     const double sta, const double lta, const double threshPct,
     struct sacData_struct *grns)
 {
-    const char *fcnm = "prepmt_greens_repickGreensWithSTALTA\0";
     struct stalta_struct stalta;
     enum sacHeader_enum pickHeader;
     double *charFn, *g, *Gxx, *Gyy, *Gzz, *Gxy, *Gxz, *Gyz,
@@ -370,8 +370,8 @@ int prepmt_greens_repickGreensWithSTALTA(
     memset(&stalta, 0, sizeof(struct stalta_struct));
     if (lta < sta || sta < 0.0)
     {
-        if (lta < sta){log_errorF("%s: Error lta < sta\n", fcnm);}
-        if (sta < 0.0){log_errorF("%s: Error sta is negative\n", fcnm);}
+        if (lta < sta){fprintf(stderr, "%s: Error lta < sta\n", __func__);}
+        if (sta < 0.0){fprintf(stderr, "%s: Error sta is < 0\n", __func__);}
         return -1;
     }
     ierr = sacio_getIntegerHeader(SAC_INT_NPTS,
@@ -380,12 +380,12 @@ int prepmt_greens_repickGreensWithSTALTA(
     {
         if (ierr != 0)
         {
-            log_errorF("%s: Error getting number of points from header\n",
-                       fcnm);
+            fprintf(stderr, "%s: Error getting number of points from header\n",
+                    __func__);
         }
         else
         {
-            log_errorF("%s: Error no data points\n", fcnm);
+            fprintf(stderr, "%s: Error no data points\n", __func__);
         }
         return -1;
     }
@@ -393,8 +393,11 @@ int prepmt_greens_repickGreensWithSTALTA(
                                 grns[0].header, &dt);
     if (ierr != 0 || dt <= 0.0)
     {
-        if (ierr != 0){log_errorF("%s: failed to get dt\n", fcnm);}
-        if (dt <= 0.0){log_errorF("%s: invalid sampling period\n", fcnm);}
+        if (ierr != 0){fprintf(stderr, "%s: failed to get dt\n", __func__);}
+        if (dt <= 0.0)
+        {
+            fprintf(stderr, "%s: invalid sampling period\n", __func__);
+        }
         return -1;
     }
     // Define the windows
@@ -462,25 +465,25 @@ int prepmt_greens_repickGreensWithSTALTA(
         ierr = stalta_setShortAndLongTermAverage(nsta, nlta, &stalta);
         if (ierr != 0)
         {
-            printf("%s: Error setting STA/LTA\n", fcnm);
+            fprintf(stderr, "%s: Error setting STA/LTA\n", __func__);
             break;
         }
         ierr = stalta_setData64f(npad, g, &stalta);
         if (ierr != 0)
         {
-            printf("%s: Error setting data\n", fcnm);
+            fprintf(stderr, "%s: Error setting data\n", __func__);
             break;
         }
         ierr = stalta_applySTALTA(&stalta);
         if (ierr != 0)
         {
-            printf("%s: Error applying STA/LTA\n", fcnm);
+            fprintf(stderr, "%s: Error applying STA/LTA\n", __func__);
             break;
         }
         ierr = stalta_getData64f(stalta, npad, &nwork, g);
         if (ierr != 0)
         {
-            printf("%s: Error getting result\n", fcnm);
+            fprintf(stderr, "%s: Error getting result\n", __func__);
             break;
         }
         cblas_daxpy(npad, 1.0, g, 1, charFn, 1);
@@ -515,7 +518,8 @@ int prepmt_greens_repickGreensWithSTALTA(
     } 
     if (pickHeader == SAC_UNKNOWN_HDRVAR)
     {
-        log_warnF("%s: Could not locate primary arrival - assume A\n", fcnm);
+        fprintf(stdout, "%s: Could not locate primary arrival - assume A\n",
+                __func__);
         pickHeader = SAC_FLOAT_A;
     } 
 //printf("%f %f\n", tpick, apick);
@@ -549,7 +553,6 @@ int prepmt_greens_processHudson96Greens(
     const struct prepmtCommands_struct cmds,
     struct sacData_struct *grns)
 {
-    const char *fcnm = "prepmt_greens_processHudson96Greens\0";
     struct serialCommands_struct commands;
     struct parallelCommands_struct parallelCommands;
     double *G, dt, dt0, epoch, epoch0, time;
@@ -583,7 +586,8 @@ int prepmt_greens_processHudson96Greens(
                                       &commands);
         if (ierr != 0)
         {
-            log_errorF("%s: Error setting serial command string\n", fcnm);
+            fprintf(stderr, "%s: Error setting serial command string\n",
+                    __func__);
             goto ERROR;
         }
         // Determine some characteristics of the processing
@@ -619,7 +623,8 @@ int prepmt_greens_processHudson96Greens(
                                                        &parallelCommands);
         if (ierr != 0)
         {
-            log_errorF("%s: Error setting the parallel commands\n", fcnm);
+            fprintf(stderr, "%s: Error setting the parallel commands\n",
+                    __func__);
             goto ERROR;
         }
         // Get the data
@@ -635,7 +640,7 @@ int prepmt_greens_processHudson96Greens(
                                               grns[kndx].header, &npts);
                 if (ierr != 0)
                 {
-                    log_errorF("%s: Error getting npts\n", fcnm);
+                    fprintf(stderr, "%s: Error getting npts\n", __func__);
                     goto ERROR;
                 }
                 i1 = idep*6*ntstar + it*6 + 0;
@@ -649,7 +654,8 @@ int prepmt_greens_processHudson96Greens(
         nwork = dataPtr[6*ndepth*ntstar];
         if (nwork < 1)
         {
-            log_errorF("%s: Invalid workspace size: %d\n", fcnm, nwork);
+            fprintf(stderr, "%s: Invalid workspace size: %d\n",
+                    __func__, nwork);
             ierr = 1;
             goto ERROR;
         } 
@@ -663,7 +669,7 @@ int prepmt_greens_processHudson96Greens(
                                         iobs, it, idep, indices);
                 if (ierr != 0)
                 {
-                    log_errorF("%s: Error getting index\n", fcnm);
+                    fprintf(stderr, "%s: Error getting index\n", __func__);
                     goto ERROR;
                 }
                 for (i=0; i<6; i++)
@@ -681,14 +687,14 @@ int prepmt_greens_processHudson96Greens(
                                                    G, &parallelCommands);
         if (ierr != 0)
         {
-            log_errorF("%s: Error setting data\n", fcnm);
+            fprintf(stderr, "%s: Error setting data\n", __func__);
             goto ERROR;
         }
         // Apply the commands
         ierr = process_applyParallelCommands(&parallelCommands);
         if (ierr != 0)
         {
-            log_errorF("%s: Error processing data\n", fcnm);
+            fprintf(stderr, "%s: Error processing data\n", __func__);
             goto ERROR;
         }
         // Get the data
@@ -708,7 +714,7 @@ int prepmt_greens_processHudson96Greens(
         //printf("%d\n", nsuse);
         if (ierr != 0)
         {
-            log_errorF("%s: Error getting data\n", fcnm);
+            fprintf(stderr, "%s: Error getting data\n", __func__);
             goto ERROR;
         }
         // Unpack the data
@@ -721,7 +727,7 @@ int prepmt_greens_processHudson96Greens(
                                         iobs, it, idep, indices);
                 if (ierr != 0)
                 {
-                    log_errorF("%s: Error getting index\n", fcnm);
+                    fprintf(stderr, "%s: Error getting index\n", __func__);
                     goto ERROR;
                 }
                 for (i=0; i<6; i++)
@@ -799,14 +805,14 @@ int prepmt_greens_writeArchive(const char *archiveName, //const char *archiveDir
                                const struct sacData_struct *sac,
                                const struct sacData_struct *sacGrns)
 {
-    const char *fcnm = "prepgrns_writeArchive\0";
     int id, ierr, indx, k;
     hid_t h5fl;
     // initialize the archive
     ierr = prepmt_dataArchive_createArchive(archiveName, //archiveDir, projnm,
                                             ndepths, evla, evlo, depths);
     if (ierr != 0)
-    {    printf("%s: Error creating archive\n", fcnm);
+    {
+         fprintf(stderr, "%s: Error creating archive\n", __func__);
          return -1;
     }
     // open it for writing
@@ -835,7 +841,6 @@ int prepmt_greens_cutHudson96FromData(const int nobs,
                                       const int ndepth, const int ntstar,
                                       struct sacData_struct *grns)
 {
-    const char *fcnm = "prepmt_greens_cutHudson96FromData\0";
     char **newCmds;
     struct prepmtModifyCommands_struct options;
     double cut0, dt, epoch, epochData;
@@ -860,7 +865,7 @@ int prepmt_greens_cutHudson96FromData(const int nobs,
         ierr = sacio_getEpochalStartTime(data[iobs].header, &epoch);
         if (ierr != 0)
         {
-            log_errorF("%s: Error getting start time\n", fcnm);
+            fprintf(stderr, "%s: Error getting start time\n", __func__);
             break;
         }
         epochData = epoch;
@@ -879,7 +884,7 @@ int prepmt_greens_cutHudson96FromData(const int nobs,
                 sacio_getEpochalStartTime(grns[indx].header, &epoch);
                 if (cut0 - epoch < 0.0)
                 {
-                    log_warnF("%s: Cut may be funky\n", fcnm);
+                    fprintf(stdout, "%s: Cut may be funky\n", __func__);
                 }
                 options.cut0 = fmax(0.0, cut0 - epoch);
                 options.cut1 = options.cut0 + dt*(double) (npts - 1);
@@ -950,7 +955,6 @@ int prepmt_greens_getHudson96GreensFunctionsIndices(
     const int iobs, const int itstar, const int idepth,
     int indices[6])
 {
-    const char *fcnm = "prepmt_greens_getGreensFunctionsIndices\0";
     int i, ierr;
     const enum prepmtGreens_enum mtTerm[6] = 
        {G11_GRNS, G22_GRNS, G33_GRNS, G12_GRNS, G13_GRNS, G23_GRNS};
@@ -964,8 +968,8 @@ int prepmt_greens_getHudson96GreensFunctionsIndices(
     }
     if (ierr != 0)
     {
-        log_errorF("%s: Error getting indices (obs,t*,depth)=(%d,%d,%d)\n",
-                   fcnm, iobs, itstar, idepth);
+        fprintf(stderr, "%s: Error getting indices (obs,t*,depth)=(%d,%d,%d)\n",
+                __func__, iobs, itstar, idepth);
     }
     return ierr;
 }
@@ -975,7 +979,6 @@ int prepmt_greens_xcAlignGreensToData(const struct sacData_struct data,
                                       const double maxTimeLag,
                                       struct sacData_struct *grns)
 {
-    const char *fcnm = "prepmt_greens_xcAlignGreensToData\0";
     double *dataPad, *Gxx, *Gyy, *Gzz, *Gxy, *Gxz, *Gyz, *xc,
            dt, dtGrns, epochData, epochGrns;
     int ierr, insertData, lxc, maxShift, npadData, npts, npgrns;
@@ -984,18 +987,18 @@ int prepmt_greens_xcAlignGreensToData(const struct sacData_struct data,
     sacio_getIntegerHeader(SAC_INT_NPTS, grns[0].header, &npgrns);
     if (npts < 1 || npgrns < 1)
     {
-        printf("%s: Error no data\n", fcnm);
-        printf("%s: Error no grns functions\n", fcnm);
+        fprintf(stderr, "%s: Error no data\n", __func__);
+        fprintf(stderr, "%s: Error no grns functions\n", __func__);
         return -1;
     }
     sacio_getFloatHeader(SAC_FLOAT_DELTA, data.header, &dt);
     sacio_getFloatHeader(SAC_FLOAT_DELTA, data.header, &dtGrns);
     if (fabs(dt - dtGrns) > 1.e-6 || dt <= 0.0)
     {
-        if (dt <= 0.0){printf("%s: dt is invalid\n", fcnm);}
+        if (dt <= 0.0){fprintf(stderr, "%s: dt is invalid\n", __func__);}
         if (fabs(dt - dtGrns) > 1.e-6)
         {
-            printf("%s: dt is inconsistent\n", fcnm);
+            fprintf(stderr, "%s: dt is inconsistent\n", __func__);
         }
         return -1;
     }
@@ -1003,18 +1006,18 @@ int prepmt_greens_xcAlignGreensToData(const struct sacData_struct data,
     ierr = sacio_getEpochalStartTime(data.header,    &epochData);
     if (ierr != 0)
     {
-        printf("%s; Error getting data start time\n", fcnm);
+        fprintf(stderr, "%s: Error getting data start time\n", __func__);
         return -1;
     }
     ierr = sacio_getEpochalStartTime(grns[0].header, &epochGrns);
     if (ierr != 0)
     {
-        printf("%s: Error getting grns start time\n", fcnm);
+        fprintf(stderr, "%s: Error getting grns start time\n", __func__);
         return -1;
     }
     if (epochData < epochGrns)
     {
-        printf("%s: epochData < epochGrns not programmed\n", fcnm);
+        fprintf(stderr, "%s: epochData < epochGrns not programmed\n", __func__);
         return -1;
     }
     // Insert the data in a epochal time aligned array
@@ -1068,7 +1071,6 @@ int prepmt_greens_xcAlignGreensToData_work(
     double *__restrict__ Gyz,
     const int lxc, double *__restrict__ xc)
 {
-    const char *fcnm = "utils_alignGreensToData\0";
     double *dwork, *Gwork, *xcorrWork, egrns, esig, xdiv;
     int i, ierr, ierr1, kmt, l1, l2, lag, lcref, nlag;
     //------------------------------------------------------------------------//
@@ -1168,7 +1170,8 @@ int prepmt_greens_xcAlignGreensToData_work(
         {
             if (ierr1 != 0)
             {
-                printf("%s: Error correlating kmt %d\n", fcnm, kmt);
+                fprintf(stderr, "%s: Error correlating kmt %d\n",
+                        __func__, kmt);
             }
             ierr = ierr + 1;
         }
@@ -1252,7 +1255,6 @@ printf("%d\n", lag);
 static int getPrimaryArrival(const struct sacHeader_struct hdr,
                              double *time, char phaseName[8])
 {
-    const char *fcnm = "getPrimaryArrival\0";
     const enum sacHeader_enum timeVars[11]
        = {SAC_FLOAT_A,
           SAC_FLOAT_T0, SAC_FLOAT_T1, SAC_FLOAT_T2, SAC_FLOAT_T3,
@@ -1271,7 +1273,7 @@ static int getPrimaryArrival(const struct sacHeader_struct hdr,
         ifound2 = sacio_getCharacterHeader(timeVarNames[i], hdr, phaseName); 
         if (ifound1 == 0 && ifound2 == 0){return 0;}
     }
-    printf("%s: Failed to get primary pick\n", fcnm);
+    fprintf(stderr, "%s: Failed to get primary pick\n", __func__);
     *time =-12345.0;
     memset(phaseName, 0, 8*sizeof(char));
     strcpy(phaseName, "-12345"); 

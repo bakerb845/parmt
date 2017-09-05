@@ -7,7 +7,6 @@
 #else
 #include <cblas.h>
 #endif
-#include "iscl/log/log.h"
 #include "iscl/memory/memory.h"
 
 /*!
@@ -68,15 +67,17 @@ int parmt_utils_ff2mtGreensMatrix64f(const int npgrns, const int ldg,
                                      const double *__restrict__ TSS,
                                      double *__restrict__ G)
 {
-    const char *fcnm = "parmt_utils_ff2mtGreensMatrix64f\0";
     double *Gxx, *Gyy, *Gzz, *Gxy, *Gxz, *Gyz;
     int ierr;
     ierr = 0;
     if (npgrns < 1 || ldg < 6 || G == NULL)
     {
-        if (npgrns < 1){log_errorF("%s: No points in greens fns\n", fcnm);}
-        if (ldg < 6){log_errorF("%s: ldg must be >= 6\n", fcnm);}
-        if (G == NULL){log_errorF("%s: Error G is NULL\n", fcnm);}
+        if (npgrns < 1)
+        {
+            fprintf(stderr, "%s: No points in greens fns\n", __func__);
+        }
+        if (ldg < 6){fprintf(stderr, "%s: ldg must be >= 6\n", __func__);}
+        if (G == NULL){fprintf(stderr, "%s: Error G is NULL\n", __func__);}
         return -1;
     }
     Gxx = memory_calloc64f(npgrns);
@@ -94,7 +95,8 @@ int parmt_utils_ff2mtGreensMatrix64f(const int npgrns, const int ldg,
                                       Gxy, Gxz, Gyz);
     if (ierr != 0)
     {
-        log_errorF("%s: Failed to compute greens functions columns\n", fcnm);
+        fprintf(stderr, "%s: Failed to compute greens functions columns\n",
+                __func__);
     } 
     else
     {
@@ -177,7 +179,6 @@ int parmt_utils_ff2mtGreens64f(const int npgrns, const int icomp,
                                double *__restrict__ Gxz,
                                double *__restrict__ Gyz)
 {
-    const char *fcnm = "parmt_utils_ff2mtGreens64f\0";
     double az, baz, c2a, ca, caz, cos_caz, cost,
            gxx_e, gxy_e, gxz_e, gyy_e, gyz_e, gzz_e,
            gxx_n, gxy_n, gxz_n, gyy_n, gyz_n, gzz_n,
@@ -195,17 +196,17 @@ int parmt_utils_ff2mtGreens64f(const int npgrns, const int icomp,
     //------------------------------------------------------------------------//
     if (icomp < 1 || icomp > 3)
     {
-        log_errorF("%s: Invalid component: %d\n", fcnm, icomp);
+        fprintf(stderr, "%s: Invalid component: %d\n", __func__, icomp);
         return -1;
     }
     if (icomp == 1)
     {
         if (ZDS == NULL || ZSS == NULL || ZDD == NULL || ZEX == NULL)
         {
-            if (ZDS == NULL){log_errorF("%s: zds is NULL\n", fcnm);}
-            if (ZSS == NULL){log_errorF("%s: zss is NULL\n", fcnm);}
-            if (ZDD == NULL){log_errorF("%s: zdd is NULL\n", fcnm);}
-            if (ZEX == NULL){log_errorF("%s: zex is NULL\n", fcnm);}
+            if (ZDS == NULL){fprintf(stderr, "%s: zds is NULL\n", __func__);}
+            if (ZSS == NULL){fprintf(stderr, "%s: zss is NULL\n", __func__);}
+            if (ZDD == NULL){fprintf(stderr, "%s: zdd is NULL\n", __func__);}
+            if (ZEX == NULL){fprintf(stderr, "%s: zex is NULL\n", __func__);}
             return -1;
         }
     }
@@ -214,12 +215,12 @@ int parmt_utils_ff2mtGreens64f(const int npgrns, const int icomp,
         if (RDS == NULL || RSS == NULL || RDD == NULL || REX == NULL ||
             TDS == NULL || TSS == NULL)
         {
-            if (RDS == NULL){log_errorF("%s: rds is NULL\n", fcnm);}
-            if (RSS == NULL){log_errorF("%s: rss is NULL\n", fcnm);}
-            if (RDD == NULL){log_errorF("%s: rdd is NULL\n", fcnm);}
-            if (REX == NULL){log_errorF("%s: rex is NULL\n", fcnm);}
-            if (TDS == NULL){log_errorF("%s: tds is NULL\n", fcnm);}
-            if (TSS == NULL){log_errorF("%s: tss is NULL\n", fcnm);}
+            if (RDS == NULL){fprintf(stderr, "%s: rds is NULL\n", __func__);}
+            if (RSS == NULL){fprintf(stderr, "%s: rss is NULL\n", __func__);}
+            if (RDD == NULL){fprintf(stderr, "%s: rdd is NULL\n", __func__);}
+            if (REX == NULL){fprintf(stderr, "%s: rex is NULL\n", __func__);}
+            if (TDS == NULL){fprintf(stderr, "%s: tds is NULL\n", __func__);}
+            if (TSS == NULL){fprintf(stderr, "%s: tss is NULL\n", __func__);}
             return -1;
         }
     } 
