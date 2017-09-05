@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include "parmt_utils.h"
 #include "sacio.h"
-#include "iscl/log/log.h"
 
 /*!
  * @brief Sets the max lag time for the given network, station, channel,
@@ -29,7 +28,6 @@ int parmt_utils_setLagTimeInH5(const hid_t h5fl,
                                const char *channel, const char *location,
                                const double maxLagTime)
 {
-    const char *fcnm = "parmt_utils_setLagTimeInH5\0";
     const char *sacFileName = "Observation";
     char varname[256], knetwk[8], kstnm[8], kcmpnm[8], khole[8];
     bool lupd;
@@ -41,7 +39,7 @@ int parmt_utils_setLagTimeInH5(const hid_t h5fl,
     nobs = utils_dataArchive_getNumberOfObservations(h5fl);
     if (nobs <= 0)
     {
-        log_errorF("%s: No observations\n", fcnm);
+        fprintf(stderr, "%s: No observations\n", __func__);
         return -1;
     }
     lupd = false;
@@ -56,8 +54,9 @@ int parmt_utils_setLagTimeInH5(const hid_t h5fl,
         ierr = sacioh5_readTimeSeries2("Observation\0", obsGroup, &sac);
         if (ierr != 0)
         {
-            log_errorF("%s: Error loading time series for obs %d\n",
-                       fcnm, iobs+1);
+            fprintf(stderr, "%s: Error loading time series for obs %d\n",
+                    __func__, iobs+1);
+            return -1; 
         }
         // Check if this station matches
         ifound = 0;
@@ -74,7 +73,7 @@ int parmt_utils_setLagTimeInH5(const hid_t h5fl,
             ierr = parmt_utils_setLagTime(maxLagTime, &sac);
             if (ierr != 0)
             {
-                printf("%s: Failed to set lag time\n", fcnm);
+                fprintf(stderr, "%s: Failed to set lag time\n", __func__);
             }
             else
             {
@@ -89,8 +88,8 @@ int parmt_utils_setLagTimeInH5(const hid_t h5fl,
     }
     if (!lupd)
     {
-        log_errorF("%s: Couldn't find %s.%s.%s.%s in archive\n",
-                   network, station, channel, location);
+        fprintf(stderr, "%s: Couldn't find %s.%s.%s.%s in archive\n",
+                 __func__,  network, station, channel, location);
         return -1;
     }
     return 0;

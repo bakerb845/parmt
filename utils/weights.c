@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include "parmt_utils.h"
 #include "sacio.h"
-#include "iscl/log/log.h"
 
 #define DATA_WEIGHT_JOB 1
 #define POLARITY_WEIGHT_JOB 2
@@ -31,7 +30,6 @@ int parmt_utils_setWeightInH5(const hid_t h5fl,
                               const char *channel, const char *location,
                               const double weight)
 {
-    const char *fcnm = "parmt_utils_setWeightInH5\0";
     const int job = DATA_WEIGHT_JOB;
     int ierr;
     ierr = parmt_utils_setAnyWeightInH5(h5fl, job,
@@ -39,7 +37,7 @@ int parmt_utils_setWeightInH5(const hid_t h5fl,
                                         weight);
     if (ierr != 0)
     {
-        log_errorF("%s: Error setting data weight\n", fcnm);
+        fprintf(stderr, "%s: Error setting data weight\n", __func__);
     }
     return ierr;
 }
@@ -66,7 +64,6 @@ int parmt_utils_setPolarityWeightInH5(const hid_t h5fl,
                                       const char *channel, const char *location,
                                       const double weight)
 {
-    const char *fcnm = "parmt_utils_setPolarityWeightInH5\0";
     const int job = POLARITY_WEIGHT_JOB;
     int ierr;
     ierr = parmt_utils_setAnyWeightInH5(h5fl, job,
@@ -74,7 +71,7 @@ int parmt_utils_setPolarityWeightInH5(const hid_t h5fl,
                                         weight);
     if (ierr != 0)
     {   
-        log_errorF("%s: Error setting data weight\n", fcnm);
+        fprintf(stderr, "%s: Error setting data weight\n", __func__);
     }   
     return ierr;
 }
@@ -105,7 +102,6 @@ int parmt_utils_setAnyWeightInH5(const hid_t h5fl, const int job,
                                  const char *channel, const char *location,
                                  const double weight)
 {
-    const char *fcnm = "parmt_utils_setLagTimeInH5\0";
     const char *sacFileName = "Observation";
     char varname[256], knetwk[8], kstnm[8], kcmpnm[8], khole[8];
     bool lupd;
@@ -114,19 +110,19 @@ int parmt_utils_setAnyWeightInH5(const hid_t h5fl, const int job,
     int ierr, ifound, iobs, nobs;
     if (weight < 0.0)
     {
-        log_errorF("%s: Error weight cannot be negative\n", fcnm);
+        fprintf(stderr, "%s: Error weight cannot be negative\n", __func__);
         return -1;
     }
     if (job < 1 || job > 2)
     {
-        log_errorF("%s: job must be 1 or 2\n", fcnm);
+        fprintf(stderr, "%s: job must be 1 or 2\n", __func__);
         return -1;
     }
     // Get number of objects in group
     nobs = utils_dataArchive_getNumberOfObservations(h5fl);
     if (nobs <= 0)
     {   
-        log_errorF("%s: No observations\n", fcnm);
+        fprintf(stderr, "%s: No observations\n", __func__);
         return -1; 
     }   
     lupd = false;
@@ -141,8 +137,8 @@ int parmt_utils_setAnyWeightInH5(const hid_t h5fl, const int job,
         ierr = sacioh5_readTimeSeries2("Observation\0", obsGroup, &sac);
         if (ierr != 0)
         {
-            log_errorF("%s: Error loading time series for obs %d\n",
-                       fcnm, iobs+1);
+            fprintf(stderr, "%s: Error loading time series for obs %d\n",
+                    __func__, iobs+1);
         }
         // Check if this station matches
         ifound = 0;
@@ -166,7 +162,8 @@ int parmt_utils_setAnyWeightInH5(const hid_t h5fl, const int job,
             }
             if (ierr != 0)
             {
-                printf("%s: Failed to set weight for job %d\n", fcnm, job);
+                fprintf(stderr, "%s: Failed to set weight for job %d\n",
+                        __func__, job);
             }
             else
             {
@@ -181,8 +178,8 @@ int parmt_utils_setAnyWeightInH5(const hid_t h5fl, const int job,
     }
     if (!lupd)
     {
-        log_errorF("%s: Couldn't find %s.%s.%s.%s in archive\n",
-                   network, station, channel, location);
+        fprintf(stderr, "%s: Couldn't find %s.%s.%s.%s in archive\n",
+                __func__, network, station, channel, location);
         return -1;
     }
     return 0;
@@ -205,12 +202,11 @@ int parmt_utils_setAnyWeightInH5(const hid_t h5fl, const int job,
 int parmt_utils_setWeight(const double weight,
                           struct sacData_struct *obs)
 {
-    const char *fcnm = "parmt_utils_setWeight\0";
     sacio_setFloatHeader(SAC_WEIGHT_HDR, -12345.0, &obs->header);
     if (weight < 0.0)
     {
-        log_errorF("%s: Error the data weight %f cannot be negative\n",
-                   fcnm, weight);
+        fprintf(stderr, "%s: Error the data weight %f cannot be negative\n",
+                __func__, weight);
         return -1;
     }
     sacio_setFloatHeader(SAC_WEIGHT_HDR, weight, &obs->header);
@@ -234,12 +230,11 @@ int parmt_utils_setWeight(const double weight,
 int parmt_utils_setPolarityWeight(const double weight,
                                   struct sacData_struct *obs)
 {
-    const char *fcnm = "parmt_utils_setPolarityWeight\0";
     sacio_setFloatHeader(SAC_POLWGT_HDR, -12345.0, &obs->header);
     if (weight < 0.0)
     {
-        log_errorF("%s: Error the polarity weight %f cannot be negative\n",
-                   fcnm, weight);
+        fprintf(stderr, "%s: Error the polarity weight %f cannot be negative\n",
+                __func__, weight);
         return -1;
     }
     sacio_setFloatHeader(SAC_POLWGT_HDR, weight, &obs->header);
@@ -267,13 +262,12 @@ double parmt_utils_getWeight(const struct sacData_struct obs,
                              const double defaultWeight,
                              bool *ldefault)
 {
-    const char *fcnm = "parmt_utils_getWeight\0";
     double weight;
     int ierr;
     if (defaultWeight <= 0.0)
     {
-        log_warnF("%s: It's strange that your default weight isn't positive\n",
-                  fcnm);
+        fprintf(stdout, "%s: It's strange your default weight isn't positive\n",
+                __func__);
     }
     *ldefault = true;
     weight = defaultWeight;
@@ -283,8 +277,8 @@ double parmt_utils_getWeight(const struct sacData_struct obs,
         *ldefault = false;
         if (weight < 0.0)
         {
-            log_errorF("%s: Error weight %f is invalid - defaulting to %f\n",
-                       fcnm, weight, defaultWeight);
+            fprintf(stderr, "%s: Error invalid weight=%f; defaulting to %f\n",
+                    __func__, weight, defaultWeight);
             weight = defaultWeight;
             *ldefault = true;
         }
@@ -317,13 +311,12 @@ double parmt_utils_getPolarityWeight(const struct sacData_struct obs,
                                      const double defaultWeight,
                                      bool *ldefault)
 {
-    const char *fcnm = "parmt_utils_getWeight\0";
     double weight;
     int ierr;
     if (defaultWeight <= 0.0)
     {
-        log_warnF("%s: It's strange that your default weight isn't positive\n",
-                  fcnm);
+        fprintf(stdout, "%s: It's strange your default weight isn't positive\n",
+                __func__);
     }
     *ldefault = true;
     weight = defaultWeight;
@@ -333,8 +326,8 @@ double parmt_utils_getPolarityWeight(const struct sacData_struct obs,
         *ldefault = false;
         if (weight < 0.0)
         {
-            log_errorF("%s: Error weight %f is invalid - defaulting to %f\n",
-                       fcnm, weight, defaultWeight);
+            fprintf(stderr, "%s: Error invalid weight=%f; defaulting to %f\n",
+                     __func__, weight, defaultWeight);
             weight = defaultWeight;
             *ldefault = true;
         }
