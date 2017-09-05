@@ -6,17 +6,29 @@
 #include <iniparser.h>
 #include "parmt_utils.h"
 #include "ttimes_config.h"
-#include "iscl/log/log.h"
 #include "iscl/memory/memory.h"
 #include "iscl/os/os.h"
 #include "compearth.h"
 
 #define DEFAULT_PROJECT_NAME "parmt"
 
+/*!
+ * @brief Reads the general parmt parameters from the [general] section.
+ *
+ * @param[in] iniFile     Initialization file to read.
+ *
+ * @param[out] parms      The parmt general parameters.
+ *
+ * @result 0 indicates success.
+ *
+ * @author Ben Baker
+ *
+ * @copyright ISTI distributed under Apache 2.
+ *
+ */
 int parmt_utils_readGeneralParms(const char *iniFile,
                                  struct parmtGeneralParms_struct *parms)
 {
-    const char *fcnm = "parmt_utils_readGeneralParms\0";
     const char *s;
     char *dirName;
     int ierr;
@@ -25,7 +37,8 @@ int parmt_utils_readGeneralParms(const char *iniFile,
     memset(parms, 0, sizeof(struct parmtGeneralParms_struct));
     if (!os_path_isfile(iniFile))
     {
-        log_errorF("%s: Error ini file %s does not exist\n", fcnm, iniFile);
+        fprintf(stderr, "%s: Error ini file %s does not exist\n",
+                __func__, iniFile);
         return -1;
     }
     ini = iniparser_load(iniFile);
@@ -41,7 +54,7 @@ int parmt_utils_readGeneralParms(const char *iniFile,
     }
     if (ierr != 0)
     {
-        log_errorF("%s: Error no project name\n", fcnm);
+        fprintf(stderr, "%s: Error no project name\n", __func__);
         goto END;
     }
     strcpy(parms->projnm, s);
@@ -57,8 +70,8 @@ int parmt_utils_readGeneralParms(const char *iniFile,
     }
     if (!os_path_isfile(parms->dataFile))
     {
-        log_errorF("%s: Error data file does %s not exist\n",
-                   fcnm, parms->dataFile);
+        fprintf(stderr, "%s: Error data file does %s not exist\n",
+                __func__, parms->dataFile);
         ierr = 1;
         goto END;
     }
@@ -78,7 +91,8 @@ int parmt_utils_readGeneralParms(const char *iniFile,
         ierr = os_makedirs(dirName);
         if (ierr != 0)
         {
-            log_errorF("%s: Failed to make directory %s\n", fcnm, dirName);
+            fprintf(stderr, "%s: Failed to make directory %s\n",
+                     __func__, dirName);
             goto END;
         }
     }
@@ -100,7 +114,8 @@ int parmt_utils_readGeneralParms(const char *iniFile,
         ierr = os_makedirs(dirName);
         if (ierr != 0)
         {
-            log_errorF("%s: Failed to make directory %s\n", fcnm, dirName);
+            fprintf(stderr, "%s: Failed to make directory %s\n",
+                    __func__, dirName);
             goto END;
         }
     }
@@ -142,8 +157,8 @@ int parmt_utils_readGeneralParms(const char *iniFile,
     parms->blockSize = iniparser_getint(ini, "general:blockSize\0", 32);
     if (parms->blockSize < 1)
     {
-        log_warnF("%s: blockSize = %d is invalid\n", fcnm, parms->blockSize);
-        log_warnF("%s: Overriding block size to 32\n", fcnm);
+        fprintf(stdout, "%s: blockSize = %d is invalid; setting to 32\n",
+                __func__, parms->blockSize);
         parms->blockSize = 32;
     }
     // determine if i want to use lags or not
@@ -154,26 +169,41 @@ int parmt_utils_readGeneralParms(const char *iniFile,
            = iniparser_getdouble(ini, "general:defaultMaxLagTime", 2.0);
         if (parms->defaultMaxLagTime < 0.0)
         {
-            printf("%s: Invalid lag time %f - setting to 2\n",
-                   fcnm, parms->defaultMaxLagTime);
+            fprintf(stdout, "%s: Invalid lag time %f - setting to 2\n",
+                    __func__, parms->defaultMaxLagTime);
         }
     }
     // determine the objective function
     parms->objFnType = iniparser_getint(ini, "general:objFnType\0", 1);
     if (parms->objFnType < 1 || parms->objFnType > 3)
     {
-        printf("%s: Invalid obj fn type %d\n", fcnm, parms->objFnType);
+        fprintf(stderr, "%s: Invalid obj fn type %d\n",
+                 __func__, parms->objFnType);
         return -1;
     }
 END:;
     iniparser_freedict(ini);
     return ierr;
 }
-
+//============================================================================//
+/*!
+ * @brief Reads the parameters necessary for computing the polarities in
+ *        a global 1D earth. 
+ *
+ * @param[in] iniFile    Initialization file to read.
+ *
+ * @param[out] parms     Polarity grid search parameters. 
+ *
+ * @result 0 indicates success.
+ *
+ * @author Ben Baker
+ *
+ * @copyright ISTI distributed under Apache 2.
+ *
+ */
 int parmt_utils_readPolarityParms(const char *iniFile,
                                   struct parmtPolarityParms_struct *parms)
 {
-    const char *fcnm = "parmt_utils_readPolarityParms\0";
     const char *s;
     int ierr;
     dictionary *ini;
@@ -181,7 +211,8 @@ int parmt_utils_readPolarityParms(const char *iniFile,
     memset(parms, 0, sizeof(struct parmtPolarityParms_struct));
     if (!os_path_isfile(iniFile))
     {
-        log_errorF("%s: Error ini file %s does not exist\n", fcnm, iniFile);
+        fprintf(stderr, "%s: Error ini file %s does not exist\n",
+                __func__, iniFile);
         return -1;
     }
     ini = iniparser_load(iniFile);
@@ -197,7 +228,8 @@ int parmt_utils_readPolarityParms(const char *iniFile,
                             TTIMES_DEFAULT_TABLE_DIRECTORY);
     if (!os_path_isdir(s))
     {   
-        printf("%s: Error ttimes tables directory doesn't exist\n", fcnm);
+        fprintf(stderr, "%s: Error ttimes tables directory doesn't exist\n",
+                __func__);
     }   
     else
     {   
@@ -211,18 +243,31 @@ int parmt_utils_readPolarityParms(const char *iniFile,
     }   
     else
     {   
-        printf("%s: Error ttimesModel not specified\n", fcnm);
+        fprintf(stderr, "%s: Error ttimesModel not specified\n", __func__);
     }
 
 END:;
     iniparser_freedict(ini);
     return ierr;
 }
-
+//============================================================================//
+/*!
+ * @brief Reads the moment tensor grid search parameters.
+ *
+ * @param[in] iniFile    Initialization file to read.
+ *
+ * @param[out] parms     MT grid search parameters.
+ *
+ * @result 0 indicates success.
+ *
+ * @author Ben Baker
+ *
+ * @copyright ISTI distributed under Apache 2.
+ *
+ */
 int parmt_utils_readMtSearch(const char *iniFile, 
                              struct parmtMtSearchParms_struct *parms)
 {
-    const char *fcnm = "parmt_utils_readMtSearch\0";
     double betaLower, betaUpper, mw;
     int ierr;
     dictionary *ini;
@@ -232,7 +277,8 @@ int parmt_utils_readMtSearch(const char *iniFile,
     memset(parms, 0, sizeof(struct parmtMtSearchParms_struct));
     if (!os_path_isfile(iniFile))
     {   
-        log_errorF("%s: Error ini file %s does not exist\n", fcnm, iniFile);
+        fprintf(stderr, "%s: Error ini file %s does not exist\n",
+                __func__, iniFile);
         return -1; 
     }   
     ini = iniparser_load(iniFile);
@@ -242,7 +288,8 @@ int parmt_utils_readMtSearch(const char *iniFile,
     parms->nb = iniparser_getint(ini, "mtsearch:nlat", -1);
     if (parms->nb ==-1)
     {
-        log_infoF("%s: Setting five latitudes in grid search\n", fcnm);
+        fprintf(stdout, "%s: Setting five latitudes in grid search\n",
+                __func__);
         parms->nb = 5;
     }
     else
@@ -252,12 +299,14 @@ int parmt_utils_readMtSearch(const char *iniFile,
         parms->betaUpper = iniparser_getdouble(ini, "mtsearch:latUpper", 90.0);
         if (parms->betaLower <-90.0)
         {
-            log_warnF("%s: Overriding mtlat_lower to -90 degrees\n", fcnm);
+            fprintf(stdout, "%s: Overriding mtlat_lower to -90 degrees\n",
+                     __func__);
             parms->betaLower =-90.0;
         }
         if (parms->betaUpper > 90.0)
         {
-            log_warnF("%s: Overriding mtlat_upper to 90 degrees\n", fcnm);
+            fprintf(stdout, "%s: Overriding mtlat_upper to 90 degrees\n",
+                    __func__);
             parms->betaUpper = 90.0;
         }
     }
@@ -273,7 +322,8 @@ int parmt_utils_readMtSearch(const char *iniFile,
     parms->ng = iniparser_getint(ini, "mtsearch:nlon", -1);
     if (parms->ng ==-1)
     {
-        log_infoF("%s: Setting five longitudes in grid search\n", fcnm);
+        fprintf(stdout, "%s: Setting five longitudes in grid search\n",
+                __func__);
         parms->ng = 5;
     }
     else
@@ -285,12 +335,14 @@ int parmt_utils_readMtSearch(const char *iniFile,
                                                 "mtsearch:lonUpper", 30.0);
         if (parms->gammaLower <-30.0)
         {
-            log_warnF("%s: Overriding mtlon_lower to -30 degrees\n", fcnm);
+            fprintf(stdout, "%s: Overriding mtlon_lower to -30 degrees\n",
+                    __func__);
             parms->gammaLower =-30.0;
         }
         if (parms->gammaUpper > 30.0)
         {
-            log_warnF("%s: Overriding mtlon_upper to 30 degrees\n", fcnm);
+            fprintf(stdout, "%s: Overriding mtlon_upper to 30 degrees\n",
+                    __func__);
             parms->gammaUpper = 30.0;
         }
     }
@@ -303,7 +355,8 @@ int parmt_utils_readMtSearch(const char *iniFile,
     parms->nk = iniparser_getint(ini, "mtsearch:nstrike", -1);
     if (parms->nk ==-1)
     {
-        log_infoF("%s: Setting five strike angles in grid search\n", fcnm);
+        fprintf(stdout, "%s: Setting five strike angles in grid search\n",
+                __func__);
         parms->nk = 5;
     }
     else
@@ -315,12 +368,14 @@ int parmt_utils_readMtSearch(const char *iniFile,
                                                 "mtsearch:strikeUpper", 360.0);
         if (parms->kappaLower < 0.0)
         {
-            log_warnF("%s: Overriding strike_lower to 0 degrees\n", fcnm);
+            fprintf(stdout, "%s: Overriding strike_lower to 0 degrees\n",
+                    __func__);
             parms->kappaLower = 0.0;
         }
         if (parms->kappaUpper > 360.0)
         {
-            log_warnF("%s: Overriding strike_upper to 360 degrees\n", fcnm);
+            fprintf(stdout, "%s: Overriding strike_upper to 360 degrees\n",
+                    __func__);
             parms->kappaUpper = 360.0;
         }
     }
@@ -333,7 +388,8 @@ int parmt_utils_readMtSearch(const char *iniFile,
     parms->nt = iniparser_getint(ini, "mtsearch:ndip", -1);
     if (parms->nt ==-1)
     {
-        log_infoF("%s: Setting five dip angles in grid search\n", fcnm);
+        fprintf(stdout, "%s: Setting five dip angles in grid search\n",
+                __func__);
         parms->nt = 5;
     }
     else
@@ -345,12 +401,14 @@ int parmt_utils_readMtSearch(const char *iniFile,
                                                 "mtsearch:thetaUpper", 90.0);
         if (parms->thetaLower < 0.0)
         {
-            log_warnF("%s: Overriding theta_lower to 0 degrees\n", fcnm);
+            fprintf(stdout, "%s: Overriding theta_lower to 0 degrees\n",
+                    __func__);
             parms->thetaLower = 0.0;
         }
         if (parms->thetaUpper > 90.0)
         {
-            log_warnF("%s: Overriding theta_upper to 90 degrees\n", fcnm);
+            fprintf(stdout, "%s: Overriding theta_upper to 90 degrees\n",
+                    __func__);
             parms->thetaUpper = 90.0;
         }
     }
@@ -363,7 +421,8 @@ int parmt_utils_readMtSearch(const char *iniFile,
     parms->ns = iniparser_getint(ini, "mtsearch:nrake", -1);
     if (parms->ns ==-1)
     {
-        log_infoF("%s: Setting five rake angles in grid search\n", fcnm);
+        fprintf(stdout, "%s: Setting five rake angles in grid search\n",
+                __func__);
         parms->ns = 5;
     }
     else
@@ -375,12 +434,14 @@ int parmt_utils_readMtSearch(const char *iniFile,
                                                 "mtsearch:rakeUpper", 90.0);
         if (parms->sigmaLower < -90.0)
         {
-            log_warnF("%s: Overriding rake_lower to -90 degrees\n", fcnm);
+            fprintf(stdout, "%s: Overriding rake_lower to -90 degrees\n",
+                    __func__);
             parms->sigmaLower =-90.0;
         }
         if (parms->sigmaUpper > 90.0)
         {
-            log_warnF("%s: Overriding strike_upper to 90 degrees\n", fcnm);
+            fprintf(stdout, "%s: Overriding strike_upper to 90 degrees\n",
+                    __func__);
             parms->sigmaUpper = 90.0;
         }
     }
@@ -394,7 +455,7 @@ int parmt_utils_readMtSearch(const char *iniFile,
     parms->nm = iniparser_getint(ini, "mtsearch:nm", -1);
     if (parms->nm < 1)
     {
-        log_infoF("%s: Setting one scalar moment to mag 5.5\n", fcnm);
+        fprintf(stdout, "%s: Setting one scalar moment to mag 5.5\n", __func__);
         parms->nm = 1;
     }
     else
