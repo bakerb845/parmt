@@ -73,7 +73,8 @@ struct prepmtCommands_struct
     FILE *pfl;
     const char *s;
     char **cwork, vname[256], cline[MAX_CMD_LEN];
-    char cdum[64], chan[64], loc[64], netw[64], stat[64],
+    char *sncl1, sncl2[64], ctemp[64], 
+         cdum[64], chan[64], loc[64], netw[64], stat[64],
          kcmpnm[64], khole[64], knetwk[64], kstnm[64];
     struct prepmtCommands_struct cmds;
     int *indx, i, icmd, j, k, ncmds, ncmdsWork, nindex, nlines;
@@ -158,6 +159,7 @@ struct prepmtCommands_struct
             return cmds;
         }
         pfl = fopen(s, "r");
+        s = NULL;
         // Count the number of lines
         nlines = 0;
         while (fgets(cline, MAX_CMD_LEN, pfl) != NULL){nlines = nlines + 1;}
@@ -169,62 +171,116 @@ struct prepmtCommands_struct
         {
             memset(cline, 0, MAX_CMD_LEN*sizeof(char));
             fgets(cline, MAX_CMD_LEN, pfl);
-            if (strcasecmp("SNCL:", cline) >= 0)
+            if (strlen(cline) > 0)
             {
-                nindex = nindex + 1;
+                if (cline[strlen(cline)-1] == '\n')
+                {
+                    cline[strlen(cline)-1] = '\0';
+                }
+            }
+            else
+            {
+                fprintf(stdout, "%s: Really shouldn't have blank lines\n",
+                        __func__);
+                continue;
+            }
+            if (strncasecmp("SNCL:\0", cline, MIN(strlen(cline), 5)) == 0)
+            {
                 indx[nindex] = i;
+                nindex = nindex + 1; 
             }
         }
+        indx[nindex] = nlines;
         // Hunt through file
         rewind(pfl);
         for (k=0; k<nobs; k++)
         {
             lfound = false; 
-            sacio_getCharacterHeader(SAC_CHAR_KNETWK, data[k].header, knetwk);
-            sacio_getCharacterHeader(SAC_CHAR_KSTNM,  data[k].header, kstnm);
-            sacio_getCharacterHeader(SAC_CHAR_KCMPNM, data[k].header, kcmpnm);
-            sacio_getCharacterHeader(SAC_CHAR_KHOLE,  data[k].header, khole); 
+            memset(sncl2, 0, 64*sizeof(char));
+            *ierr = sacio_getCharacterHeader(SAC_CHAR_KNETWK, data[k].header,
+                                             knetwk);
+            if (*ierr != 0)
+            {
+                fprintf(stderr, "%s: Failed to get network for waveform %d\n",
+                        __func__, k+1);
+                continue;
+            } 
+            *ierr = sacio_getCharacterHeader(SAC_CHAR_KSTNM,  data[k].header,
+                                             kstnm);
+            if (*ierr != 0)
+            {
+                fprintf(stderr, "%s: Failed to get station for waveform %d\n", 
+                        __func__, k+1);
+                continue;
+            }
+            *ierr = sacio_getCharacterHeader(SAC_CHAR_KCMPNM, data[k].header,
+                                             kcmpnm);
+            if (*ierr != 0)
+            {
+                fprintf(stderr, "%s: Failed to get channel for waveform %d\n",
+                        __func__, k+1);
+                continue;
+            }
+            *ierr = sacio_getCharacterHeader(SAC_CHAR_KHOLE,  data[k].header,
+                                             khole); 
+            if (*ierr != 0)
+            {
+                fprintf(stderr, "%s: khole not set; overriding to --", __func__);
+                *ierr = 0;
+                memset(khole, 0, 64*sizeof(char));
+                strcpy(khole, "--\0");
+            }
+            sprintf(sncl2, "%s.%s.%s.%s", knetwk, kstnm, kcmpnm, khole);
             for (i=0; i<nindex; i++)
             {
                 for (j=indx[i]; j<indx[i+1]; j++)
                 {
                     memset(cline, 0, MAX_CMD_LEN*sizeof(char));
                     fgets(cline, MAX_CMD_LEN, pfl);
+                    if (strlen(cline) > 0)
+                    {
+                        if (cline[strlen(cline)-1] == '\n')
+                        {
+                            cline[strlen(cline)-1] = '\0';
+                        }
+                    }
                     if (j == indx[i])
                     {
-                        memset(cdum, 0, 64*sizeof(char));
-                        memset(netw, 0, 64*sizeof(char));
-                        memset(stat, 0, 64*sizeof(char));
-                        memset(chan, 0, 64*sizeof(char));
-                        memset(loc,  0, 64*sizeof(char)); 
-                        sscanf(cline, "%s:%s.%s.%s.%s\n",
-                                      cdum, netw, stat, chan, loc); 
-                        if (strcasecmp(knetwk, netw) == 0 &&
-                            strcasecmp(kstnm,  stat) == 0 &&
-                            strcasecmp(kcmpnm, chan) == 0)
+                        memset(ctemp, 0, 64*sizeof(char));
+                        sscanf(cline, "SNCL:%s", ctemp);
+                        sncl1 = string_strip(NULL, ctemp);
+                        if (strcasecmp(sncl1, sncl2) == 0)
                         {
-                            if (strcasecmp(khole, loc) != 0)
+                            fprintf(stdout, "%s: Unpacking commands for %s\n",
+                                    __func__, sncl1);
+                            ncmds = indx[i+1] - indx[i] - 1;
+                            if (ncmds < 1)
                             {
-                                fprintf(stdout,
-                                        "%s: Location code mismatch %s %s\n",
-                                        __func__, loc, khole);
+                                fprintf(stderr, "%s: No cmds for %s skipping\n",
+                                        __func__, sncl1);
+                            } 
+                            else
+                            {
+                                cmds.cmds[k].lgeneric = false;
+                                cmds.cmds[k].cmds
+                                = (char **) calloc((size_t) ncmds, sizeof(char *));
+                                lfound = true;
                             }
-                            ncmds = indx[i+1] - indx[i];
-                            cmds.cmds[k].lgeneric = false;
-                            cmds.cmds[k].cmds
-                             = (char **) calloc((size_t) ncmds, sizeof(char *));
-                            lfound = true;
                         }
+                        memory_free8c(&sncl1);
                     }
                     else
                     {
-                        if (lfound)
+                        if (lfound && strlen(cline) > 0)
                         {
-                            icmd = j - (indx[i] + 1); // + 1 removes header line
+                            cmds.cmds[k].ncmds = cmds.cmds[k].ncmds + 1;
+                            icmd = cmds.cmds[k].ncmds - 1;
+                            cmds.cmds[k].lgeneric = true;
                             lenos = strlen(cline);
                             cmds.cmds[k].cmds[icmd]
                                = (char *) calloc(lenos+1, sizeof(char));
                             strcpy(cmds.cmds[k].cmds[icmd], cline);
+                            //printf("%s\n", cline);
                         }
                     }
                 }
