@@ -177,6 +177,8 @@ return 0;
            +               jk*ns*nt
            +                  js*nt
            +                     jt;
+//printf("%d %e\n", jm, M0s[jm]);
+//getchar();
     compearth_m02mw(1, CE_KANAMORI_1978, &M0s[jm], &Mw);
     joptLoc = jloc;
 //printf("%d %d %d %d %d %d %d\n", jloc, jm, jg, jb, jk, js, jt);

@@ -8,7 +8,6 @@
 #include "prepmt/prepmt_prepData.h"
 #include "ispl/process.h"
 #include "iscl/array/array.h"
-#include "iscl/log/log.h"
 #include "iscl/geodetic/geodetic.h"
 #include "iscl/memory/memory.h"
 #include "iscl/os/os.h"
@@ -38,7 +37,6 @@ int prepmt_prepData_verifyTeleseismicDistance(const double *dminIn,
                                               const double *dmaxIn,
                                               const struct sacData_struct data)
 {
-    const char *fcnm = "prepmt_prepData_verifyTeleseismicDistance\0";
     double az, baz, dmax, dmin, dist, evla, evlo, gcarc, stla, stlo;
     int ierr;
     dmin = PREPMT_MIN_TELESEISMIC_DIST;
@@ -47,7 +45,8 @@ int prepmt_prepData_verifyTeleseismicDistance(const double *dminIn,
     if (dmaxIn != NULL){dmax = fmin(*dmaxIn, dmax);}
     if (dmin > dmax)
     {
-        log_errorF("%s: Error - dmin %f > dmax %f\n", fcnm, dmin, dmax);
+        fprintf(stderr, "%s: Error - dmin %f > dmax %f\n",
+                 __func__, dmin, dmax);
         return -2;
     }
     ierr = sacio_getFloatHeader(SAC_FLOAT_GCARC, data.header, &gcarc);
@@ -60,8 +59,8 @@ int prepmt_prepData_verifyTeleseismicDistance(const double *dminIn,
         ierr += sacio_getFloatHeader(SAC_FLOAT_STLO, data.header, &stlo);
         if (ierr != 0)
         {
-            log_errorF("%s: Unable to compute gcarc and it isnt on header\n",
-                       fcnm);
+            fprintf(stderr, "%s: Unable to compute gcarc and not in header\n",
+                    __func__);
             return -2;
         }
         // Compute the azimuth, back-azimuth, distances 
@@ -95,7 +94,6 @@ int prepmt_prepData_verifyRegionalDistance(const double *dminIn,
                                            const double *dmaxIn,
                                            const struct sacData_struct data)
 {
-    const char *fcnm = "prepmt_prepData_verifyTeleseismicDistance\0";
     double az, baz, dmax, dmin, dist, evla, evlo, gcarc, stla, stlo;
     int ierr;
     dmin = PREPMT_MIN_REGIONAL_DIST;
@@ -104,7 +102,8 @@ int prepmt_prepData_verifyRegionalDistance(const double *dminIn,
     if (dmaxIn != NULL){dmax = fmin(*dmaxIn, dmax);}
     if (dmin > dmax)
     {
-        log_errorF("%s: Error - dmin %f > dmax %f\n", fcnm, dmin, dmax);
+        fprintf(stderr, "%s: Error - dmin %f > dmax %f\n",
+                __func__, dmin, dmax);
         return -2;
     }
     ierr = sacio_getFloatHeader(SAC_FLOAT_GCARC, data.header, &gcarc);
@@ -117,8 +116,8 @@ int prepmt_prepData_verifyRegionalDistance(const double *dminIn,
         ierr += sacio_getFloatHeader(SAC_FLOAT_STLO, data.header, &stlo);
         if (ierr != 0)
         {
-            log_errorF("%s: Unable to compute gcarc and it isnt on header\n",
-                       fcnm);
+            fprintf(stderr, "%s: Unable to compute gcarc not in header\n",
+                    __func__);
             return -2;
         }
         // Compute the azimuth, back-azimuth, distances 
@@ -155,7 +154,6 @@ int prepmt_prepData_readDataListFromIniFile(const char *iniFile,
                                             char ***sacFiles,
                                             char ***sacpzFiles)
 {
-    const char *fcnm = "prepmt_prepData_readDataListFromIniFile\0";
     FILE *flist;
     const char *s;
     char **csplit, **sFiles, **spzFiles, vname[256], cline[2*PATH_MAX];
@@ -169,7 +167,8 @@ int prepmt_prepData_readDataListFromIniFile(const char *iniFile,
     spzFiles = NULL;
     if (!os_path_isfile(iniFile))
     {
-        log_errorF("%s: Error ini file %s doesn't exist\n", fcnm, iniFile);
+        fprintf(stderr, "%s: Error ini file %s doesn't exist\n",
+                __func__, iniFile);
         return -1;
     }    
     // Load the ini file
@@ -187,7 +186,8 @@ int prepmt_prepData_readDataListFromIniFile(const char *iniFile,
         s = iniparser_getstring(ini, vname, NULL);
         if (!os_path_isfile(s))
         {
-            log_errorF("%s: Error file list %s does not exist\n", fcnm, s);
+            fprintf(stderr, "%s: Error file list %s does not exist\n",
+                    __func__, s);
             return -1;
         }
         // Count the number of files
@@ -195,7 +195,7 @@ int prepmt_prepData_readDataListFromIniFile(const char *iniFile,
         while(fgets(cline, 128, flist) != NULL){*nfiles = *nfiles + 1;}
         if (*nfiles < 1)
         {
-            log_errorF("%s: Error no files in file list\n", fcnm);
+            fprintf(stderr, "%s: Error no files in file list\n", __func__);
             fclose(flist);
         }
         // Set space
@@ -215,8 +215,8 @@ int prepmt_prepData_readDataListFromIniFile(const char *iniFile,
                 {
                     if (!os_path_isfile(csplit[0]))
                     {   
-                        log_errorF("%s: Error data file %s doesn't exist\n",
-                                   fcnm, csplit[0]);
+                        fprintf(stderr, "%s: Error data file %s doesnt exist\n",
+                                __func__, csplit[0]);
                         goto NEXT_LINE;
                     }
                     else
@@ -231,8 +231,8 @@ int prepmt_prepData_readDataListFromIniFile(const char *iniFile,
                 {
                     if (!os_path_isfile(csplit[1]))
                     {
-                        log_errorF("%s: Warning pz file %s doesn't exist\n",
-                                   fcnm, csplit[1]);
+                        fprintf(stdout, "%s: Warning pz file %s doesnt exist\n",
+                                __func__, csplit[1]);
                     }
                     else
                     {   
@@ -249,7 +249,8 @@ int prepmt_prepData_readDataListFromIniFile(const char *iniFile,
         fclose(flist);
         if (nread != *nfiles)
         {
-            log_warnF("%s: Only %d files from %s read\n", fcnm, nread, s);
+            fprintf(stdout, "%s: Only %d files from %s read\n",
+                    __func__, nread, s);
         }
         *nfiles = nread;
     }
@@ -261,7 +262,7 @@ int prepmt_prepData_readDataListFromIniFile(const char *iniFile,
         *nfiles = iniparser_getint(ini, vname, 0);
         if (*nfiles < 1)
         {
-            log_errorF("%s: No files to read!\n", fcnm);
+            fprintf(stderr, "%s: No files to read!\n", __func__);
             ierr = 1;
             goto ERROR;
         }
@@ -277,7 +278,8 @@ int prepmt_prepData_readDataListFromIniFile(const char *iniFile,
             s = iniparser_getstring(ini, vname, NULL);
             if (!os_path_isfile(s))
             {
-                log_errorF("%s: Error sac file %s doesn't exist\n", fcnm, s);
+                fprintf(stderr, "%s: Error sac file %s doesn't exist\n", 
+                        __func__, s);
                 continue;
             }
             strcpy(sFiles[nread], s);
@@ -293,7 +295,7 @@ int prepmt_prepData_readDataListFromIniFile(const char *iniFile,
     }
     if (*nfiles < 1)
     {
-        log_errorF("%s: Error - no data files read\n", fcnm);
+        fprintf(stderr, "%s: Error - no data files read\n", __func__);
         ierr = 1;
     }
 ERROR:;
@@ -326,7 +328,6 @@ int prepmt_prepData_getDefaultDTAndWindowFromIniFile(const char *iniFile,
                                                      double *cutStart,
                                                      double *cutEnd)
 {
-    const char *fcnm = "prepmt_prepData_getDefaultDTAndWindowFromIniFile\0";
     char vname[256];
     dictionary *ini;
     *cutStart =-2.0;
@@ -334,7 +335,8 @@ int prepmt_prepData_getDefaultDTAndWindowFromIniFile(const char *iniFile,
     *targetDt = 0.1;
     if (!os_path_isfile(iniFile))
     {    
-        log_errorF("%s: Error ini file %s doesn't exist\n", fcnm, iniFile);
+        fprintf(stderr, "%s: Error ini file %s doesn't exist\n",
+                __func__, iniFile);
         return -1;
     }
     ini = iniparser_load(iniFile);
@@ -347,8 +349,8 @@ int prepmt_prepData_getDefaultDTAndWindowFromIniFile(const char *iniFile,
     *cutEnd   = iniparser_getdouble(ini, vname, 3.0);
     if (*cutEnd <= *cutStart)
     {    
-        log_errorF("%s: Error cutStart: %f must be less than cutEnd: %f\n",
-                   fcnm, *cutStart, *cutEnd);
+        fprintf(stderr, "%s: Error cutStart: %f must be less than cutEnd: %f\n",
+                __func__, *cutStart, *cutEnd);
         return -1; 
     }
 
@@ -357,8 +359,8 @@ int prepmt_prepData_getDefaultDTAndWindowFromIniFile(const char *iniFile,
     *targetDt = iniparser_getdouble(ini, vname, 0.1);
     if (*targetDt <= 0.0)
     {    
-        log_errorF("%s: Error targetDt %f must be positive\n",
-                   fcnm, *targetDt);
+        fprintf(stderr, "%s: Error targetDt %f must be positive\n",
+                __func__, *targetDt);
         return -1; 
     }
     iniparser_freedict(ini);
@@ -395,13 +397,12 @@ int prepmt_prepData_setEventInformation(const double evla,
                                         const int nobs,
                                         struct sacData_struct *data)
 {
-    const char *fcnm = "prepmt_prepData_setEventInformation\0";
     double az, baz, dist, epoch, gcarc, o, stla, stlo, var;
     int ierr, ierr1, k;
     ierr = 0;
     if (data == NULL || nobs < 1)
     {
-        log_errorF("%s: Error - no data\n", fcnm);
+        fprintf(stderr, "%s: Error - no data\n", __func__);
         return -1; 
     }
     for (k=0; k<nobs; k++)
@@ -411,20 +412,20 @@ int prepmt_prepData_setEventInformation(const double evla,
         o = evtime - epoch;
         if (ierr != 0)
         {
-            log_errorF("%s: Failed to get start time\n", fcnm);
+            fprintf(stderr, "%s: Failed to get start time\n", __func__);
             break;
         }
         // Get the station location
         ierr = sacio_getFloatHeader(SAC_FLOAT_STLA, data[k].header, &stla);
         if (ierr != 0)
         {
-            log_errorF("%s: Failed to get station latitude\n", fcnm);
+            fprintf(stderr, "%s: Failed to get station latitude\n", __func__);
             break;
         }
         ierr = sacio_getFloatHeader(SAC_FLOAT_STLO, data[k].header, &stlo);
         if (ierr != 0)
         {
-            log_errorF("%s: Failed to get station longitude\n", fcnm);
+            fprintf(stderr, "%s: Failed to get station longitude\n", __func__);
             break;
         }
         // Compute the azimuth, back-azimuth, distances 
@@ -434,44 +435,50 @@ int prepmt_prepData_setEventInformation(const double evla,
         ierr1 = sacio_getFloatHeader(SAC_FLOAT_EVLA, data[k].header, &var);
         if (ierr1 == 0 && fabs(var - evla) > 1.e-3)
         {
-            log_warnF("%s: Overwriting event latitude: %f\n", fcnm, var);
+            fprintf(stdout, "%s: Overwriting event latitude: %f\n",
+                    __func__, var);
         }
         ierr1 = sacio_getFloatHeader(SAC_FLOAT_EVLO, data[k].header, &var);
         if (ierr1 == 0 && fabs(var - evlo) > 1.e-3)
         {   
-            log_warnF("%s: Overwriting event longitude: %f\n", fcnm, var);
+            fprintf(stdout, "%s: Overwriting event longitude: %f\n",
+                    __func__, var);
         }
         ierr1 = sacio_getFloatHeader(SAC_FLOAT_EVDP, data[k].header, &var);
         if (ierr1 == 0 && fabs(var - evdp) > 1.e-3)
         {
-            log_warnF("%s: Overwriting event depth: %f\n", fcnm, var);
+            fprintf(stdout, "%s: Overwriting event depth: %f\n",
+                     __func__, var);
         }
         ierr1 = sacio_getFloatHeader(SAC_FLOAT_GCARC, data[k].header, &var);
         if (ierr1 == 0 && fabs(var - gcarc) > 1.e-3)
         {
-            log_warnF("%s: Overwriting event great-circle dist: %f\n",
-                      fcnm, var);
+            fprintf(stdout, "%s: Overwriting event great-circle dist: %f\n",
+                    __func__, var);
         }
         ierr1 = sacio_getFloatHeader(SAC_FLOAT_DIST, data[k].header, &var);
         if (ierr1 == 0 && fabs(var - dist) > 1.e-3)
         {
-            log_warnF("%s: Overwriting event distance: %f\n",
-                      fcnm, var);
+            fprintf(stdout, "%s: Overwriting event distance: %f\n",
+                    __func__, var);
         }
         ierr1 = sacio_getFloatHeader(SAC_FLOAT_AZ, data[k].header, &var);
         if (ierr1 == 0 && fabs(var - az) > 1.e-3)
         {
-            log_warnF("%s: Overwriting event azimuhh: %f\n", fcnm, var);
+            fprintf(stdout, "%s: Overwriting event azimuhh: %f\n",
+                    __func__, var);
         }
         ierr1 = sacio_getFloatHeader(SAC_FLOAT_BAZ, data[k].header, &var);
         if (ierr1 == 0 && fabs(var - baz) > 1.e-3)
         {
-            log_warnF("%s: Overwriting event back-azimuth: %f\n", fcnm, var);
+            fprintf(stdout, "%s: Overwriting event back-azimuth: %f\n",
+                    __func__, var);
         }
         ierr1 = sacio_getFloatHeader(SAC_FLOAT_O, data[k].header, &var);
         if (ierr1 == 0 && fabs(var - o) > 1.e-3)
         {
-            log_warnF("%s: Overwriting event origin time: %f\n", fcnm, var);
+            fprintf(stdout, "%s: Overwriting event origin time: %f\n",
+                    __func__, var);
         }
         // Set the variables
         sacio_setFloatHeader(SAC_FLOAT_EVLA,  evla,  &data[k].header);
@@ -503,7 +510,6 @@ int prepmt_prepData_setEventInformation(const double evla,
 struct sacData_struct *prepmt_prepData_readArchivedWaveforms(
     const char *archiveFile, int *nobs, int *ierr)
 {
-    const char *fcnm = "prepmt_prepData_readArchivedWaveforms\0";
     char **sacFiles;
     hid_t groupID, fileID;
     int i, nfiles;
@@ -512,7 +518,8 @@ struct sacData_struct *prepmt_prepData_readArchivedWaveforms(
     sacData = NULL;
     if (!os_path_isfile(archiveFile))
     {
-        printf("%s: Error archive file %s doesn't exist\n", fcnm, archiveFile);
+        fprintf(stderr, "%s: Error archive file %s doesn't exist\n",
+                __func__, archiveFile);
         *ierr = 1; 
         return sacData;
     }    
@@ -521,7 +528,7 @@ struct sacData_struct *prepmt_prepData_readArchivedWaveforms(
     sacFiles = sacioh5_getFilesInGroup(groupID, &nfiles, ierr);
     if (*ierr != 0 || sacFiles == NULL)
     {
-        printf("%s: Error getting names of SAC flies\n", fcnm);
+        fprintf(stderr, "%s: Error getting names of SAC flies\n", __func__);
         *ierr = 1; 
         return sacData;
     }    
@@ -529,11 +536,11 @@ struct sacData_struct *prepmt_prepData_readArchivedWaveforms(
                                          groupID, nobs, ierr);
     if (*ierr != 0)
     {    
-        printf("%s: Errors while reading SAC files\n", fcnm);
+        fprintf(stderr, "%s: Errors while reading SAC files\n", __func__);
     }    
     if (*nobs != nfiles)
     {
-        printf("%s: Warning - subset of data was read\n", fcnm);
+        fprintf(stdout, "%s: Warning - subset of data was read\n", __func__);
     }
     // Clean up and close archive file
     for (i=0; i<nfiles; i++)
@@ -563,7 +570,6 @@ int prepmt_prepData_archiveWaveforms(const char *archiveFile,
                                      const int nobs,
                                      const struct sacData_struct *data)
 {
-    const char *fcnm = "prepmt_prepData_archiveWaveforms\0";
     char dir[PATH_MAX];
     char **csplit;
     char objName[256];
@@ -574,12 +580,12 @@ int prepmt_prepData_archiveWaveforms(const char *archiveFile,
     // Check inputs
     if (archiveFile == NULL)
     {
-        printf("%s: Error archive file is NULL\n", fcnm);
+        fprintf(stderr, "%s: Error archive file is NULL\n", __func__);
         return -1; 
     }   
     if (strlen(archiveFile) == 0)
     {
-        printf("%s: Error archive file is blank\n", fcnm);
+        fprintf(stderr, "%s: Error archive file is blank\n", __func__);
         return -1; 
     }
     // Ensure the archive directory exists
@@ -595,7 +601,8 @@ int prepmt_prepData_archiveWaveforms(const char *archiveFile,
             ierr = os_makedirs(dir);
             if (ierr != 0)
             {
-                printf("%s: Failed to make output dircectory: %s\n", fcnm, dir);
+                fprintf(stderr, "%s: Failed to make output dircectory: %s\n",
+                        __func__, dir);
                 return -1;
             }
         }
@@ -607,7 +614,7 @@ int prepmt_prepData_archiveWaveforms(const char *archiveFile,
     }
     if (os_path_isfile(archiveFile))
     {
-        printf("%s: Clobbering file %s\n", fcnm, archiveFile);
+        fprintf(stderr, "%s: Clobbering file %s\n", __func__, archiveFile);
     }
     // Create a brand new file to hold the data
     fileID = H5Fcreate(archiveFile, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
@@ -632,7 +639,8 @@ int prepmt_prepData_archiveWaveforms(const char *archiveFile,
         ierr = sacioh5_writeTimeSeries2(objName, groupID, data[k]);
         if (ierr != 0)
         {
-            printf("%s: Error writing waveform: %d\n", fcnm, k + 1);
+            fprintf(stderr, "%s: Error writing waveform %d, object %sn",
+                    __func__, k + 1, objName);
             goto ERROR;
         }
     }
@@ -670,13 +678,12 @@ int prepmt_prepData_computeTheoreticalPorSPickTimes(
     const int nobs, const struct sacData_struct *data,
     double *__restrict__ ptimes)
 {
-    const char *fcnm = "prepmt_prepData_computeTheoreticalPorSPickTimes\0";
     struct ttimesTravelTime_struct ppick;
     double delta, depth, epoch, o;
     int ierr, k;
     if (nobs < 1 || ptimes == NULL)
     {
-        log_errorF("%s: Insufficient space for output ptimes\n", fcnm);
+        fprintf(stderr, "%s: Insufficient space for output ptimes\n", __func__);
         return -1;
     }
     memset(&ppick, 0, sizeof(struct ttimesTravelTime_struct));
@@ -685,32 +692,32 @@ int prepmt_prepData_computeTheoreticalPorSPickTimes(
         ierr = sacio_getEpochalStartTime(data[k].header, &epoch);
         if (ierr != 0)
         {
-            log_errorF("%s: Failed to get start time\n", fcnm);
+            fprintf(stderr, "%s: Failed to get start time\n", __func__);
             return -1;
         }
         ierr = sacio_getFloatHeader(SAC_FLOAT_O, data[k].header, &o);
         if (ierr != 0)
         {
-            log_errorF("%s: Origin time not set\n", fcnm);
+            fprintf(stderr, "%s: Origin time not set\n", __func__);
             return -1;
         }
         ierr = sacio_getFloatHeader(SAC_FLOAT_GCARC,
                                     data[k].header, &delta);
         if (ierr != 0)
         {
-            log_errorF("%s: Error event distance not set\n", fcnm);
+            fprintf(stderr, "%s: Error event distance not set\n", __func__);
             return -1;
         }
         ierr = sacio_getFloatHeader(SAC_FLOAT_EVDP,
                                     data[k].header, &depth);
         if (ierr != 0)
         {
-            log_errorF("%s: Error event depth not set\n", fcnm);
+            fprintf(stderr, "%s: Error event depth not set\n", __func__);
             return -1;
         }
         if (ierr != 0)
         {
-            log_errorF("%s: Error getting origin time\n", fcnm);
+            fprintf(stderr, "%s: Error getting origin time\n", __func__);
             return -1;
         }
         if (ldop)
@@ -718,7 +725,7 @@ int prepmt_prepData_computeTheoreticalPorSPickTimes(
             ierr = ttimes_getFirstPPhase(delta, depth, dirnm, model, &ppick);
             if (ierr != 0)
             {
-                log_errorF("%s: Error computing P pick time\n", fcnm);
+                fprintf(stderr, "%s: Error computing P pick time\n", __func__);
                 return -1;
             } 
         }
@@ -727,7 +734,7 @@ int prepmt_prepData_computeTheoreticalPorSPickTimes(
             ierr = ttimes_getFirstSPhase(delta, depth, dirnm, model, &ppick);
             if (ierr != 0)
             {
-                log_errorF("%s: Error computing S pick time\n", fcnm);
+                fprintf(stderr, "%s: Error computing S pick time\n", __func__);
                 return -1;
             }
         }
@@ -761,13 +768,12 @@ int prepmt_prepData_computeTheoreticalPPickTimes(
     const int nobs, const struct sacData_struct *data,
     double *__restrict__ ptimes)
 {
-    const char *fcnm = "prepmt_prepData_computeTheoreticalPPickTimes\0";
     int ierr;
     ierr = prepmt_prepData_computeTheoreticalPorSPickTimes(dirnm, model, true,
                                                            nobs, data, ptimes);
     if (ierr != 0)
     {
-        log_errorF("%s: Error computing P pick times\n", fcnm);
+        fprintf(stderr, "%s: Error computing P pick times\n", __func__);
         return -1;
     }
     return 0;
@@ -798,13 +804,12 @@ int prepmt_prepData_computeTheoreticalSPickTimes(
     const int nobs, const struct sacData_struct *data,
     double *__restrict__ ptimes)
 {
-    const char *fcnm = "prepmt_prepData_computeTheoreticalSPickTimes\0";
     int ierr;
     ierr = prepmt_prepData_computeTheoreticalPorSPickTimes(dirnm, model, false,
                                                           nobs, data, ptimes);
     if (ierr != 0)
     {   
-        log_errorF("%s: Error computing S pick times\n", fcnm);
+        fprintf(stderr, "%s: Error computing S pick times\n", __func__);
         return -1; 
     }   
     return 0;
@@ -849,7 +854,6 @@ int prepmt_prepData_setPrimaryPorSPickFromTheoreticalTime(
     const enum sacHeader_enum pickHeaderName,
     const int nobs, struct sacData_struct *data)
 {
-    const char *fcnm = "tdsearch_data_setPPickTimeFromTheoreticalTime\0";
     double *ptimes;
     char phaseName[8];
     int ierr, k;
@@ -862,7 +866,7 @@ int prepmt_prepData_setPrimaryPorSPickFromTheoreticalTime(
     phaseName[0] = 'P';
     if (nobs < 1 || data == NULL) 
     {    
-        log_errorF("%s: Error - no data\n", fcnm);
+        fprintf(stderr, "%s: Error - no data\n", __func__);
         return -1;
     }
     if (!ldop){phaseName[0] = 'S';}
@@ -873,8 +877,9 @@ int prepmt_prepData_setPrimaryPorSPickFromTheoreticalTime(
                                                           ptimes);
     if (ierr != 0)
     {
-        log_errorF("%s: Error computing theorietical primary arrival times\n",
-                   fcnm);
+        fprintf(stderr,
+                "%s: Error computing theorietical primary arrival times\n",
+                __func__);
         goto ERROR;
     }
     // Set the theoretical arrival times on the header
@@ -886,7 +891,8 @@ int prepmt_prepData_setPrimaryPorSPickFromTheoreticalTime(
                                             &data[k].header);
         if (ierr != 0)
         {
-            log_errorF("%s: Failed to set pick time on header\n", fcnm);
+            fprintf(stderr, "%s: Failed to set pick time on header\n",
+                    __func__);
             goto ERROR;
         }
     }
@@ -901,7 +907,6 @@ int prepmt_prepData_setTheoreticalSurfaceWaveArrivalTime(
     const enum sacHeader_enum pickHeaderName,
     const int nobs, struct sacData_struct *data)
 {
-    const char *fcnm = "prepmt_prepData_setTheoreticalSurfaceWaveArrivalTime\0";
     char phaseName[8];
     double dist, epoch, o, ptime;
     int ierr, k;
@@ -911,12 +916,13 @@ int prepmt_prepData_setTheoreticalSurfaceWaveArrivalTime(
     phaseName[0] = 'R';
     if (nobs < 1 || data == NULL)
     {
-        log_errorF("%s: Error - no data\n", fcnm);
+        fprintf(stderr, "%s: Error - no data\n", __func__);
         return -1;
     }
     if (vel <= 0.0)
     {
-        log_errorF("%s: Error - velocity %f must be positive\n", fcnm, vel);
+        fprintf(stderr, "%s: Error - velocity %f must be positive\n",
+                __func__, vel);
         return -1;
     }
     if (!lr){phaseName[0] = 'L';}
@@ -925,20 +931,20 @@ int prepmt_prepData_setTheoreticalSurfaceWaveArrivalTime(
         ierr = sacio_getEpochalStartTime(data[k].header, &epoch);
         if (ierr != 0)
         {
-            log_errorF("%s: Failed to get start time\n", fcnm);
+            fprintf(stderr, "%s: Failed to get start time\n", __func__);
             return -1;
         }
         ierr = sacio_getFloatHeader(SAC_FLOAT_O, data[k].header, &o);
         if (ierr != 0)
         {
-            log_errorF("%s: Origin time not set\n", fcnm);
+            fprintf(stderr, "%s: Origin time not set\n", __func__);
             return -1;
         }
         ierr = sacio_getFloatHeader(SAC_FLOAT_DIST,
                                     data[k].header, &dist);
         if (ierr != 0)
         {
-            log_errorF("%s: Error event distance not set\n", fcnm);
+            fprintf(stderr, "%s: Error event distance not set\n", __func__);
             return -1;
         }
         ptime = epoch + o + dist/vel;
@@ -948,7 +954,8 @@ int prepmt_prepData_setTheoreticalSurfaceWaveArrivalTime(
                                             &data[k].header);
         if (ierr != 0)
         {
-            log_errorF("%s: Failed to set pick time on header\n", fcnm);
+            fprintf(stderr, "%s: Failed to set pick time on header\n",
+                     __func__);
             goto ERROR;
         }
     }
@@ -973,7 +980,6 @@ ERROR:;
 int prepmt_prepData_process(const struct prepmtCommands_struct cmds,
                             const int nobs, struct sacData_struct *data)
 {
-    const char *fcnm = "prepmt_prepData_process\0";
     struct serialCommands_struct *commands;
     double dt, dt0, epoch, epoch0, time, *ycopy;
     int *nyAll, i, i0, ierr, k, npts0, nq, nwork;
@@ -990,12 +996,13 @@ int prepmt_prepData_process(const struct prepmtCommands_struct cmds,
     if (nobs < 1){return 0;}
     if (cmds.nobs != nobs)
     {
-        log_errorF("%s: Inconsistent sizes between cmds and nobs\n", fcnm);
+        fprintf(stderr, "%s: Inconsistent sizes between cmds and nobs\n",
+                __func__);
         return -1;
     }
     if (data == NULL)
     {
-        log_errorF("%s: Error - data is NULL\n", fcnm);
+        fprintf(stderr, "%s: Error - data is NULL\n", __func__);
         return -1;
     }
     commands = (struct serialCommands_struct *)
@@ -1008,7 +1015,8 @@ int prepmt_prepData_process(const struct prepmtCommands_struct cmds,
                                       &commands[k]);
         if (ierr != 0)
         {
-            log_errorF("%s: Error setting serial command string\n", fcnm);
+            fprintf(stderr, "%s: Error setting serial command string\n",
+                    __func__);
             goto ERROR;
         }
         process_setSerialCommandsData64f(data[k].npts,
@@ -1019,7 +1027,8 @@ int prepmt_prepData_process(const struct prepmtCommands_struct cmds,
     ierr = process_applyMultipleSerialCommands(nobs, commands);
     if (ierr != 0)
     {
-        log_errorF("%s: Error applying serial commands chains to data\n", fcnm);
+        fprintf(stderr, "%s: Error applying serial commands chains to data\n",
+                __func__);
         goto ERROR;
     }    
     // Get the workspace
@@ -1040,14 +1049,15 @@ int prepmt_prepData_process(const struct prepmtCommands_struct cmds,
         ierr = sacio_getEpochalStartTime(data[k].header, &epoch0);
         if (ierr != 0)
         {
-            log_errorF("%s: Failed to get start time of trace\n", fcnm);
+            fprintf(stderr, "%s: Failed to get start time of trace\n",
+                    __func__);
             goto ERROR;
         }
         epoch = epoch0;
         sacio_getFloatHeader(SAC_FLOAT_DELTA, data[k].header, &dt0);
         sacio_getIntegerHeader(SAC_INT_NPTS, data[k].header, &npts0);
         dt = dt0;
-        for (i=0; i<commands->ncmds; i++)
+        for (i=0; i<commands[k].ncmds; i++)
         {
             if (commands[k].commands[i].type == CUT_COMMAND)
             {
@@ -1075,7 +1085,8 @@ int prepmt_prepData_process(const struct prepmtCommands_struct cmds,
                                                     &nyAll[k], ycopy);
             if (ierr != 0)
             {
-                log_errorF("%s: Error extracting data onto ycopy\n", fcnm);
+                fprintf(stderr, "%s: Error extracting data onto ycopy\n",
+                        __func__);
                 goto ERROR;
             }
             sacio_freeData(&data[k]);
@@ -1097,7 +1108,7 @@ int prepmt_prepData_process(const struct prepmtCommands_struct cmds,
                                                     data[k].data);
             if (ierr != 0)
             {
-                log_errorF("%s: Error extracting data\n", fcnm);
+                fprintf(stderr, "%s: Error extracting data\n", __func__);
                 goto ERROR;
             }
         }

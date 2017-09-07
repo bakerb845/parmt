@@ -11,6 +11,8 @@
 #include "iscl/os/os.h"
 #include "iscl/string/string.h"
 
+#define LENP 256
+
 /*!
  * @brief Frees memory on the commands structure.
  *
@@ -73,11 +75,13 @@ struct prepmtCommands_struct
     FILE *pfl;
     const char *s;
     char **cwork, vname[256], cline[MAX_CMD_LEN];
-    char *sncl1, sncl2[64], ctemp[64], 
+    char stringSplit[MAX_CMD_LEN];
+    char *sncl1, *cstrip, sncl2[64], ctemp[64], 
          cdum[64], chan[64], loc[64], netw[64], stat[64],
          kcmpnm[64], khole[64], knetwk[64], kstnm[64];
     struct prepmtCommands_struct cmds;
-    int *indx, i, icmd, j, k, ncmds, ncmdsWork, nindex, nlines;
+    int *indx, ptr[LENP], i, icmd, is, j, k,
+        ncmds, ncmdsWork, nindex, nlines, ns;
     dictionary *ini;
     size_t lenos;
     bool lfound, luseProcessingList;
@@ -269,19 +273,56 @@ struct prepmtCommands_struct
                         }
                         memory_free8c(&sncl1);
                     }
-                    else
+                    else if (lfound)
                     {
-                        if (lfound && strlen(cline) > 0)
+                        cstrip = string_strip(NULL, cline); 
+                        *ierr = string_split_work(0, NULL, cstrip, LENP, ptr,
+                                                 MAX_CMD_LEN, &ns, stringSplit);
+                        if (*ierr != ISCL_SUCCESS)
+                        {
+                            fprintf(stderr, "%s: Error splitting string\n",
+                                    __func__);
+                        }
+                        if (lfound && ns > 0 && strlen(cstrip) > 0)
                         {
                             cmds.cmds[k].ncmds = cmds.cmds[k].ncmds + 1;
                             icmd = cmds.cmds[k].ncmds - 1;
                             cmds.cmds[k].lgeneric = true;
-                            lenos = strlen(cline);
+                            lenos = strlen(cstrip);
                             cmds.cmds[k].cmds[icmd]
                                = (char *) calloc(lenos+1, sizeof(char));
-                            strcpy(cmds.cmds[k].cmds[icmd], cline);
-                            //printf("%s\n", cline);
+                            strcpy(cmds.cmds[k].cmds[icmd], cstrip);
+                            if (strcasecmp(&stringSplit[0], "transfer\0") == 0 && ns > 1)
+                            {
+                                cmds.cmds[k].lgeneric = false;
+                            }
+                            if (strcasecmp(&stringSplit[0], "cut\0") == 0 && ns > 1)
+                            {
+                                cmds.cmds[k].lgeneric = false;
+                            }
+                            if (strcasecmp(&stringSplit[0], "downsample\0") == 0 && ns > 1)
+                            {
+                                cmds.cmds[k].lgeneric = false;
+                            }
+                            if (strcasecmp(&stringSplit[0], "decimate\0") == 0 && ns > 1)
+                            {
+                                cmds.cmds[k].lgeneric = false;
+                            }
+                            if (strcasecmp(&stringSplit[0], "sos\0") == 0 ||
+                                strcasecmp(&stringSplit[0], "iir\0") == 0)
+                            {
+                                for (is=1; is<ns; is++)
+                                {
+                                    if (strcasecmp(&stringSplit[ptr[is]], "dt\0") == 0)
+                                    {
+                                        cmds.cmds[k].lgeneric = false;
+                                        break;
+                                    }
+                                }
+                            }
+                            //printf("%s\n", cstrip);
                         }
+                        memory_free8c(&cstrip);
                     }
                 }
                 if (lfound){break;}
@@ -299,7 +340,26 @@ struct prepmtCommands_struct
     iniparser_freedict(ini);
     return cmds;
 }
-
+//============================================================================//
+/*!
+ * @brief Modifies the commands on the processing structure.
+ *
+ * @param[in] options    Options such as the cut start/end time, the
+ *                       target sampling period, a flag indicating whether
+ *                       transfer should indicate convolution or deconvolution,
+ *                       and the output units of the output commands.
+ * @param[in] data       Provides context (e.g., the sampling period) to the
+ *                       generic processing command.
+ *
+ * @param[in,out] cmds   On input contains the generic commands. \n
+ *                       On output contains the commands contextualized to
+ *                       the data.
+ *
+ * @result 0 indicates success.
+ *
+ * @author Ben Baker, ISTI
+ *
+ */
 int prepmt_commands_modifyCommandsCharsStruct(
     const struct prepmtModifyCommands_struct options,
     const struct sacData_struct data,
