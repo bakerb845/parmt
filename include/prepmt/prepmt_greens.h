@@ -58,6 +58,18 @@ int prepmt_greens_xcAlignGreensToData_work(
     double *__restrict__ Gyz,
     const int lxc, double *__restrict__ xc);
 
+double prepmt_greens_scoreXCAlignment(const int npts,
+                                      const bool luseEnvelope,
+                                      const bool lnorm,
+                                      const double *__restrict__ data,
+                                      const double *__restrict__ Gxx,
+                                      const double *__restrict__ Gyy,
+                                      const double *__restrict__ Gzz,
+                                      const double *__restrict__ Gxy,
+                                      const double *__restrict__ Gxz,
+                                      const double *__restrict__ Gyz,
+                                      int *ierr);
+
 #ifdef __cplusplus
 }
 #endif

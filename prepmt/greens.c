@@ -974,6 +974,30 @@ int prepmt_greens_getHudson96GreensFunctionsIndices(
     return ierr;
 }
 //============================================================================//
+/*!
+ * @brief Aligns the Green's functions to the data via cross-correlation.
+ *
+ * @param[in] data          Holds the observed data.
+ * @param[in] luseEnvelope  If true then cross-correlate the envelopes of
+ *                          the waveforms. \n
+ *                          Otherwise, cross-correlate the waveforms
+ *                          themselves.  In this case the absolute values
+ *                          of the cross-correlation are used.
+ * @param[in] lnorm         If true then use a normalized cross-correlation
+ *                          so that all waveforms can contribute equally. \n
+ *                          Otherwise, use the non-normalized cross-correlation.
+ * @param[in] maxTimLag     Max time lag (seconds) allowed in cross-correlation.
+ *
+ * @param[in,out] grns      On input contains the Green's functions to 
+ *                          align to the data.
+ *                          On output contains the Green's functions which
+ *                          have been aligned to the data via cross-correlation.
+ *
+ * @result 0 indicates success.
+ *
+ * @author Ben Baker, ISTI
+ *
+ */
 int prepmt_greens_xcAlignGreensToData(const struct sacData_struct data,
                                       const bool luseEnvelope, const bool lnorm,
                                       const double maxTimeLag,
@@ -1084,13 +1108,14 @@ int prepmt_greens_xcAlignGreensToData_work(
         Gwork = memory_calloc64f(npgrns);
         dwork = memory_calloc64f(npts);
         ierr = signal_filter_envelope64f_work(npts, data, dwork);
+        esig = cblas_dnrm2(npts, dwork, 1);
     }
     else
     {
         Gwork = NULL;
         dwork = data;
+        esig = cblas_dnrm2(npts, data, 1);
     }
-    esig = cblas_dnrm2(npts, data, 1);
     // Loop on the Green's functions
     for (kmt=0; kmt<6; kmt++)
     {
@@ -1250,6 +1275,150 @@ printf("%d\n", lag);
     }
     memory_free64f(&xcorrWork);
     return 0;
+}
+//============================================================================//
+/*!
+ * @brief Utility function for use after the Green's functions have been 
+ *        manually aligned to issue a measure of the alignment quality.
+ *
+ * @param[in] npts          Number of points in data and Green's functions.
+ * @param[in] luseEnvelope  If true then cross-correlate the envelopes of
+ *                          the waveforms. \n
+ *                          Otherwise, cross-correlate the waveforms
+ *                          themselves.  In this case the absolute values
+ *                          of the cross-correlation are used.
+ * @param[in] lnorm         If true then use a normalized cross-correlation
+ *                          so that all waveforms can contribute equally. \n
+ *                          Otherwise, use the non-normalized cross-correlation.
+ * @param[in] data          Observed waveforms.  This is an array of dimension
+ *                          [npts].
+ * @param[in] Gxx           Aligned Gxx Green's function.  This is an array of
+ *                          dimension [npts].
+ * @param[in] Gyy           Aligned Gyy Green's function.  This is an array of
+ *                          dimension [npts].
+ * @param[in] Gzz           Aligned Gzz Green's function.  This is an array of
+ *                          dimension [npts].
+ * @param[in] Gxy           Aligned Gxy Green's function.  This is an array of
+ *                          dimension [npts].
+ * @param[in] Gxz           Aligned Gxz Green's function.  This is an array of
+ *                          dimension [npts].
+ * @param[in] Gyz           Aligned Gyz Green's function.  This is an array of
+ *                          dimension [npts].
+ *
+ * @param[out] ierr         0 indicates success.
+ *
+ * @result The zero-lag cross-correlation score of the Green's function to 
+ *         data alignment.
+ *
+ * @author Ben Baker, ISTI
+ *
+ */
+double prepmt_greens_scoreXCAlignment(const int npts,
+                                      const bool luseEnvelope,
+                                      const bool lnorm,
+                                      const double *__restrict__ data,
+                                      const double *__restrict__ Gxx,
+                                      const double *__restrict__ Gyy,
+                                      const double *__restrict__ Gzz,
+                                      const double *__restrict__ Gxy,
+                                      const double *__restrict__ Gxz,
+                                      const double *__restrict__ Gyz,
+                                      int *ierr)
+{
+    double *dwork, *Gwork, egrns, esig, xcStack, xdiv;
+    const double *G;
+    int i;
+    enum isclError_enum isclError;
+    *ierr = 0;
+    xcStack = 0.0;
+    dwork = NULL;
+    G = NULL;
+    Gwork = memory_calloc64f(npts);
+    if (luseEnvelope)
+    {
+        dwork = signal_filter_envelope64f(npts, data, &isclError);
+        if (isclError != ISCL_SUCCESS)
+        {
+            fprintf(stderr, "%s: Error computing data envelope\n", __func__);
+            *ierr = 1;
+            return xcStack;
+        }
+        esig = cblas_dnrm2(npts, dwork, 1);
+    }
+    else
+    {
+        dwork = array_copy64f(npts, data, &isclError);
+        if (isclError != ISCL_SUCCESS)
+        {
+            fprintf(stderr, "%s: Error copying data\n", __func__);
+            *ierr = 1; 
+            return xcStack;
+        }
+        esig = cblas_dnrm2(npts, data, 1);
+    }
+    for (i=0; i<6; i++)
+    {
+        if (i == 0)
+        {
+            G = Gxx;
+        }
+        else if (i == 1)
+        {
+            G = Gyy;
+        }
+        else if (i == 2)
+        {
+            G = Gzz;
+        }
+        else if (i == 3)
+        {
+            G = Gxy;
+        }
+        else if (i == 4)
+        {
+            G = Gxz;
+        }
+        else if (i == 5)
+        {
+            G = Gyz;
+        }
+        if (luseEnvelope)
+        {
+            isclError = signal_filter_envelope64f_work(npts, G, Gwork);
+            if (isclError != ISCL_SUCCESS)
+            {
+                fprintf(stderr, "%s: Error computing Grns envelope\n", __func__);
+                *ierr = 1; 
+                return xcStack;
+            }
+        }
+        else
+        {
+            isclError = array_copy64f_work(npts, G, Gwork);
+            if (isclError != ISCL_SUCCESS)
+            {
+                fprintf(stderr, "%s: Error copying G to Gwork\n", __func__);
+                *ierr = 1;
+                return xcStack;
+            }
+        }
+        egrns = cblas_dnrm2(npts, Gwork, 1);
+        xdiv = 1.0;
+        if (lnorm){xdiv = 1.0/(esig*egrns);}
+        if (luseEnvelope)
+        {
+            xcStack = xcStack + xdiv*cblas_ddot(npts, dwork, 1, Gwork, 1);
+        }
+        else
+        {
+            xcStack = xcStack + xdiv*fabs(cblas_ddot(npts, G, 1, Gwork, 1));
+        }
+        G = NULL;
+    }
+    xcStack = xcStack/6.0;
+    memory_free64f(&dwork);
+    memory_free64f(&Gwork);
+    return xcStack;
 }
 //============================================================================//
 static int getPrimaryArrival(const struct sacHeader_struct hdr,
