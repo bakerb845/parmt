@@ -1405,17 +1405,17 @@ double prepmt_greens_scoreXCAlignment(const int npts,
         egrns = cblas_dnrm2(npts, Gwork, 1);
         xdiv = 1.0;
         if (lnorm){xdiv = 1.0/(esig*egrns);}
+        xdiv = xdiv*1.0/6.0; // Normalization term for sum
         if (luseEnvelope)
         {
             xcStack = xcStack + xdiv*cblas_ddot(npts, dwork, 1, Gwork, 1);
         }
         else
         {
-            xcStack = xcStack + xdiv*fabs(cblas_ddot(npts, G, 1, Gwork, 1));
+            xcStack = xcStack + xdiv*fabs(cblas_ddot(npts, dwork, 1, Gwork, 1));
         }
         G = NULL;
     }
-    xcStack = xcStack/6.0;
     memory_free64f(&dwork);
     memory_free64f(&Gwork);
     return xcStack;
