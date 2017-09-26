@@ -814,7 +814,7 @@ ERROR:;
  *                          is an array of dimension [6 x ndepths x nwaves]
  *                          where the fastest dimension is 6 and the slowest
  *                          dimension is nwaves.  Each Green's function 
- *                          group at for the waveform, depth is packed; 
+ *                          group for the waveform, depth pair is packed:
  *                          \f$ \{ G_{xx}, G_{yy}, G_{zz},
  *                                 G_{xy}, G_{xz}, G_{yz} \} \f$.
  *
