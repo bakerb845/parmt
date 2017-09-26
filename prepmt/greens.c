@@ -798,6 +798,31 @@ ERROR:;
     return 0;
 }
 //============================================================================//
+/*!
+ * @brief Writes a Green's functions archive that is appropriate for parmt.
+ *
+ * @param[in] archiveName   Name of archive file to write.
+ * @param[in] nwaves        Number of waveforms.
+ * @param[in] ndepths       Number of depths in grid-search.
+ * @param[in] evla          Event latitude (degrees).
+ * @param[in] evlo          Event longitude (degrees).
+ * @param[in] depths        Depths (km) in grid search.  This is an array of
+ *                          dimension [ndepths].
+ * @param[in] sac           SAC observations to write.  This is an array of
+ *                          dimension [nwaves].
+ * @param[in] sacGrns       Corresponding Green's functions to write.  This
+ *                          is an array of dimension [6 x ndepths x nwaves]
+ *                          where the fastest dimension is 6 and the slowest
+ *                          dimension is nwaves.  Each Green's function 
+ *                          group at for the waveform, depth is packed; 
+ *                          \f$ \{ G_{xx}, G_{yy}, G_{zz},
+ *                                 G_{xy}, G_{xz}, G_{yz} \} \f$.
+ *
+ * @result 0 indicates success. 
+ *
+ * @author Ben Baker
+ *
+ */
 int prepmt_greens_writeArchive(const char *archiveName, //const char *archiveDir, const char *projnm,
                                const int nwaves, const int ndepths,
                                const double evla, const double evlo,
@@ -1387,7 +1412,8 @@ double prepmt_greens_scoreXCAlignment(const int npts,
             isclError = signal_filter_envelope64f_work(npts, G, Gwork);
             if (isclError != ISCL_SUCCESS)
             {
-                fprintf(stderr, "%s: Error computing Grns envelope\n", __func__);
+                fprintf(stderr, "%s: Error computing Grns envelope\n",
+                        __func__);
                 *ierr = 1; 
                 return xcStack;
             }
