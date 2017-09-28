@@ -384,7 +384,7 @@ int prepmt_hspec96_initializeArchive(
     h5fl = H5Fcreate(archiveName, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
     memset(modelName, 0, 512*sizeof(char));
     sprintf(modelName, "/%s", model);
-printf("%s: modelName", modelName);
+    printf("%s: Initializing model: %s\n", __func__, modelName);
     modelGroup = H5Gcreate2(h5fl, modelName, H5P_DEFAULT,
                             H5P_DEFAULT, H5P_DEFAULT);
     // write the depths and distances
