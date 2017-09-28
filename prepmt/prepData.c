@@ -38,6 +38,7 @@ int prepmt_prepData_verifyTeleseismicDistance(const double *dminIn,
                                               const struct sacData_struct data)
 {
     double az, baz, dmax, dmin, dist, evla, evlo, gcarc, stla, stlo;
+    char stat[8], netw[8], chan[8], loc[8];
     int ierr;
     dmin = PREPMT_MIN_TELESEISMIC_DIST;
     dmax = PREPMT_MAX_TELESEISMIC_DIST;
@@ -68,6 +69,16 @@ int prepmt_prepData_verifyTeleseismicDistance(const double *dminIn,
                                      &dist, &gcarc, &az, &baz);
     }
     if (gcarc >= dmin && gcarc <= dmax){return 0;}
+    memset(netw, 0, 8*sizeof(char));
+    memset(stat, 0, 8*sizeof(char));
+    memset(chan, 0, 8*sizeof(char));
+    memset(loc,  0, 8*sizeof(char));
+    sacio_getCharacterHeader(SAC_CHAR_KNETWK, data.header, netw);
+    sacio_getCharacterHeader(SAC_CHAR_KSTNM,  data.header, stat);
+    sacio_getCharacterHeader(SAC_CHAR_KCMPNM, data.header, chan);
+    sacio_getCharacterHeader(SAC_CHAR_KHOLE,  data.header, loc);
+    fprintf(stderr, "%s: %s.%s.%s.%s with distance %f out of bounds [%f,%f]\n",
+            __func__, netw, stat, chan, loc, gcarc, dmin, dmax);
     return -1;
 }
 /*!
@@ -95,6 +106,7 @@ int prepmt_prepData_verifyRegionalDistance(const double *dminIn,
                                            const struct sacData_struct data)
 {
     double az, baz, dmax, dmin, dist, evla, evlo, gcarc, stla, stlo;
+    char stat[8], netw[8], chan[8], loc[8];
     int ierr;
     dmin = PREPMT_MIN_REGIONAL_DIST;
     dmax = PREPMT_MAX_REGIONAL_DIST;
@@ -125,6 +137,16 @@ int prepmt_prepData_verifyRegionalDistance(const double *dminIn,
                                      &dist, &gcarc, &az, &baz);
     }
     if (gcarc >= dmin && gcarc <= dmax){return 0;}
+    memset(netw, 0, 8*sizeof(char));
+    memset(stat, 0, 8*sizeof(char));
+    memset(chan, 0, 8*sizeof(char));
+    memset(loc,  0, 8*sizeof(char));
+    sacio_getCharacterHeader(SAC_CHAR_KNETWK, data.header, netw);
+    sacio_getCharacterHeader(SAC_CHAR_KSTNM,  data.header, stat);
+    sacio_getCharacterHeader(SAC_CHAR_KCMPNM, data.header, chan);
+    sacio_getCharacterHeader(SAC_CHAR_KHOLE,  data.header, loc); 
+    fprintf(stderr, "%s: %s.%s.%s.%s with distance %f out of bounds [%f,%f]\n",
+            __func__, netw, stat, chan, loc, gcarc, dmin, dmax);
     return -1;
 }
 //============================================================================//
