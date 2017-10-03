@@ -20,7 +20,6 @@
 #include "parmt_mtsearch.h"
 #include "iscl/array/array.h"
 #include "iscl/linalg/linalg.h"
-#include "iscl/log/log.h"
 #include "iscl/memory/memory.h"
 #include "iscl/signal/convolve.h"
 
@@ -194,7 +193,8 @@ int parmt_mtSearchKL64f(const int ldm, const int nlags, const int nmt,
                                                ldv, V);
             if (ierr != 0)
             {
-                log_errorF("%s: Failed to compute outerproduct\n", fcnm);
+                fprintf(stderr, "%s: Failed to compute outerproduct\n",
+                        __func__);
             }
             // Compute objective function
             ierr = parmt_mtSearch_mahalanobis64f(ldm, nmt, npts,
@@ -1361,7 +1361,7 @@ static int setGxc64f(const int npts,
                                            CONVCOR_FULL, &lcref, &ierr);
     if (lcref != 2*npts - 1)
     {
-        log_errorF("%s: Error invalid number of points\n", fcnm);
+        fprintf(stderr, "%s: Error invalid number of points\n", __func__);
         ierr = 1;
     }
     cblas_dcopy(lcref, gxxWork, 1, &Gxc[0], LDG);

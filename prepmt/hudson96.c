@@ -11,7 +11,6 @@
 #include "cps.h"
 #include "iscl/array/array.h"
 #include "iscl/fft/fft.h"
-#include "iscl/log/log.h"
 #include "iscl/memory/memory.h"
 #include "iscl/os/os.h"
 
@@ -33,7 +32,6 @@ int prepmt_hudson96_readHudson96Parameters(const char *iniFile,
                                            const char *section,
                                            struct hudson96_parms_struct *parms)
 {
-    const char *fcnm = "prepmt_hudson96_readHudson96Parameters\0";
     const char *s;
     char vname[256];
     dictionary *ini;
@@ -41,13 +39,13 @@ int prepmt_hudson96_readHudson96Parameters(const char *iniFile,
     cps_setHudson96Defaults(parms);
     if (!os_path_isfile(iniFile))
     {
-        log_errorF("%s: ini file: %s does not exist\n", fcnm, iniFile);
+        fprintf(stderr, "%s: ini file: %s does not exist\n", __func__, iniFile);
         return -1;
     }
     ini = iniparser_load(iniFile);
     if (ini == NULL)
     {
-        log_errorF("%s: Cannot parse ini file\n", fcnm);
+        fprintf(stderr, "%s: Cannot parse ini file\n", __func__);
         return -1;
     }
     // Teleseismic model
@@ -195,7 +193,6 @@ int hudson96_getModels(const int nobs, const struct sacData_struct *obs,
                        struct vmodel_struct *srcmod, 
                        struct vmodel_struct *recmod)
 {
-    const char *fcnm = "hudson96_getModels\0";
     double *lats, *lons, evla, evlo;
     int ierr, iobs;
     ierr = 0;
@@ -205,19 +202,19 @@ int hudson96_getModels(const int nobs, const struct sacData_struct *obs,
     cps_globalModel_ak135f(telmod);
     if (luseCrust1)
     {
-        printf("%s: Reading crust1.0...\n", fcnm);
+        fprintf(stdout, "%s: Reading crust1.0...\n", __func__);
         lats = memory_calloc64f(nobs);
         lons = memory_calloc64f(nobs);
         ierr = sacio_getFloatHeader(SAC_FLOAT_EVLA, obs[0].header, &evla);
         if (ierr != 0)
         {
-            log_errorF("%s: Error - evla not set\n", fcnm);
+            fprintf(stderr, "%s: Error - evla not set\n", __func__);
             return ierr;
         }
         ierr = sacio_getFloatHeader(SAC_FLOAT_EVLO, obs[0].header, &evlo);
         if (ierr != 0)
         {
-            log_errorF("%s: Error - evlo not set\n", fcnm);
+            fprintf(stderr, "%s: Error - evlo not set\n", __func__);
             return ierr;
         }
         for (iobs=0; iobs<nobs; iobs++)
@@ -234,7 +231,7 @@ int hudson96_getModels(const int nobs, const struct sacData_struct *obs,
                                                srcmod, recmod);
         if (ierr != 0)
         {
-            log_errorF("%s: Failed to load crust1.0 model\n", fcnm);
+            fprintf(stderr, "%s: Failed to load crust1.0 model\n", __func__);
             return ierr;
         }
         memory_free64f(&lats);
@@ -243,7 +240,8 @@ int hudson96_getModels(const int nobs, const struct sacData_struct *obs,
     // Use teleseismic model for receiver model
     else
     {
-        printf("%s: Setting receiver models to teleseismic model\n", fcnm);
+        fprintf(stdout, "%s: Setting receiver models to teleseismic model\n",
+                __func__);
         for (iobs=0; iobs<nobs; iobs++)
         {
             cps_utils_copyVmodelStruct(*telmod, &recmod[iobs]);
@@ -252,20 +250,21 @@ int hudson96_getModels(const int nobs, const struct sacData_struct *obs,
     // Use source model
     if (luseSrcModel)
     {
-        printf("%s: Using source model: %s\n", fcnm, sourceModel);
+        fprintf(stdout, "%s: Using source model: %s\n", __func__, sourceModel);
         cps_utils_freeVmodelStruct(srcmod);
         ierr = cps_getmod(sourceModel, srcmod);
         if (ierr != 0)
         {
-            log_errorF("%s: Error loading srcmod\n", fcnm);
+            fprintf(stderr, "%s: Error loading srcmod\n", __func__);
             return ierr;
         }
     }
-    printf("%s: Computing Green's functions...\n", fcnm);
+    fprintf(stdout, "%s: Computing Green's functions...\n", __func__);
     // Otherwise source to teleseismic model
     if (!luseSrcModel && !luseCrust1)
     {
-        printf("%s: Setting source model to teleseismic model\n", fcnm);
+        fprintf(stdout, "%s: Setting source model to teleseismic model\n",
+                __func__);
         cps_utils_copyVmodelStruct(*telmod, srcmod);
     }
     return 0;
@@ -310,7 +309,6 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
     const int ndepth, const double *__restrict__ depths,
     const int nobs, const struct sacData_struct *obs, int *ierr)
 {
-    const char *fcnm = "prepmt_hudson96_computeGreensFF\0";
     struct hudson96_parms_struct hudson96ParmsWork;
     struct hpulse96_parms_struct hpulse96ParmsWork;
     struct hpulse96_data_struct zresp;
@@ -360,12 +358,18 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
         ndepth < 1 || depths == NULL)
     {
         *ierr = 1;
-        if (nobs < 1){log_errorF("%s: Error no observations\n", fcnm);}
-        if (obs == NULL){log_errorF("%s: Error obs is NULL\n", fcnm);}
-        if (ntstar < 1){log_errorF("%s: Error no t*'s\n", fcnm);}
-        if (tstars == NULL){log_errorF("%s: Error tstars is NULL\n", fcnm);}
-        if (ndepth < 1){log_errorF("%s: Error no depths\n", fcnm);}
-        if (depths == NULL){log_errorF("%s: Error depths is NULL\n", fcnm);}
+        if (nobs < 1){fprintf(stderr, "%s: Error no observations\n", __func__);}
+        if (obs == NULL){fprintf(stderr, "%s: Error obs is NULL\n", __func__);}
+        if (ntstar < 1){fprintf(stderr, "%s: Error no t*'s\n", __func__);}
+        if (tstars == NULL)
+        {
+            fprintf(stderr, "%s: Error tstars is NULL\n", __func__);
+        }
+        if (ndepth < 1){fprintf(stderr, "%s: Error no depths\n", __func__);}
+        if (depths == NULL)
+        {
+            fprintf(stderr, "%s: Error depths is NULL\n", __func__);
+        }
         return sacFFGrns;
     }
     // Set the modeling structures
@@ -392,7 +396,7 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
                                         &it, &idep, &iobs);
         if (*ierr != 0)
         {
-            log_errorF("%s: Failed to convert to grid\n", fcnm);
+            fprintf(stderr, "%s: Failed to convert to grid\n", __func__);
             break;
         }
         // New observation (station) -> may need to update velocity model
@@ -404,21 +408,21 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
                                      obs[iobs].header, &dt);
         if (*ierr != 0)
         {
-            log_errorF("%s: Could not get sampling period\n", fcnm);
+            fprintf(stderr, "%s: Could not get sampling period\n", __func__);
             break;
         }
         *ierr = sacio_getFloatHeader(SAC_FLOAT_GCARC,
                                      obs[iobs].header, &gcarc);
         if (*ierr != 0)
         {
-            log_errorF("%s: Could not get gcarc\n", fcnm);
+            fprintf(stderr, "%s: Could not get gcarc\n", __func__);
             break;
         }
         *ierr = sacio_getIntegerHeader(SAC_INT_NPTS,
                                        obs[iobs].header, &npts);
         if (*ierr != 0)
         {
-            log_errorF("%s: Could not get npts\n", fcnm);
+            fprintf(stderr, "%s: Could not get npts\n", __func__);
             break;
         }
         // Tie waveform modeling to first pick type 
@@ -443,7 +447,8 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
                 }
                 else
                 {
-                    log_errorF("%s: Can't classify phase: %s\n", phaseName);
+                    fprintf(stderr, "%s: Can't classify phase: %s\n",
+                            __func__, phaseName);
                     lfound = false;
                 }
                 break;
@@ -451,7 +456,8 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
         }
         if (!lfound)
         {
-            log_warnF("%s: No pick available - won't be able to align\n", fcnm);
+            fprintf(stdout, "%s: No pick available - won't be able to align\n",
+                    __func__);
             continue;
         }
         memset(&zresp, 0, sizeof(struct hpulse96_data_struct));
@@ -475,7 +481,7 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
                                    telmod, recmod[iobs], srcmod, ierr);
         if (*ierr != 0)
         {
-            log_errorF("%s: Error calling hudson96\n", fcnm);
+            fprintf(stderr, "%s: Error calling hudson96\n", __func__);
             ierrAll = ierrAll + 1;
             goto NEXT_OBS;
         }
@@ -484,7 +490,7 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
                                     &zresp, ierr);
         if (*ierr != 0)
         {
-            log_errorF("%s: Error calling hpulse96 interface\n", fcnm);
+            fprintf(stderr, "%s: Error calling hpulse96 interface\n", __func__);
             ierrAll = ierrAll + 1;
             goto NEXT_OBS;
         }

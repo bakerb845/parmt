@@ -9,7 +9,6 @@
 #include <cblas.h>
 #endif
 #include "iscl/array/array.h"
-#include "iscl/log/log.h"
 #include "iscl/memory/memory.h"
 #include "iscl/signal/convolve.h"
 
@@ -105,27 +104,27 @@ int parmt_computeStackedCrossCorrelation(
         Gxy == NULL || Gxz == NULL || Gyz == NULL ||
         data == NULL)
     {
-        if (npts < 1){log_errorF("%s: no data points\n", fcnm);}
-        if (npgrns < 1){log_errorF("%s: no grns fns points\n", fcnm);}
-        if (data == NULL){log_errorF("%s: data is NULL\n", fcnm);}
-        if (Gxx == NULL){log_errorF("%s: Gxx is NULL\n", fcnm);}
-        if (Gyy == NULL){log_errorF("%s: Gyy is NULL\n", fcnm);}
-        if (Gzz == NULL){log_errorF("%s: Gzz is NULL\n", fcnm);}
-        if (Gxy == NULL){log_errorF("%s: Gxy is NULL\n", fcnm);}
-        if (Gxz == NULL){log_errorF("%s: Gxz is NULL\n", fcnm);}
-        if (Gyz == NULL){log_errorF("%s: Gyz is NULL\n", fcnm);}
+        if (npts < 1){fprintf(stderr, "%s: no data points\n", __func__);}
+        if (npgrns < 1){fprintf(stderr, "%s: no grns fns points\n", __func__);}
+        if (data == NULL){fprintf(stderr, "%s: data is NULL\n", __func__);}
+        if (Gxx == NULL){fprintf(stderr, "%s: Gxx is NULL\n", __func__);}
+        if (Gyy == NULL){fprintf(stderr, "%s: Gyy is NULL\n", __func__);}
+        if (Gzz == NULL){fprintf(stderr, "%s: Gzz is NULL\n", __func__);}
+        if (Gxy == NULL){fprintf(stderr, "%s: Gxy is NULL\n", __func__);}
+        if (Gxz == NULL){fprintf(stderr, "%s: Gxz is NULL\n", __func__);}
+        if (Gyz == NULL){fprintf(stderr, "%s: Gyz is NULL\n", __func__);}
         return -1;
     } 
     if (lc > lxc)
     {
-        log_errorF("%s: Error xc is too small\n", fcnm);
+        fprintf(stderr, "%s: Error xc is too small\n", __func__);
         return -1;
     }
     if (ldm < 6 || nmt < 1 || mt == NULL)
     {
-        if (ldm < 6){log_errorF("%s: ldm must be >= 6\n", fcnm);}
-        if (nmt < 1){log_errorF("%s: no moment tensors\n", fcnm);}
-        if (mt == NULL){log_errorF("%s: mt is NULL\n", fcnm);}
+        if (ldm < 6){fprintf(stderr, "%s: ldm must be >= 6\n", __func__);}
+        if (nmt < 1){fprintf(stderr, "%s: no moment tensors\n", __func__);}
+        if (mt == NULL){fprintf(stderr, "%s: mt is NULL\n", __func__);}
         return -1;
     }
     // Set space and correlate data with columns of G
@@ -198,7 +197,8 @@ __assume_aligned(xc, 64);
         }
         if (ierr != 0)
         {
-            log_errorF("%s: Error correlating Greens fn: %d\n", fcnm, i+1);
+            fprintf(stderr, "%s: Error correlating Greens fn: %d\n",
+                    __func__, i+1);
             return -1;
         }
         cblas_dcopy(lc, xcorr, 1, &Gxc[i], 8);

@@ -3,7 +3,6 @@
 #include <string.h>
 #include <iniparser.h>
 #include "prepmt/prepmt_hpulse96.h"
-#include "iscl/log/log.h"
 #include "iscl/memory/memory.h"
 #include "iscl/os/os.h"
 
@@ -25,7 +24,6 @@ int prepmt_hpulse96_readHpulse96Parameters(const char *iniFile,
                                            const char *section,
                                            struct hpulse96_parms_struct *parms)
 {
-    const char *fcnm = "prepmt_hpulse96_readHpulse96Parameters\0";
     const char *s;
     char vname[256];
     dictionary *ini;
@@ -33,13 +31,13 @@ int prepmt_hpulse96_readHpulse96Parameters(const char *iniFile,
     cps_setHpulse96Defaults(parms);
     if (!os_path_isfile(iniFile))
     {
-        log_errorF("%s: ini file: %s does not exist\n", fcnm, iniFile);
+        fprintf(stderr, "%s: ini file: %s does not exist\n", __func__, iniFile);
         return -1;
     }
     ini = iniparser_load(iniFile);
     if (ini == NULL)
     {
-        log_errorF("%s: Cannot parse ini file\n", fcnm);
+        fprintf(stderr, "%s: Cannot parse ini file\n", __func__);
         return -1;
     }
     memset(vname, 0, 256*sizeof(char));
@@ -63,13 +61,13 @@ int prepmt_hpulse96_readHpulse96Parameters(const char *iniFile,
             strcpy(parms->rfile, s);
             if (!os_path_isfile(parms->rfile))
             {
-                log_errorF("%s: Response file does not exist!\n", fcnm);
+                fprintf(stderr, "%s: Response file doesnt exist!\n", __func__);
                 return -1;
             }
         }
         else
         {
-            log_errorF("%s: Response file not specified!\n", fcnm);
+            fprintf(stderr, "%s: Response file not specified!\n", __func__);
             return -1;
         }
     }
@@ -96,12 +94,12 @@ int prepmt_hpulse96_readHpulse96Parameters(const char *iniFile,
     if (parms->ipt == 2 && parms->alp <= 0.0){parms->alp = 1.0;}
     if (parms->ipt == 2 && parms->alp < 0.0)
     {
-        log_errorF("%s: No alpha for Ohnaka pulse\n", fcnm);
+        fprintf(stderr, "%s: No alpha for Ohnaka pulse\n", __func__);
         return -1;
     }
     if (parms->ipt < 0)
     {
-        log_errorF("%s: No pulse shape defined\n", fcnm);
+        fprintf(stderr, "%s: No pulse shape defined\n", __func__);
         return -1;
     }
     if (parms->iodva < 0){parms->iodva = parms->idva;}

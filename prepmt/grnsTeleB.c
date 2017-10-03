@@ -7,7 +7,6 @@
 #include "prepmt/prepmt.h"
 #include "ispl/process.h"
 #include "iscl/array/array.h"
-#include "iscl/log/log.h"
 #include "iscl/memory/memory.h"
 #include "iscl/os/os.h"
 #ifdef PARMT_USE_INTEL
@@ -351,7 +350,6 @@ int prepmt_grnsTeleB_loadTstarTable(const char *tstarTable,
                                     struct sacData_struct *data,
                                     double **tstars)
 {
-    const char *fcnm = "prepmt_grnsTeleB_loadTstarTable\0";
     FILE *tsf;
     char cline[64], search[64], item[64];
     double *tstar, tin;
@@ -361,12 +359,13 @@ int prepmt_grnsTeleB_loadTstarTable(const char *tstarTable,
     tstar = NULL;
     if (!os_path_isfile(tstarTable))
     {
-        printf("%s: Error tstar table %s does not exist\n", fcnm, tstarTable);
+        fprintf(stderr, "%s: Error tstar table %s does not exist\n",
+                 __func__, tstarTable);
         return -1;
     }
     if (nobs < 1 || data == NULL)
     {
-        printf("%s: No data\n", fcnm);
+        fprintf(stderr, "%s: No data\n", __func__);
         return -1;
     }
     // Initialize to default
@@ -398,7 +397,8 @@ int prepmt_grnsTeleB_loadTstarTable(const char *tstarTable,
         }
         if (!lfound)
         {
-            printf("%s: Setting %s tstar to: %f\n", fcnm, search, defaultTstar);
+            fprintf(stderr, "%s: Setting %s tstar to: %f\n",
+                    __func__, search, defaultTstar);
         }
         rewind(tsf);
     }
@@ -412,7 +412,6 @@ int prepmt_grnsTeleB_windowHudson96(
     const struct sacData_struct *data,
     struct sacData_struct *grns)
 {
-    const char *fcnm = "prepmt_grnsTeleB_windowHudson96\0";
     double epoch, epochGrns;
     int indices[6], idep, ierr, iobs, it;
     for (iobs=0; iobs<nobs; iobs++)
@@ -421,7 +420,7 @@ int prepmt_grnsTeleB_windowHudson96(
         ierr = sacio_getEpochalStartTime(data[iobs].header, &epoch);
         if (ierr != 0)
         {
-            log_errorF("%s: Failed to get start time\n", fcnm);
+            fprintf(stderr, "%s: Failed to get start time\n", __func__);
             break;
         }
         for (idep=0; idep<ndepth; idep++)
@@ -436,7 +435,7 @@ int prepmt_grnsTeleB_windowHudson96(
                                                  &epochGrns);
                 if (ierr != 0)
                 {
-                    log_errorF("%s: Failed to get start time\n", fcnm);
+                    fprintf(stderr, "%s: Failed to get start time\n", __func__);
                     break;
                 }
                 // Fig
@@ -465,7 +464,6 @@ int prepmt_grnsTeleB_processHudson96Greens(
     const struct prepmtCommands_struct cmds,
     struct sacData_struct *grns)
 {
-    const char *fcnm = "prepmt_grnsTeleB_processHudson96Greens\0";
     struct serialCommands_struct commands;
     struct parallelCommands_struct parallelCommands;
     double *G, dt, dt0, epoch, epoch0, time;
@@ -499,7 +497,8 @@ int prepmt_grnsTeleB_processHudson96Greens(
                                       &commands);
         if (ierr != 0)
         {
-            log_errorF("%s: Error setting serial command string\n", fcnm);
+            fprintf(stderr, "%s: Error setting serial command string\n",
+                    __func__);
             goto ERROR;
         }
         // Determine some characteristics of the processing
@@ -535,7 +534,8 @@ int prepmt_grnsTeleB_processHudson96Greens(
                                                        &parallelCommands);
         if (ierr != 0)
         {
-            log_errorF("%s: Error setting the parallel commands\n", fcnm);
+            fprintf(stderr, "%s: Error setting the parallel commands\n",
+                    __func__);
             goto ERROR;
         }
         // Get the data
@@ -551,7 +551,7 @@ int prepmt_grnsTeleB_processHudson96Greens(
                                               grns[kndx].header, &npts);
                 if (ierr != 0)
                 {
-                    log_errorF("%s: Error getting npts\n", fcnm);
+                    fprintf(stderr, "%s: Error getting npts\n", __func__);
                     goto ERROR;
                 }
                 i1 = idep*6*ntstar + it*6 + 0;
@@ -565,7 +565,8 @@ int prepmt_grnsTeleB_processHudson96Greens(
         nwork = dataPtr[6*ndepth*ntstar];
         if (nwork < 1)
         {
-            log_errorF("%s: Invalid workspace size: %d\n", fcnm, nwork);
+            fprintf(stderr, "%s: Invalid workspace size: %d\n",
+                    __func__, nwork);
             ierr = 1;
             goto ERROR;
         } 
@@ -579,7 +580,7 @@ int prepmt_grnsTeleB_processHudson96Greens(
                                         iobs, it, idep, indices);
                 if (ierr != 0)
                 {
-                    log_errorF("%s: Error getting index\n", fcnm);
+                    fprintf(stderr, "%s: Error getting index\n", __func__);
                     goto ERROR;
                 }
                 for (i=0; i<6; i++)
@@ -595,14 +596,14 @@ int prepmt_grnsTeleB_processHudson96Greens(
                                                    G, &parallelCommands);
         if (ierr != 0)
         {
-            log_errorF("%s: Error setting data\n", fcnm);
+            fprintf(stderr, "%s: Error setting data\n", __func__);
             goto ERROR;
         }
         // Apply the commands
         ierr = process_applyParallelCommands(&parallelCommands);
         if (ierr != 0)
         {
-            log_errorF("%s: Error processing data\n", fcnm);
+            fprintf(stderr, "%s: Error processing data\n", __func__);
             goto ERROR;
         }
         // Get the data
@@ -621,7 +622,7 @@ int prepmt_grnsTeleB_processHudson96Greens(
                                                   &ny, &nsuse, dataPtr, G); 
         if (ierr != 0)
         {
-            log_errorF("%s: Error getting data\n", fcnm);
+            fprintf(stderr, "%s: Error getting data\n", __func__);
             goto ERROR;
         }
         // Unpack the data
@@ -634,7 +635,7 @@ int prepmt_grnsTeleB_processHudson96Greens(
                                         iobs, it, idep, indices);
                 if (ierr != 0)
                 {
-                    log_errorF("%s: Error getting index\n", fcnm);
+                    fprintf(stderr, "%s: Error getting index\n", __func__);
                     goto ERROR;
                 }
                 for (i=0; i<6; i++)
@@ -724,7 +725,6 @@ int prepmt_grnsTeleB_readParameters(const char *iniFile,
                                     double *maxXCtimeLag,
                                     int *ndepth, double **depths)
 {
-    const char *fcnm = "prepmt_grnsTeleB_readParameters\0";
     const char *s;
     char vname[256];
     dictionary *ini;
@@ -741,7 +741,7 @@ int prepmt_grnsTeleB_readParameters(const char *iniFile,
     memset(parmtDataFile, 0, PATH_MAX*sizeof(char));
     if (!os_path_isfile(iniFile))
     {
-        printf("%s: Error ini file does not exist\n", fcnm);
+        fprintf(stderr, "%s: Error ini file does not exist\n", __func__);
         return -1;
     }
     ini = iniparser_load(iniFile);
@@ -751,7 +751,7 @@ int prepmt_grnsTeleB_readParameters(const char *iniFile,
     s = iniparser_getstring(ini, vname, NULL);
     if (!os_path_isfile(s))
     {
-        printf("%s: Data file %s does not exist\n", fcnm, s);
+        fprintf(stderr, "%s: Data file %s does not exist\n", __func__, s);
         ierr = 1;
         goto ERROR;
     }
@@ -768,7 +768,8 @@ int prepmt_grnsTeleB_readParameters(const char *iniFile,
         ierr = os_makedirs(dirName);
         if (ierr != 0)
         {
-            printf("%s: Failed to make directory: %s\n", fcnm, dirName);
+            fprintf(stderr, "%s: Failed to make directory: %s\n",
+                    __func__, dirName);
             goto ERROR;
         }
     }
@@ -783,7 +784,7 @@ int prepmt_grnsTeleB_readParameters(const char *iniFile,
     *staWin = iniparser_getdouble(ini, vname, 0.2);
     if (*staWin <= 0.0)
     {
-        printf("%s: Invalid STA length %f\n", fcnm, *staWin);
+        fprintf(stderr, "%s: Invalid STA length %f\n", __func__, *staWin);
         ierr = 1;
         goto ERROR;
     }
@@ -793,7 +794,8 @@ int prepmt_grnsTeleB_readParameters(const char *iniFile,
     *ltaWin = iniparser_getdouble(ini, vname, 1.2);
     if (*ltaWin <= *staWin)
     {
-        printf("%s: Invalid LTA/STA lengths %f %f\n", fcnm, *staWin, *ltaWin);
+        fprintf(stderr, "%s: Invalid LTA/STA lengths %f %f\n",
+                __func__, *staWin, *ltaWin);
         ierr = 1;
         goto ERROR;
     }
@@ -803,7 +805,8 @@ int prepmt_grnsTeleB_readParameters(const char *iniFile,
     *staltaThreshPct = iniparser_getdouble(ini, vname, 0.8);
     if (*staltaThreshPct <= 0.0 || *staltaThreshPct > 1.0)
     {
-        printf("%s: Invalid STA/LTA thresh pct %f\n", fcnm, *staltaThreshPct);
+        fprintf(stderr, "%s: Invalid STA/LTA thresh pct %f\n",
+                 __func__, *staltaThreshPct);
         ierr = 1;
         goto ERROR;
     }
@@ -818,7 +821,8 @@ int prepmt_grnsTeleB_readParameters(const char *iniFile,
         s = iniparser_getstring(ini, vname, NULL);
         if (!os_path_isfile(s))
         {
-            printf("%s: tstar table %s doesn't exist\n", fcnm, s);
+            fprintf(stderr, "%s: tstar table %s doesn't exist\n",
+                    __func__, s);
             ierr = 1;
             goto ERROR;
         }
@@ -830,7 +834,8 @@ int prepmt_grnsTeleB_readParameters(const char *iniFile,
     *ndepth = iniparser_getint(ini, vname, 0);
     if (*ndepth < 1)
     {
-        printf("%s: Inadequate number of depths %d\n", fcnm, *ndepth);
+        fprintf(stderr, "%s: Inadequate number of depths %d\n",
+                __func__, *ndepth);
         ierr = 1;
         goto ERROR;
     }
@@ -844,7 +849,7 @@ int prepmt_grnsTeleB_readParameters(const char *iniFile,
     dmax = iniparser_getdouble(ini, vname, -1.0);
     if (dmin < 0.0 || dmin > dmax)
     {
-        printf("%s: Invalid dmin/dmax %f %f\n", fcnm, dmin, dmax);
+        fprintf(stderr, "%s: Invalid dmin/dmax %f %f\n", __func__, dmin, dmax);
         ierr = 1;
         goto ERROR;
     }
@@ -860,7 +865,8 @@ int prepmt_grnsTeleB_readParameters(const char *iniFile,
         s = iniparser_getstring(ini, vname, CPS_DEFAULT_CRUST1_DIRECTORY);
         if (!os_path_isdir(s))
         {
-            printf("%s: crust1.0 directory %s doesn't exist\n", fcnm, s);
+            fprintf(stderr, "%s: crust1.0 directory %s doesn't exist\n",
+                    __func__, s);
             ierr = 1;
             goto ERROR;
         }
@@ -877,7 +883,8 @@ int prepmt_grnsTeleB_readParameters(const char *iniFile,
         s = iniparser_getstring(ini, vname, NULL);
         if (!os_path_isfile(s))
         {
-            printf("%s: Source model %s does not exist\n", fcnm, s);
+            fprintf(stderr, "%s: Source model %s does not exist\n",
+                    __func__, s);
             ierr = 1;
             goto ERROR;
         } 
@@ -915,7 +922,6 @@ ERROR:;
 struct sacData_struct *
     prepmt_grnsTeleB_readData(const char *archiveFile, int *nobs, int *ierr)
 {
-    const char *fcnm = "prepmt_grnsTeleB_readData\0";
     char **sacFiles;
     hid_t groupID, fileID;
     int i, nfiles;
@@ -924,7 +930,8 @@ struct sacData_struct *
     sacData = NULL;
     if (!os_path_isfile(archiveFile))
     {
-        printf("%s: Error archive file %s doesn't exist\n", fcnm, archiveFile);
+        fprintf(stderr, "%s: Error archive file %s doesn't exist\n",
+                __func__, archiveFile);
         *ierr = 1;
         return sacData;
     }
@@ -933,7 +940,7 @@ struct sacData_struct *
     sacFiles = sacioh5_getFilesInGroup(groupID, &nfiles, ierr);
     if (*ierr != 0 || sacFiles == NULL)
     {
-        printf("%s: Error getting names of SAC flies\n", fcnm);
+        fprintf(stderr, "%s: Error getting names of SAC flies\n", __func__);
         *ierr = 1;
         return sacData;
     }
@@ -941,11 +948,11 @@ struct sacData_struct *
                                          groupID, nobs, ierr);
     if (*ierr != 0)
     {
-        printf("%s: Errors while reading SAC files\n", fcnm);
+        fprintf(stderr, "%s: Errors while reading SAC files\n", __func__);
     }
     if (*nobs != nfiles)
     {
-        printf("%s: Warning - subset of data was read\n", fcnm);
+        fprintf(stderr, "%s: Warning - subset of data was read\n", __func__);
     }
     // Clean up and close archive file
     for (i=0; i<nfiles; i++)

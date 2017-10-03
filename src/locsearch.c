@@ -14,7 +14,6 @@
 #include "parmt_utils.h"
 #include "compearth.h"
 #include "iscl/array/array.h"
-#include "iscl/log/log.h"
 #include "iscl/memory/memory.h"
 
 #ifndef MAX
@@ -80,8 +79,11 @@ int parmt_locSearchL164f(const MPI_Comm locComm,
     }
     if (mtloc.mts == NULL || phi == NULL)
     {
-        if (mtloc.mts == NULL){log_errorF("%s: Error mts is NULL\n", fcnm);}
-        if (phi == NULL){log_errorF("%s: Error phi is NULL\n", fcnm);}
+        if (mtloc.mts == NULL)
+        {
+            fprintf(stderr, "%s: Error mts is NULL\n", __func__);
+        }
+        if (phi == NULL){fprintf(stderr, "%s: Error phi is NULL\n", __func__);}
         return -1;
     }
     npmax = getNpMax(iobs, *data, mtloc);
@@ -257,8 +259,11 @@ int parmt_locSearchXC64f(const MPI_Comm locComm,
     }
     if (mtloc.mts == NULL || phi == NULL)
     {
-        if (mtloc.mts == NULL){log_errorF("%s: Error mts is NULL\n", fcnm);}
-        if (phi == NULL){log_errorF("%s: Error phi is NULL\n", fcnm);}
+        if (mtloc.mts == NULL)
+        {
+            fprintf(stderr, "%s: Error mts is NULL\n", __func__);
+        }
+        if (phi == NULL){fprintf(stderr, "%s: Error phi is NULL\n", __func__);}
         return -1;
     }
     npmax = getNpMax(iobs, *data, mtloc);
