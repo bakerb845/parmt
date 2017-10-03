@@ -32,7 +32,8 @@ int prepmt_prepData_setEventInformation(const double evla,
                                         const int nobs,
                                         struct sacData_struct *data);
 /* Utility function for verifying event / station distances */
-int prepmt_prepData_verifyTeleseismicDistance(const double *dminIn,
+int prepmt_prepData_verifyTeleseismicDistance(const bool lisP,
+                                              const double *dminIn,
                                               const double *dmaxIn,
                                               const struct sacData_struct data);
 int prepmt_prepData_verifyRegionalDistance(const double *dminIn,

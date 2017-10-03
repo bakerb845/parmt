@@ -32,10 +32,10 @@ int main(int argc, char **argv)
     int ierr, k, nfiles;
     bool lsetNewPicks, lusePickFile, lwrtIntFiles;
     char khole[8];
-    const double dmin = PREPMT_MIN_TELESEISMIC_DIST;
-    const double dmax = PREPMT_MAX_TELESEISMIC_DIST;
+    const double dmin = PREPMT_P_MIN_TELESEISMIC_DIST;
+    const double dmax = PREPMT_P_MAX_TELESEISMIC_DIST;
     const char *hpulseSection = "hpulse96\0";
-    const bool ldoP = true;
+    const bool lisP = true;
     //------------------------------------------------------------------------// 
     // Initialize
     memset(&event, 0, sizeof(struct prepmtEventParms_struct));
@@ -135,7 +135,7 @@ int main(int argc, char **argv)
     printf("%s: Verifying data ranges...\n", PROGRAM_NAME);
     for (k=0; k<nfiles; k++)
     {
-        ierr = prepmt_prepData_verifyTeleseismicDistance(&dmin, &dmax,
+        ierr = prepmt_prepData_verifyTeleseismicDistance(lisP, &dmin, &dmax,
                                                          sacData[k]);
         if (ierr != 0)
         {
@@ -149,7 +149,7 @@ int main(int argc, char **argv)
         if (!lusePickFile)
         {
             printf("%s: Setting theoretical P picks\n", PROGRAM_NAME);
-            if (ldoP)
+            if (lisP)
             {
                 ierr = prepmt_prepData_setPrimaryPorSPickFromTheoreticalTime(
                                                       NULL, "ak135", DO_P_PICKS,

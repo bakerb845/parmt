@@ -17,6 +17,8 @@
  * @brief Convenience function to check if SAC data is at a valid
  *        teleseismic distance.
  *
+ * @param[in] lisP     If true then this is for P waves. \n
+ *                     Otherwise, it is for S waves.
  * @param[in] dminIn   Minimum override distance (degrees).  If NULL then
  *                     this will be set to 30.0.  Otherwise, MAX(30, dminIn)
  *                     will be used.
@@ -33,15 +35,24 @@
  * @author Ben Baker, ISTI
  *
  */
-int prepmt_prepData_verifyTeleseismicDistance(const double *dminIn,
+int prepmt_prepData_verifyTeleseismicDistance(const bool lisP,
+                                              const double *dminIn,
                                               const double *dmaxIn,
                                               const struct sacData_struct data)
 {
     double az, baz, dmax, dmin, dist, evla, evlo, gcarc, stla, stlo;
     char stat[8], netw[8], chan[8], loc[8];
     int ierr;
-    dmin = PREPMT_MIN_TELESEISMIC_DIST;
-    dmax = PREPMT_MAX_TELESEISMIC_DIST;
+    if (lisP)
+    {
+        dmin = PREPMT_P_MIN_TELESEISMIC_DIST;
+        dmax = PREPMT_P_MAX_TELESEISMIC_DIST;
+    }
+    else
+    {
+        dmin = PREPMT_S_MIN_TELESEISMIC_DIST;
+        dmax = PREPMT_S_MAX_TELESEISMIC_DIST;
+    }
     if (dminIn != NULL){dmin = fmax(*dminIn, dmin);}
     if (dmaxIn != NULL){dmax = fmin(*dmaxIn, dmax);}
     if (dmin > dmax)
