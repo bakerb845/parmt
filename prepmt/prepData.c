@@ -81,6 +81,7 @@ int prepmt_prepData_verifyTeleseismicDistance(const double *dminIn,
             __func__, netw, stat, chan, loc, gcarc, dmin, dmax);
     return -1;
 }
+//============================================================================//
 /*!
  * @brief Convenience function to check if SAC data is at a valid
  *        regional distance.
@@ -148,6 +149,181 @@ int prepmt_prepData_verifyRegionalDistance(const double *dminIn,
     fprintf(stderr, "%s: %s.%s.%s.%s with distance %f out of bounds [%f,%f]\n",
             __func__, netw, stat, chan, loc, gcarc, dmin, dmax);
     return -1;
+}
+//============================================================================//
+/*!
+ * @brief Defines the way picks will be added to the data.
+ *
+ * @param[out] lsetNewPicks      If true then the program will update the picks.
+ * @param[out] lusePickFile      If true then picks are derived from a pick
+ *                               file.  This is false if lsetNewPicks is false.
+ * @param[out] pickFile          If lusePickFile is true then this is the pick
+ *                               file from which to set the picks.
+ * @param[out] ttimesTableDir    Directory where the ttimes precomputed
+ *                               models reside.  This is not defined if
+ *                               lusePickFile is true.
+ * @param[out] ttimesModel       Name of ttimes model (e.g., ak135 or iasp91).
+ *                               This is not defined if lusePickFile is true.
+ *
+ * @result 0 indicates success.
+ *
+ * @author Ben Baker, ISTI
+ *
+ */
+int prepmt_prepData_readPickModel(const char *iniFile,
+                                  const char *prefix,
+                                  bool *lsetNewPicks,
+                                  bool *lusePickFile,
+                                  char pickFile[PATH_MAX],
+                                  char ttimesTableDir[PATH_MAX],
+                                  char ttimesModel[128])
+{
+    const char *s;
+    char vname[256];
+    int ierr;
+    dictionary *ini;
+    //------------------------------------------------------------------------//
+    ierr = 0;
+    *lsetNewPicks = false;
+    *lusePickFile = false;
+    memset(pickFile, 0, PATH_MAX*sizeof(char));
+    memset(ttimesModel, 0, 128*sizeof(char)); 
+    memset(ttimesTableDir, 0, PATH_MAX*sizeof(char));
+
+    if (!os_path_isfile(iniFile))
+    {   
+        fprintf(stderr, "%s: Error - ini file %s does not exist\n",
+                __func__, iniFile);
+        return -1;
+    }
+    ini = iniparser_load(iniFile);
+    memset(vname, 0, 256*sizeof(char));
+    sprintf(vname, "%s:lsetNewPicks", prefix);
+    *lsetNewPicks = iniparser_getboolean(ini, vname, false);
+    if (!*lsetNewPicks){goto END;} 
+
+    memset(vname, 0, 256*sizeof(char));
+    sprintf(vname, "%s:lusePickFile", prefix);
+    *lusePickFile = iniparser_getboolean(ini, vname, false);
+
+    if (*lusePickFile)
+    {
+        memset(vname, 0, 256*sizeof(char));
+        sprintf(vname, "%s:pickFile", prefix);
+        s = iniparser_getstring(ini, vname, NULL);
+        if (!os_path_isfile(s))
+        {
+            fprintf(stderr, "%s: Pick file %s does not exist\n", __func__, s);
+            ierr = 1;
+            goto END;
+        }
+        strcpy(pickFile, s); 
+    }
+    else
+    {
+        memset(vname, 0, 256*sizeof(char));
+        sprintf(vname, "%s:ttimesModel", prefix);
+        s = iniparser_getstring(ini, vname, TTIMES_DEFAULT_MODEL);
+        strcpy(ttimesModel, s);
+
+        memset(vname, 0, 256*sizeof(char));
+        sprintf(vname, "%s:ttimesTableDir", prefix);
+        s = iniparser_getstring(ini, vname, TTIMES_DEFAULT_TABLE_DIRECTORY);
+        if (!os_path_isdir(s))
+        {
+            fprintf(stderr, "%s: ttimes table directory %s doesn't exist\n",
+                    __func__, s);
+            ierr = 1;
+            goto END;
+        }
+        strcpy(ttimesTableDir, s);
+    }
+END:;
+    iniparser_freedict(ini);
+    return ierr;
+}
+//============================================================================//
+/*!
+ * @brief Extracts the file/directory information for file writing 
+ *        and whether or not to  write individual SAC files.
+ *
+ * @param[in] iniFile        Name of initialization file.
+ * @param[in] section        Section of ini file to read.
+ *
+ * @param[out] lwrtIntFiles  If true then the intermediate SAC files will be
+ *                           written.
+ * @param[out] wfDir         Directory to which the SAC files will be written.
+ * @param[out] wfSuffix      An identifier to append to the waveform names.
+ * @param[out] archiveFile   Name of HDF5 archive file.
+ *
+ * @result 0 indicates success.
+ * 
+ */
+int prepmt_prepData_intermediateFileOptions(const char *iniFile,
+                                            const char *section,
+                                            bool *lwrtIntFiles,
+                                            char wfDir[PATH_MAX],
+                                            char wfSuffix[128],
+                                            char archiveFile[PATH_MAX])
+{
+    const char *s;
+    char defaultName[PATH_MAX], vname[256];
+    dictionary *ini;
+    int ierr;
+    size_t lenos;
+    //------------------------------------------------------------------------//
+    ierr = 0;
+    *lwrtIntFiles = false;
+    memset(wfDir, 0, PATH_MAX*sizeof(char));
+    memset(wfSuffix, 0, 128*sizeof(char));
+    memset(archiveFile, 0, PATH_MAX*sizeof(char));
+    if (!os_path_isfile(iniFile))
+    {
+        fprintf(stderr, "%s: Error - ini file %s does not exist\n",
+                __func__, iniFile);
+        return -1;
+    }
+    ini = iniparser_load(iniFile);
+    memset(vname, 0, 256*sizeof(char));
+    sprintf(vname, "%s:lwrtIntFiles", section);
+    *lwrtIntFiles = iniparser_getboolean(ini, vname, true);
+    if (*lwrtIntFiles)
+    {
+        memset(vname, 0, 256*sizeof(char)); 
+        sprintf(vname, "%s:intermediateWaveformDir", section);
+        s = iniparser_getstring(ini, vname, "./\0");
+        if (!os_path_isdir(s))
+        {
+            ierr = os_makedirs(s);
+            if (ierr != 0)
+            {
+                fprintf(stderr, "%s: Couldn't make output directory %s\n",
+                        __func__, s);
+                ierr = 1;
+                goto END;
+            }
+        }
+        strcpy(wfDir, s);
+        lenos = strlen(wfDir);
+        if (lenos > 0)
+        {
+            if (wfDir[lenos-1] != '/'){wfDir[lenos] = '/';}
+        }
+
+        memset(vname, 0, 256*sizeof(char));
+        sprintf(vname, "%s:outputSuffix", section);
+        s = iniparser_getstring(ini, vname, NULL);
+        if (s != NULL){strcpy(wfSuffix, s);}
+    }
+    memset(vname, 0, 256*sizeof(char));
+    memset(defaultName, 0, PATH_MAX*sizeof(char));
+    sprintf(vname, "%s:archivedWaveforms", section);
+    sprintf(defaultName, "%sobservedWaveforms.h5", wfDir);
+    s = iniparser_getstring(ini, vname, defaultName);
+    strcpy(archiveFile, s);
+END:;
+    iniparser_freedict(ini); 
+    return ierr;
 }
 //============================================================================//
 /*!

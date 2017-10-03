@@ -44,6 +44,21 @@ int prepmt_prepData_archiveWaveforms(const char *archiveFile,
                                      const struct sacData_struct *data);
 struct sacData_struct *prepmt_prepData_readArchivedWaveforms(
     const char *archiveFile, int *nobs, int *ierr);
+/* Reads the method to set the pick information */
+int prepmt_prepData_readPickModel(const char *iniFile,
+                                  const char *prefix,
+                                  bool *lsetNewPicks,
+                                  bool *lusePickFile,
+                                  char pickFile[PATH_MAX],
+                                  char ttimesTableDir[PATH_MAX],
+                                  char ttimesModel[128]);
+/* Reads intermediate file options */
+int prepmt_prepData_intermediateFileOptions(const char *iniFile,
+                                            const char *section,
+                                            bool *lwrtIntFiles,
+                                            char wfDir[PATH_MAX],
+                                            char wfSuffix[128],
+                                            char archiveFile[PATH_MAX]);
 /* Utilities for computing theoretical travel times. */
 int prepmt_prepData_setTheoreticalSurfaceWaveArrivalTime(
     const double vel, const bool lr,
