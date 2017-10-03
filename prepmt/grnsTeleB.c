@@ -334,11 +334,13 @@ sacio_writeTimeSeriesFile("test_gyz.sac", grns[11*ndepth*6+11]);
  * @param[in] nobs          Number of observations.
  * @param[in] data          List of teleseismic waveforms to map t* values to.
  *                          This is an array of dimension [nobs].
+ *
  * @param[out] tstars       tstar values corresponding to each station.
  *                          If a SNCL in the data list cannot be found in the
  *                          tstarTable file then this tstar will be set to the
  *                          default value.
  *                          This is an array of length [nobs].
+ *
  * @result 0 indicates success.
  *
  * @author Ben Baker
@@ -407,6 +409,9 @@ int prepmt_grnsTeleB_loadTstarTable(const char *tstarTable,
     return 0;
 }
 //============================================================================//
+/*!
+ * @brief TODO: delete this function. 
+ */
 int prepmt_grnsTeleB_windowHudson96(
     const int nobs, const int ntstar, const int ndepth,
     const struct sacData_struct *data,
@@ -450,7 +455,7 @@ int prepmt_grnsTeleB_windowHudson96(
  *
  * @param[in,out] grns    On input contains the Green's functions for all
  *                        observations, depths, and t*'s as well as the
- *                        processing chains.
+ *                        processing chains. \n
  *                        On output contains the filtered Green's functions
  *                        for all observations, depths, and t*'s.
  *
@@ -705,6 +710,62 @@ ERROR:;
     return 0;
 }
 //============================================================================//
+/*!
+ * @brief Reads the teleseismic body wave Green's functions modeling parameters.
+ *
+ * @param[in] iniFile           Name of initialization file.
+ * @param[in] section           Section of initalization file to read.  For
+ *                              example, this may be prepmt:telePGrns.
+ * @param[out] archiveFile      This is the HDF5 file with the observed waveforms.
+ * @param[out] parmtDataFile    This is the name of the data archive file to
+ *                              be used by parmt.
+ * @param[out] luseCrust1       If true then the modeling may use crust1 
+ *                              at the source and receiver (unless superseded
+ *                              by a specified local model). \n
+ *                              Otherwise, use a local model or the global 
+ *                              ak135 earth model.
+ * @param[out] crustDir         The crust1.0 directory.  This is only relevant
+ *                              if luseCrust1 is true.
+ * @param[out] luseSourceModel  If true then use a local source model.
+ * @param[out] sourceModel      If luseSourceModel is true then this is the
+ *                              filename with the local source model.
+ * @param[out] luseTstarTable   If true then read the t* attenuation factors
+ *                              from a table.
+ * @param[out] defaultTstar     This is the default t* (e.g., 0.4).
+ * @param[out] tstarTable       If luseTstarTable is true then this is the file
+ *                              with the station/t* table pairings.
+ * @param[out] lreprickGrns     If true then repick the Green's functions with
+ *                              an STA/LTA function.  This is in the context of
+ *                              severe attenutation which noticeably effect
+ *                              theoretical arrival times.
+ * @param[out] staWin           If repicking Green's functions then this
+ *                              is the short term window (seconds).
+ * @param[out] ltaWin           If repicking Green's functions then this
+ *                              is the long term window (seconds).  
+ * @param[out] staltaThreshPct  This is the fraction (0,1) after which an 
+ *                              arrival is declared in the STA/LTA repicking.
+ * @param[out] lalignXC         If true the the Green's functions will be 
+ *                              re-aligned with cross-correlation.
+ * @param[out] luseEnvelope     If true and lalignXC is true then the 
+ *                              Green's functions will be aligned based on 
+ *                              the cross-correlation of their envelopes.
+ * @param[out] lnormalizeXC     If true then each Green's function is normalized
+ *                              in the Green's function cross-correlation thus
+ *                              Green's functions with larger amplitudes may 
+ *                              bias the result.
+ * @param[out] maxXCtimeLag     This is the max time lag (seconds) available to
+ *                              the waveform cross-correlation alignment.
+ * @param[out] ndepth           Number of depths in modeling.
+ * @param[in,out] depths        On input this is a NULL pointer.
+ *                              On output this is a pointer to an array 
+ *                              of dimension [ndepth] with the modeling depths
+ *                              (km).
+ *
+ * @result 0 indicates success.
+ *
+ * @author Ben Baker, ISTI
+ *
+ */
 int prepmt_grnsTeleB_readParameters(const char *iniFile,
                                     const char *section,
                                     char archiveFile[PATH_MAX],
