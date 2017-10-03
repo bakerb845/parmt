@@ -5,14 +5,278 @@
 #include <iniparser.h>
 #include "sacio.h"
 #include "ttimes.h"
-#include "prepmt/prepmt_prepData.h"
+#include "prepmt/prepmt.h"
 #include "ispl/process.h"
 #include "iscl/array/array.h"
 #include "iscl/geodetic/geodetic.h"
 #include "iscl/memory/memory.h"
 #include "iscl/os/os.h"
 #include "iscl/string/string.h"
+#include "iscl/time/time.h"
 
+#define DO_P_PICKS true
+#define DO_S_PICKS false
+
+/*!
+ * @brief Preprocesses the teleseismic P or S body waves.
+ *
+ * @param[in] iniFile        Name of initialization file.
+ * @param[in] section        Section of initialization file to read containing
+ *                           the data pre-processing parameters.
+ * @param[in] hpulseSection  Section of initialization file with hpulse
+ *                           parameters. 
+ * @param[in] lisP           If true then this is for P waves. \n
+ *                           Otherwise, this is for S waves.
+ * @param[in] dmin           Minimum teleseismic distance (degrees).
+ * @param[in] dmax           Maximum teleseismic distance (degrees).
+ *
+ * @result EXIT_SUCCESS indicates success.
+ *
+ * @author Ben Baker, ISTI
+ *
+ */
+int prepmt_prepData_prepTeleseismicBodyWaves(const char *iniFile,
+                                             const char *section,
+                                             const char *hpulseSection,
+                                             const bool lisP,
+                                             const double dmin,
+                                             const double dmax)
+{
+    char **sacFiles, **sacpzFiles;
+    char pickFile[PATH_MAX], wfDir[PATH_MAX],
+         ttimesTableDir[PATH_MAX], fname[PATH_MAX], archiveFile[PATH_MAX],
+         ttimesModel[128], wfSuffix[128];
+    struct prepmtEventParms_struct event;
+    struct sacData_struct *sacData;
+    struct prepmtCommands_struct cmds;
+    struct prepmtModifyCommands_struct options;
+    struct hpulse96_parms_struct hpulse96Parms;
+    int ierr, k, nfiles;
+    bool lsetNewPicks, lusePickFile, lwrtIntFiles;
+    char khole[8];
+    //------------------------------------------------------------------------// 
+    // Initialize
+    memset(&event, 0, sizeof(struct prepmtEventParms_struct));
+    // Load the event
+    ierr = prepmt_event_initializeFromIniFile(iniFile, &event);
+    if (ierr != 0)
+    {
+        fprintf(stderr, "%s: Error loading event\n", __func__);
+        return EXIT_FAILURE;
+    }
+    // Load the pick model
+    ierr = prepmt_prepData_readPickModel(iniFile,
+                                         section,
+                                         &lsetNewPicks, &lusePickFile,
+                                         pickFile, ttimesTableDir, ttimesModel);
+    if (ierr != 0)
+    {
+        fprintf(stderr, "%s: Error reading pick model\n", __func__);
+        return EXIT_FAILURE;
+    }
+    // Figure out some sampling period and windowing info
+    memset(&options, 0, sizeof(struct prepmtModifyCommands_struct));
+    prepmt_hpulse96_readHpulse96Parameters(iniFile, hpulseSection,
+                                           &hpulse96Parms);
+    options.iodva = hpulse96Parms.iodva;
+    options.ldeconvolution = true; // We are working the data
+    ierr = prepmt_prepData_getDefaultDTAndWindowFromIniFile(iniFile, section,
+                                                            &options.targetDt,
+                                                            &options.cut0,
+                                                            &options.cut1);
+    if (ierr != 0)
+    {
+        fprintf(stderr, "%s: Error getting default dt\n", __func__);
+        return EXIT_FAILURE;
+    }
+    // Load the scratch output data info
+    ierr = prepmt_prepData_intermediateFileOptions(iniFile, section,
+                                                   &lwrtIntFiles,
+                                                   wfDir, wfSuffix,
+                                                   archiveFile);
+    // Read the data
+    fprintf(stdout, "%s: Loading data...\n", __func__);
+    ierr = prepmt_prepData_readDataListFromIniFile(iniFile,
+                                               section,
+                                               &nfiles, &sacFiles, &sacpzFiles);
+    if (ierr != 0 || nfiles < 1)
+    {
+        fprintf(stderr, "%s: Failed to find data\n", __func__);
+        return EXIT_FAILURE;
+    }
+    sacData = (struct sacData_struct *)
+              calloc((size_t) nfiles, sizeof(struct sacData_struct));
+    for (k=0; k<nfiles; k++)
+    {
+        // Read the data
+        ierr = sacio_readTimeSeriesFile(sacFiles[k], &sacData[k]); 
+        if (ierr != 0)
+        {
+            fprintf(stderr, "%s: Failed to read sacFile: %s\n",
+                    __func__, sacFiles[k]);
+            return EXIT_FAILURE;
+        }
+        // Fix the location code
+        ierr = sacio_getCharacterHeader(SAC_CHAR_KHOLE, sacData[k].header,
+                                        khole); 
+        if (ierr != 0 || strcasecmp(khole, "-12345\0") == 0)
+        {
+            sacio_setCharacterHeader(SAC_CHAR_KHOLE, "--\0",
+                                     &sacData[k].header);
+        }
+        // Get the pole-zero file
+        if (os_path_isfile(sacpzFiles[k]))
+        {
+            ierr = sacio_readPoleZeroFile(sacpzFiles[k], &sacData[k].pz);
+            if (ierr != 0)
+            {
+                fprintf(stderr, "%s: Failed to read pole-zero information\n",
+                        __func__);
+            }
+        }
+        free(sacpzFiles[k]);
+        free(sacFiles[k]);
+    }
+    free(sacpzFiles);
+    free(sacFiles);
+    // Read the processing commands
+    cmds = prepmt_commands_readFromIniFile(iniFile, section,
+                                           nfiles, sacData, &ierr);
+    if (ierr != 0)
+    {
+        fprintf(stderr, "%s: Failed to get processing commands\n", __func__);
+        return EXIT_FAILURE;
+    }
+    // Attach the event to the SAC data
+    ierr = prepmt_prepData_setEventInformation(event.latitude,
+                                               event.longitude,
+                                               event.depth,
+                                               event.time,
+                                               nfiles, sacData);
+    if (ierr != 0)
+    {
+        fprintf(stderr, "%s: Failed to set event information\n", __func__);
+        return EXIT_FAILURE;
+    }
+    // Verify the data ranges
+    fprintf(stdout, "%s: Verifying data ranges...\n", __func__);
+    for (k=0; k<nfiles; k++)
+    {
+        ierr = prepmt_prepData_verifyTeleseismicDistance(lisP, &dmin, &dmax,
+                                                         sacData[k]);
+        if (ierr != 0)
+        {
+            fprintf(stderr, "%s: Cannot verify distance - skipping\n", __func__);
+            continue;
+        } 
+    }
+    // Attach picks? 
+    if (lsetNewPicks)
+    {
+        if (!lusePickFile)
+        {
+            fprintf(stderr, "%s: Setting theoretical P picks\n", __func__);
+            if (lisP)
+            {
+                ierr = prepmt_prepData_setPrimaryPorSPickFromTheoreticalTime(
+                                                      NULL, "ak135", DO_P_PICKS,
+                                                      SAC_FLOAT_A, SAC_CHAR_KA,
+                                                      nfiles, sacData);
+            }
+            else
+            {
+                ierr = prepmt_prepData_setPrimaryPorSPickFromTheoreticalTime(
+                                                      NULL, "ak135", DO_S_PICKS,
+                                                      SAC_FLOAT_A, SAC_CHAR_KA,
+                                                      nfiles, sacData);
+            }
+            if (ierr != 0)
+            {
+                fprintf(stderr, "%s: Failed to set theoretical primary picks\n",
+                        __func__);
+                return EXIT_FAILURE;
+            }
+        }
+        else
+        {
+            fprintf(stderr, "%s: Attaching picks from NLL file: %s\n",
+                    __func__, pickFile);
+            ierr = prepmt_pickFile_nonLinLoc2sac(pickFile, 
+                                                 SAC_FLOAT_A, SAC_CHAR_KA,
+                                                 nfiles, sacData);
+            if (ierr != 0)
+            {
+                fprintf(stderr, "%s: Failed to attached picks to data\n",
+                        __func__);
+                return EXIT_FAILURE;
+            }
+        }
+    }
+    // Modify the processing commands
+    for (k=0; k<cmds.nobs; k++)
+    {
+        ierr = prepmt_commands_modifyCommandsCharsStruct(options,
+                                                         sacData[k],
+                                                         &cmds.cmds[k]);
+        if (ierr != 0)
+        {
+            fprintf(stderr, "%s: Failed to modify processing commands\n",
+                    __func__);
+            return EXIT_FAILURE;
+        }
+    }
+    // Process the data
+    fprintf(stdout, "%s: Processing data...\n", __func__);
+    time_tic();
+    ierr = prepmt_prepData_process(cmds, nfiles, sacData);
+    if (ierr != 0)
+    {
+        fprintf(stderr, "%s: Error processing data\n", __func__);
+        return EXIT_FAILURE;
+    }
+    fprintf(stdout, "%s: Processing time: %lf (s)\n", __func__, time_toc());
+    if (lwrtIntFiles)
+    {
+        fprintf(stdout, "%s: Writing intermediate files to directory: %s\n",
+                __func__, wfDir);
+        for (k=0; k<nfiles; k++)
+        {
+            memset(fname, 0, PATH_MAX*sizeof(char));
+            if (strlen(wfSuffix) > 0)
+            {
+                sprintf(fname, "%s/%s.%s.%s.%s.%s.SAC",
+                        wfDir,
+                        sacData[k].header.knetwk,
+                        sacData[k].header.kstnm,
+                        sacData[k].header.kcmpnm,
+                        sacData[k].header.khole,
+                        wfSuffix);
+            }
+            else
+            {
+                sprintf(fname, "%s/%s.%s.%s.%s.SAC",
+                        wfDir,
+                        sacData[k].header.knetwk,
+                        sacData[k].header.kstnm,
+                        sacData[k].header.kcmpnm,
+                        sacData[k].header.khole);
+            }
+            sacio_writeTimeSeriesFile(fname, sacData[k]);
+        }
+    }
+    // Write the results to an h5 archive
+    fprintf(stdout, "%s: Writing H5 archive...\n", __func__);
+    ierr = prepmt_prepData_archiveWaveforms(archiveFile, nfiles, sacData);
+    if (ierr != 0)
+    {
+        fprintf(stderr, "%s: Error writing archive!\n", __func__);
+        return EXIT_FAILURE;
+    }
+    // Free data
+    prepmt_commands_freePrepmtCommands(&cmds);
+    free(sacData);
+    return EXIT_SUCCESS;
+}
 /*!
  * @brief Convenience function to check if SAC data is at a valid
  *        teleseismic distance.

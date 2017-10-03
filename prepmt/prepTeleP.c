@@ -8,17 +8,36 @@
 #include "prepmt/prepmt.h"
 #include "iscl/iscl/iscl.h"
 #include "iscl/os/os.h"
-#include "iscl/string/string.h"
-#include "ttimes.h"
  
 #define PROGRAM_NAME "xprepTeleP"
-#define DO_P_PICKS true
-#define DO_S_PICKS false
 static void printUsage(void);
 static int parseArguments(int argc, char *argv[],
                           char iniFile[PATH_MAX], char section[256]);
 
 int main(int argc, char **argv)
+{
+    char iniFile[PATH_MAX], section[256];
+    const char *hpulseSection = "hpulse96\0";
+    const bool lisP = true;
+    int ierr;
+    const double dmin = PREPMT_P_MIN_TELESEISMIC_DIST;
+    const double dmax = PREPMT_P_MAX_TELESEISMIC_DIST;
+    iscl_init();
+    ierr = parseArguments(argc, argv, iniFile, section);
+    if (ierr != 0){return EXIT_FAILURE;}
+    ierr = prepmt_prepData_prepTeleseismicBodyWaves(iniFile, section,
+                                                    hpulseSection,lisP,
+                                                    dmin, dmax);
+    if (ierr != EXIT_SUCCESS)
+    {
+        fprintf(stderr, "%s: Error preparing data\n", PROGRAM_NAME);
+        return EXIT_FAILURE;
+    }
+    iscl_finalize();
+    return EXIT_SUCCESS;
+}
+/*
+int main_original(int argc, char **argv)
 {
     char **sacFiles, **sacpzFiles;
     char iniFile[PATH_MAX], pickFile[PATH_MAX], wfDir[PATH_MAX],
@@ -149,20 +168,10 @@ int main(int argc, char **argv)
         if (!lusePickFile)
         {
             printf("%s: Setting theoretical P picks\n", PROGRAM_NAME);
-            if (lisP)
-            {
-                ierr = prepmt_prepData_setPrimaryPorSPickFromTheoreticalTime(
-                                                      NULL, "ak135", DO_P_PICKS,
+            ierr = prepmt_prepData_setPrimaryPorSPickFromTheoreticalTime(
+                                                      NULL, "ak135", true,
                                                       SAC_FLOAT_A, SAC_CHAR_KA,
                                                       nfiles, sacData);
-            }
-            else
-            {
-                ierr = prepmt_prepData_setPrimaryPorSPickFromTheoreticalTime(
-                                                      NULL, "ak135", DO_S_PICKS,
-                                                      SAC_FLOAT_A, SAC_CHAR_KA,
-                                                      nfiles, sacData);
-            }
             if (ierr != 0)
             {
                 printf("%s: Failed to set theoretical primary picks\n",
@@ -243,6 +252,7 @@ int main(int argc, char **argv)
     iscl_finalize();
     return 0;
 }
+*/
 //============================================================================//
 /*!
  * @brief Parses the command line arguments for the ini file.

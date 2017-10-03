@@ -9,6 +9,13 @@ extern "C"
 {
 #endif
 
+/* Driver function for preparing teleseismic P or S body waves */
+int prepmt_prepData_prepTeleseismicBodyWaves(const char *iniFile,
+                                             const char *section,
+                                             const char *hpulseSection,
+                                             const bool lisP,
+                                             const double dmin,
+                                             const double dmax);
 /* Utility function to process data */
 int prepmt_prepData_process(const struct prepmtCommands_struct cmds,
                             const int nobs, struct sacData_struct *data);
