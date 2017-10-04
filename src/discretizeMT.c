@@ -475,7 +475,7 @@ int parmt_discretizeMT64f(const int ng,
     const double thetaMax = M_PI_2;
     const double sigmaMin =-M_PI_2;
     const double sigmaMax = M_PI_2;
-    const double sqrt2i = 1.0/sqrt(2.0); // unit magnitude MT
+    //const double sqrt2i = 1.0/sqrt(2.0); // unit magnitude MT
     //------------------------------------------------------------------------//
     ierr = 0;
     // Verify the inputs

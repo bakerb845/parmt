@@ -175,9 +175,9 @@ int prepmt_prepData_prepTeleseismicBodyWaves(const char *iniFile,
     {
         if (!lusePickFile)
         {
-            fprintf(stderr, "%s: Setting theoretical P picks\n", __func__);
             if (lisP)
             {
+                fprintf(stderr, "%s: Setting theoretical P picks\n", __func__);
                 ierr = prepmt_prepData_setPrimaryPorSPickFromTheoreticalTime(
                                                       NULL, "ak135", DO_P_PICKS,
                                                       SAC_FLOAT_A, SAC_CHAR_KA,
@@ -185,6 +185,7 @@ int prepmt_prepData_prepTeleseismicBodyWaves(const char *iniFile,
             }
             else
             {
+                fprintf(stderr, "%s: Setting theoretical S picks\n", __func__);
                 ierr = prepmt_prepData_setPrimaryPorSPickFromTheoreticalTime(
                                                       NULL, "ak135", DO_S_PICKS,
                                                       SAC_FLOAT_A, SAC_CHAR_KA,

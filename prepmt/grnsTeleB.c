@@ -948,7 +948,7 @@ int prepmt_grnsTeleB_readParameters(const char *iniFile,
                     __func__, s);
             ierr = 1;
             goto ERROR;
-        } 
+        }
         strcpy(sourceModel, s);
     }
        

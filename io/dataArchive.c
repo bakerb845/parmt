@@ -4,7 +4,6 @@
 #include <limits.h>
 #include "parmt_utils.h"
 #include "sacio.h"
-#include "iscl/log/log.h"
 #include "iscl/memory/memory.h"
 #include "iscl/os/os.h"
 
@@ -67,17 +66,16 @@ struct h5_greensStruct
 int utils_dataArchive_setFileName(const char *dirnm, const char *projnm,
                                   char fname[PATH_MAX])
 {
-    const char *fcnm = "utils_dataArchive_setFileName\0";
     size_t lenos; 
     memset(fname, 0, PATH_MAX*sizeof(char));
     if (projnm == NULL)
     {
-        log_errorF("%s: Error project name can't be NULL\n", fcnm);
+        fprintf(stderr, "%s: Error project name can't be NULL\n", __func__);
         return -1;
     }
     if (strlen(projnm) == 0)
     {
-        log_errorF("%s: Error project name undefined\n", fcnm);
+        fprintf(stderr, "%s: Error project name undefined\n", __func__);
         return -1;
     }
     if (dirnm == NULL)
@@ -105,7 +103,6 @@ int utils_dataArchive_setFileName(const char *dirnm, const char *projnm,
 /*
 static int utils_archive_createDataStructure(const hid_t groupID)
 {
-    const char *fcnm = "utils_archive_createDataStructure\0";
     hid_t dataType, string64Type, vlenCData, vlenDData;
     herr_t status;
     //------------------------------------------------------------------------//
@@ -167,7 +164,7 @@ static int utils_archive_createDataStructure(const hid_t groupID)
                         H5T_NATIVE_INT);
     if (status != 0)
     {
-        log_errorF("%s: Failed to pack type\n", fcnm);
+        fprintf(stderr, "%s: Failed to pack type\n", __func__);
         return -1;
     }
     // Commit it
@@ -175,7 +172,7 @@ static int utils_archive_createDataStructure(const hid_t groupID)
                         H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     if (status != 0)
     {
-        log_errorF("%s: Failed to commit structure\n", fcnm);
+        fprintf(stderr, "%s: Failed to commit structure\n", __func__);
         return -1;
     } 
     // Release memory
@@ -185,7 +182,7 @@ static int utils_archive_createDataStructure(const hid_t groupID)
     status += H5Tclose(string64Type); 
     if (status != 0)
     {
-        log_errorF("%s: Failed to close types\n", fcnm);
+        fprintf(stderr, "%s: Failed to close types\n", __func__);
         return -1;
     }
     return status;
@@ -231,7 +228,7 @@ int utils_dataArchive_getLocationID(const hid_t h5fl,
         rank = H5Sget_simple_extent_dims(dataSpace, dims, NULL);
         if (rank != 1)
         {
-            printf("Invalid rank\n");
+            fprintf(stderr, "%s: Invalid rank\n", __func__);
         }
         nlocs = (int) dims[0];
         if (i == 0)
@@ -304,7 +301,6 @@ int utils_dataArchive_getLocationID(const hid_t h5fl,
 int utils_dataArchive_readAllWaveforms(const char *dataFile,
                                        struct parmtData_struct *data)
 {
-    const char *fcnm = "utils_dataArchive_readAllWaveforms\0";
     char varname[512];
     hid_t dataSet, dataSpace, groupID, h5fl;
     hsize_t dims[1];
@@ -314,7 +310,8 @@ int utils_dataArchive_readAllWaveforms(const char *dataFile,
     memset(data, 0, sizeof(struct parmtData_struct));
     if (!os_path_isfile(dataFile))
     {
-        log_errorF("%s: Error data file %s does not exist\n", fcnm, dataFile);
+        fprintf(stderr, "%s: Error data file %s does not exist\n",
+                __func__, dataFile);
         return -1;
     }
     h5fl = H5Fopen(dataFile, H5F_ACC_RDONLY, H5P_DEFAULT);
@@ -324,7 +321,7 @@ int utils_dataArchive_readAllWaveforms(const char *dataFile,
     ndims = H5Sget_simple_extent_dims(dataSpace, dims, NULL);
     if (ndims != 1)
     {
-        log_errorF("%s: Error only 1D arrays supported\n", fcnm);
+        fprintf(stderr, "%s: Error only 1D arrays supported\n", __func__);
         ierr = 1;
         goto ERROR;
     }
@@ -333,7 +330,7 @@ int utils_dataArchive_readAllWaveforms(const char *dataFile,
     nlocs = (int) dims[0];
     if (nlocs < 1)
     {
-        log_errorF("%s: Error no locations in grid-search\n", fcnm);
+        fprintf(stderr, "%s: Error no locations in grid-search\n", __func__);
         ierr = 1;
         goto ERROR;
     } 
@@ -341,14 +338,14 @@ int utils_dataArchive_readAllWaveforms(const char *dataFile,
     nobs = utils_dataArchive_getNumberOfObservations(h5fl);
     if (nobs < 1)
     {
-        printf("%s: Error no observations\n", fcnm);
+        fprintf(stderr, "%s: Error no observations\n", __func__);
         ierr = 1;
         goto ERROR;
     }
     nread = nobs*nlocs;
     if (nread < 1)
     {
-        log_errorF("%s: Error nothing to read\n", fcnm);
+        fprintf(stderr, "%s: Error nothing to read\n", __func__);
         ierr = 1;
         goto ERROR;
     }
@@ -380,7 +377,7 @@ int utils_dataArchive_readAllWaveforms(const char *dataFile,
                                        &data->data[iobs]);
         if (ierr != 0)
         {
-            printf("%s: Error reading data\n", fcnm);
+            fprintf(stderr, "%s: Error reading data\n", __func__);
             goto ERROR;
         }
         H5Gclose(groupID);
@@ -395,10 +392,25 @@ int utils_dataArchive_readAllWaveforms(const char *dataFile,
                                                          &data->sacGxy[k],
                                                          &data->sacGxz[k],
                                                          &data->sacGyz[k]);
+/*
+printf("%s %s %s %s %s %s %e %e %e %e %e %e\n",
+        data->sacGxx[k].header.kcmpnm,
+        data->sacGyy[k].header.kcmpnm,
+        data->sacGzz[k].header.kcmpnm,
+        data->sacGxy[k].header.kcmpnm,
+        data->sacGxz[k].header.kcmpnm,
+        data->sacGyz[k].header.kcmpnm,
+        data->sacGxx[k].data[20],
+        data->sacGyy[k].data[20],
+        data->sacGzz[k].data[20],
+        data->sacGxy[k].data[20],
+        data->sacGxz[k].data[20],
+        data->sacGyz[k].data[20]);
+*/
             if (ierr != 0)
             {
-                log_errorF("%s: Error loading obs/location %d %d\n",
-                           fcnm, iobs, iloc);
+                fprintf(stderr, "%s: Error loading obs/location %d %d\n",
+                        __func__, iobs, iloc);
                 goto ERROR;
             }
             //sacio_freeData(struct sacData_struct *sac);
@@ -435,7 +447,6 @@ int utils_dataArchive_initialize(const char *fname, //const char *dirnm, const c
                                  const double *__restrict__ evlos,
                                  const double *__restrict__ evdps)
 {
-    const char *fcnm = "utils_dataArchive_initialize\0";
     char varname[256], *dirnm;
     int i, ierr;
     const hsize_t dims[1] = {nlocs};
@@ -447,7 +458,8 @@ int utils_dataArchive_initialize(const char *fname, //const char *dirnm, const c
         ierr = os_makedirs(dirnm);
         if (ierr != 0)
         {
-            log_errorF("%s: Error making output directory: %s\n", fcnm, dirnm);
+            fprintf(stderr, "%s: Error making output directory: %s\n",
+                    __func__, dirnm);
             return -1;
         }
     }
@@ -457,14 +469,14 @@ int utils_dataArchive_initialize(const char *fname, //const char *dirnm, const c
     ierr = utils_dataArchive_setFileName(dirnm, projnm, fname);
     if (ierr != 0)
     {
-        log_errorF("%s: Error setting filename\n", fcnm);
+        fprintf(stderr, "%s: Error setting filename\n", __func__);
         return -1;
     }
 */
     // Tell the user i'm going to destroy their file 
     if (os_path_isfile(fname))
     {
-        log_warnF("%s: Warning overwriting file %s\n", fcnm, fname);
+        fprintf(stdout, "%s: Warning overwriting file %s\n", __func__, fname);
     }
     // Open the H5 file
     fid = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
@@ -532,7 +544,6 @@ int utils_dataArchive_initialize(const char *fname, //const char *dirnm, const c
 
 int utils_dataArchive_getNumberOfObservations(const hid_t h5fl)
 {
-    const char *fcnm = "utils_dataArchive_getNumberOfObservations\0";
     char varname[256];
     int nobs;
     int iobs;
@@ -544,7 +555,8 @@ int utils_dataArchive_getNumberOfObservations(const hid_t h5fl)
         if (H5Lexists(h5fl, varname, H5P_DEFAULT) <= 0){goto END;}
         nobs = iobs + 1;
     }
-    log_errorF("%s: Exceeded max number of observations %d\n", fcnm, MAXOBS);
+    fprintf(stderr, "%s: Exceeded max number of observations %d\n",
+            __func__, MAXOBS);
 END:;
     return nobs;
 }
@@ -569,7 +581,6 @@ END:;
 int utils_dataArchive_getObservationID(const hid_t h5fl,
                                        const struct sacData_struct obs)
 {
-    const char *fcnm = "utils_dataArchive_getObservationID\0";
     struct sacData_struct sac;
     char varname[256];
     int ierr, iobs, nobs;
@@ -580,7 +591,7 @@ int utils_dataArchive_getObservationID(const hid_t h5fl,
     nobs = utils_dataArchive_getNumberOfObservations(h5fl) - 1;
     if (nobs < 0)
     {
-        log_errorF("%s: No observations\n", fcnm);
+        fprintf(stderr, "%s: No observations\n", __func__);
         return -1;
     }
     // Loop through the observations and match 
@@ -597,7 +608,8 @@ int utils_dataArchive_getObservationID(const hid_t h5fl,
         ierr = sacioh5_readTimeSeries2("Observation\0", obsID, &sac);
         if (ierr != 0)
         {
-            log_errorF("%s: Error loading observation %d\n", fcnm, iobs);
+            fprintf(stderr, "%s: Error loading observation %d\n",
+                    __func__, iobs);
             return -1;
         }
         // check it
@@ -625,6 +637,8 @@ int utils_dataArchive_addObservation(const hid_t h5fl,
     // Get the number of observations
     nobs = utils_dataArchive_getNumberOfObservations(h5fl);
     // no observations
+    iobs = MAX(0, nobs);
+/*
     if (nobs < 0)
     {
         iobs = 0;
@@ -633,12 +647,16 @@ int utils_dataArchive_addObservation(const hid_t h5fl,
     {
         iobs = nobs;
     }
+*/
     memset(varname, 0, 256*sizeof(char));
     sprintf(varname, "/Observations/Observation_%d", iobs);
     groupID = H5Gcreate2(h5fl, varname,
                          H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     ierr = sacioh5_writeTimeSeries2("Observation\0", groupID, obs);
-    if (ierr != 0){printf("Failed to write observation\n");}
+    if (ierr != 0)
+    {
+        fprintf(stderr, "%s: Failed to write observation\n", __func__);
+    }
     H5Gclose(groupID);
     return ierr;
 }
@@ -653,7 +671,6 @@ int utils_dataArchive_loadGreensFunctions(const hid_t h5fl,
                                           struct sacData_struct *sacGxz,
                                           struct sacData_struct *sacGyz)
 {
-    const char *fcnm = "utils_dataArchive_loadGreensFunctions\0";
     char varname[256];
     int ierr;
     hid_t groupID;
@@ -667,50 +684,56 @@ int utils_dataArchive_loadGreensFunctions(const hid_t h5fl,
     sprintf(varname, "/Observations/Observation_%d", waveformID);
     if (H5Lexists(h5fl, varname, H5P_DEFAULT) <= 0)
     {
-        printf("%s: Observation does not exist\n", fcnm);
+        fprintf(stderr, "%s: Observation does not exist\n", __func__);
         return -1;
     }
     groupID = H5Gopen2(h5fl, varname, H5P_DEFAULT);
+    memset(varname, 0, 256*sizeof(char));
     sprintf(varname, "Gxx_%d", locationID);
     ierr = sacioh5_readTimeSeries2(varname, groupID, sacGxx);
     if (ierr != 0)
     {
-        printf("%s: Error reading Gxx\n", fcnm);
+        fprintf(stderr, "%s: Error reading Gxx\n", __func__);
         goto ERROR;
     }
+    memset(varname, 0, 256*sizeof(char));
     sprintf(varname, "Gyy_%d", locationID);
     ierr = sacioh5_readTimeSeries2(varname, groupID, sacGyy);
     if (ierr != 0)
     {
-        printf("%s: Error reading Gyy\n", fcnm);
+        fprintf(stderr, "%s: Error reading Gyy\n", __func__);
         goto ERROR;
     }
+    memset(varname, 0, 256*sizeof(char));
     sprintf(varname, "Gzz_%d", locationID);
     ierr = sacioh5_readTimeSeries2(varname, groupID, sacGzz);
     if (ierr != 0)
     {
-        printf("%s: Error reading Gzz\n", fcnm);
+        fprintf(stderr, "%s: Error reading Gzz\n", __func__);
         goto ERROR;
     }
+    memset(varname, 0, 256*sizeof(char));
     sprintf(varname, "Gxy_%d", locationID);
     ierr = sacioh5_readTimeSeries2(varname, groupID, sacGxy);
     if (ierr != 0)
     {
-        printf("%s: Error reading Gxy\n", fcnm);
+        fprintf(stderr, "%s: Error reading Gxy\n", __func__);
         goto ERROR;
     }
+    memset(varname, 0, 256*sizeof(char));
     sprintf(varname, "Gxz_%d", locationID);
     ierr = sacioh5_readTimeSeries2(varname, groupID, sacGxz);
     if (ierr != 0)
     {
-        printf("%s: Error reading Gxz\n", fcnm);
+        fprintf(stderr, "%s: Error reading Gxz\n", __func__);
         goto ERROR;
     }
+    memset(varname, 0, 256*sizeof(char));
     sprintf(varname, "Gyz_%d", locationID);
     ierr = sacioh5_readTimeSeries2(varname, groupID, sacGyz);
     if (ierr != 0)
     {
-        printf("%s: Error reading Gyz\n", fcnm);
+        fprintf(stderr, "%s: Error reading Gyz\n", __func__);
         goto ERROR;
     }
 
@@ -729,62 +752,62 @@ int utils_dataArchive_addGreensFunctions(const hid_t h5fl,
                                          const struct sacData_struct sacGxz,
                                          const struct sacData_struct sacGyz)
 {
-    const char *fcnm = "utils_dataArchive_addGreensFunctions\0";
     char varname[256];
     int ierr;
     hid_t groupID;
     sprintf(varname, "/Observations/Observation_%d", waveformID);
     if (H5Lexists(h5fl, varname, H5P_DEFAULT) <= 0)
     {
-        printf("%s: Observation does not exist\n", fcnm);
+        fprintf(stderr, "%s: Observation does not exist\n", __func__);
         return -1;
     }
     groupID = H5Gopen2(h5fl, varname, H5P_DEFAULT);
+    memset(varname, 0, 256*sizeof(char));
     sprintf(varname, "Gxx_%d", locationID);
     ierr = sacioh5_writeTimeSeries2(varname, groupID, sacGxx);
     if (ierr != 0)
     {
-        printf("%s: Error writing Gxx\n", fcnm);
+        fprintf(stderr, "%s: Error writing Gxx\n", __func__);
         goto ERROR;
     }
-
+    memset(varname, 0, 256*sizeof(char));
     sprintf(varname, "Gyy_%d", locationID);
     ierr = sacioh5_writeTimeSeries2(varname, groupID, sacGyy);
     if (ierr != 0)
     {   
-        printf("%s: Error writing Gyy\n", fcnm);
+        fprintf(stderr, "%s: Error writing Gyy\n", __func__);
         goto ERROR;
     }
-
+    memset(varname, 0, 256*sizeof(char));
     sprintf(varname, "Gzz_%d", locationID);
     ierr = sacioh5_writeTimeSeries2(varname, groupID, sacGzz);
     if (ierr != 0)
     {
-        printf("%s: Error writing Gzz\n", fcnm);
+        fprintf(stderr, "%s: Error writing Gzz\n", __func__);
         goto ERROR;
     }
-
+    memset(varname, 0, 256*sizeof(char));
     sprintf(varname, "Gxy_%d", locationID);
     ierr = sacioh5_writeTimeSeries2(varname, groupID, sacGxy);
     if (ierr != 0)
     {
-        printf("%s: Error writing Gxy\n", fcnm);
+        fprintf(stderr, "%s: Error writing Gxy\n", __func__);
         goto ERROR;
     }
-
+    memset(varname, 0, 256*sizeof(char));
     sprintf(varname, "Gxz_%d", locationID);
     ierr = sacioh5_writeTimeSeries2(varname, groupID, sacGxz);
     if (ierr != 0)
     {
-        printf("%s: Error writing Gxz\n", fcnm);
+        fprintf(stderr, "%s: Error writing Gxz\n", __func__);
         goto ERROR;
     }
-
+    memset(varname, 0, 256*sizeof(char));
     sprintf(varname, "Gyz_%d", locationID);
     ierr = sacioh5_writeTimeSeries2(varname, groupID, sacGyz);
     if (ierr != 0)
     {
-        printf("%s: Error writing Gyz\n", fcnm);
+        fprintf(stderr, "%s: Error writing Gyz\n", __func__);
         goto ERROR;
     }
 
