@@ -63,6 +63,20 @@ struct h5_greensStruct
     int locationID;        /*!< Location ID */
 };
 
+/*!
+ * @brief Sets the file name of the data archive.
+ *
+ * @param[in] dirnm     Name of archive directory.  If NULL then the current
+ *                      working directory will be used.
+ * @param[in] projnm    Name of project.
+ *
+ * @param[out] fname    Name of H5 data archive.
+ *
+ * @result 0 indicates success.
+ *
+ * @author Ben Baker, ISTI
+ *
+ */
 int utils_dataArchive_setFileName(const char *dirnm, const char *projnm,
                                   char fname[PATH_MAX])
 {
@@ -541,13 +555,22 @@ int utils_dataArchive_initialize(const char *fname, //const char *dirnm, const c
     H5Fclose(fid);
     return 0;
 }
-
+//============================================================================//
+/*!
+ * @brief Convenience routine for getting the number of observations.
+ *
+ * @param[in] h5fl    HDF5 file handle.
+ *
+ * @result The number of observations in the file.
+ *
+ *
+ */
 int utils_dataArchive_getNumberOfObservations(const hid_t h5fl)
 {
     char varname[256];
     int nobs;
     int iobs;
-    nobs =-1;
+    nobs = 0; //nobs =-1;
     for (iobs=0; iobs<MAXOBS; iobs++)
     {
         memset(varname, 0, 256);
