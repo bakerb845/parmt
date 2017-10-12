@@ -275,6 +275,10 @@ int prepmt_prepData_prepTeleseismicBodyWaves(const char *iniFile,
     }
     // Free data
     prepmt_commands_freePrepmtCommands(&cmds);
+    for (k=0; k<nfiles; k++)
+    {
+        sacio_free(&sacData[k]);
+    } 
     free(sacData);
     return EXIT_SUCCESS;
 }

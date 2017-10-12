@@ -42,6 +42,7 @@ int prepmt_commands_freePrepmtCommands(struct prepmtCommands_struct *cmds)
         }
         memset(&cmds->cmds[k], 0, sizeof(struct prepmtCommandsChars_struct));
     }
+    if (cmds->cmds != NULL){free(cmds->cmds);}
     memset(cmds, 0, sizeof(struct prepmtCommands_struct));
     return 0;
 }
@@ -97,9 +98,9 @@ struct prepmtCommands_struct
     }
     ini = iniparser_load(iniFile);
  
-    cmds.nobs = MAX(1, nobs);
+    cmds.nobs = nobs; //MAX(1, nobs);
     cmds.cmds = (struct prepmtCommandsChars_struct *)
-                calloc((size_t) cmds.nobs,
+                calloc((size_t) MAX(1, cmds.nobs),
                        sizeof(struct prepmtCommandsChars_struct));
 
     memset(vname, 0, 256*sizeof(char));
@@ -115,22 +116,31 @@ struct prepmtCommands_struct
         {
             ncmdsWork = ncmds;
             ncmds = 0;
-            cwork = (char **) calloc((size_t) ncmdsWork, sizeof(char *));
+            cmds.cmds[0].cmds = (char **) calloc((size_t) ncmdsWork, sizeof(char *));
             for (k=0; k<ncmdsWork; k++)
             {
                 memset(vname, 0, 256*sizeof(char));
                 sprintf(vname, "%s:command_%d", section, k+1);
                 s = iniparser_getstring(ini, vname, NULL);
                 if (s == NULL){continue;}
+                cmds.cmds[0].cmds[ncmds] = strdup(s);
+/*
                 lenos = strlen(s);
+                cmds.cmds[0].cmds[ncmds]
+                    = (char *) calloc(lenos+1, sizeof(char));
+                strcpy(cmds.cmds[0].cmds[ncmds], s);
+*/
+/*
                 cwork[ncmds] = (char *) calloc(lenos+1, sizeof(char));
                 strcpy(cwork[ncmds], s);
+*/
                 //cwork[ncmds] = strdup(s); 
                 ncmds = ncmds + 1;
+                s = NULL;
             }
             cmds.cmds[0].lgeneric = true;
-            cmds.cmds[0].ncmds = ncmdsWork;
-            cmds.cmds[0].cmds = cwork;
+            cmds.cmds[0].ncmds = ncmds; //ncmdsWork;
+            //cmds.cmds[0].cmds = cwork;
         }
         // Copy the results to all other observations 
         for (k=1; k<nobs; k++)
@@ -142,9 +152,12 @@ struct prepmtCommands_struct
                   (char **) calloc((size_t) cmds.cmds[k].ncmds, sizeof(char *));
             for (i=0; i<cmds.cmds[0].ncmds; i++)
             {
-                lenos = strlen(cmds.cmds[0].cmds[i]);
+                lenos = MAX(1, strlen(cmds.cmds[0].cmds[i]));
+                cmds.cmds[k].cmds[i] = strdup(cmds.cmds[0].cmds[i]);
+/*
                 cmds.cmds[k].cmds[i] = (char *) calloc(lenos, sizeof(char));
                 strcpy(cmds.cmds[k].cmds[i], cmds.cmds[0].cmds[i]);
+*/
                 //cmds.cmds[k].cmds[i] = strdup(cmds.cmds[0].cmds[i]);
             }
         }

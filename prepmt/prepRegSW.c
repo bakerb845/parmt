@@ -241,6 +241,10 @@ int main(int argc, char **argv)
     }
     // Free data
     prepmt_commands_freePrepmtCommands(&cmds);
+    for (k=0; k<nfiles; k++) 
+    {    
+        sacio_free(&sacData[k]);
+    }    
     free(sacData);
     iscl_finalize();
     return 0;
