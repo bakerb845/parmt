@@ -161,7 +161,7 @@ int prepmt_pickFile_nonLinLoc2sac(const char *pickFile,
         if (!lfound)
         {
             printf("%s: Couldn't find pick for %s.%s.%s\n",
-                   fcnm, netStat[i], chans[i], locs[i]);
+                   fcnm, knetst, kcmpnm, khole);
         }
     }
 
