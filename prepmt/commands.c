@@ -378,7 +378,7 @@ int prepmt_commands_modifyCommandsCharsStruct(
     const struct sacData_struct data,
     struct prepmtCommandsChars_struct *cmds)
 {
-    char **cwork;
+    char **cwork = NULL;
     int i, ierr;
     size_t lenos;
     if (cmds->ncmds < 1){return 0;}
@@ -401,9 +401,12 @@ int prepmt_commands_modifyCommandsCharsStruct(
         free(cmds->cmds[i]);
         if (cwork[i] != NULL)
         {
+            cmds->cmds[i] = strdup(cwork[i]);
+/*
             lenos = strlen(cwork[i]);
             cmds->cmds[i] = (char *) calloc(lenos+1, sizeof(char));
             strcpy(cmds->cmds[i], cwork[i]);
+*/
             free(cwork[i]);
         }
         else
@@ -411,7 +414,7 @@ int prepmt_commands_modifyCommandsCharsStruct(
             cmds->cmds[i] = (char *) calloc(1, sizeof(char));
         }
     }
-    free(cwork);
+    if (cwork != NULL){free(cwork);}
     return 0;
 }
 //============================================================================//
