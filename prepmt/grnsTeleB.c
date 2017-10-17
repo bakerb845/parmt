@@ -376,6 +376,7 @@ int prepmt_grnsTeleB_loadTstarTable(const char *tstarTable,
     tsf = fopen(tstarTable, "r");
     nlines = 0;
     while (fgets(cline, 64, tsf) != NULL){nlines = nlines + 1;}  
+    rewind(tsf);
     // Loop through and match observations to tstar's in table
     for (k=0; k<nobs; k++)
     {
@@ -979,6 +980,20 @@ ERROR:;
 }
 //============================================================================//
 /*!
+ * @brief Utility function for reading the data for which the Green's functions
+ *        will be generated.
+ *
+ * @param[in] archiveFile  Name of HDF5 archive file containing the
+ *                         observations.
+ *
+ * @param[out] nobs        Number of observations.
+ * @param[out] ierr        0 indicates success.
+ *
+ * @result The SAC data from the H5 archive for which the Green's functions
+ *         will be created.  This is an array of dimension [nobs].
+ *
+ * @author Ben Baker, ISTI
+ *
  */
 struct sacData_struct *
     prepmt_grnsTeleB_readData(const char *archiveFile, int *nobs, int *ierr)

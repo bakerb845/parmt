@@ -314,12 +314,13 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
     struct hpulse96_data_struct zresp;
     struct sacData_struct *sacFFGrns;
     struct hwave_greens_struct *ffGrns;
-    char phaseName[8];
+    char sncl[64], phaseName[8];
     double *dptr, cmpaz, cmpinc, dt, gcarc, offset0,
-           pickTime;
+           pickTime, xnorm;
     int i, idep, ierrAll, ierr1, ierr2, indx, iobs, iobs0, ip, it,
-        kndx, nloop, npts;
-    bool lfound, lsh;
+        kndx, maxPts, nloop, npts;
+    bool lzero[10], lfound, lsh;
+    enum isclError_enum isclError;
     const enum sacHeader_enum pickVars[11]
        = {SAC_FLOAT_A,
           SAC_FLOAT_T0, SAC_FLOAT_T1, SAC_FLOAT_T2, SAC_FLOAT_T3,
@@ -465,7 +466,11 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
         hudson96ParmsWork.dt = dt;
         hudson96ParmsWork.gcarc = gcarc;
         hudson96ParmsWork.utstar = tstars[it];
-        hudson96ParmsWork.npts = MAX(256, MIN(2048, 2*fft_nextpow2(MAX(1, npts), ierr)));
+        maxPts = 256;
+        if (hudson96ParmsWork.dt < 0.1){maxPts = 512;}
+        hudson96ParmsWork.npts = MAX(maxPts,
+                                     MIN(2048,
+                                         2*fft_nextpow2(MAX(1, npts), ierr)));
         hudson96ParmsWork.offset = fmin(pickTime, offset0); //TODO: fmin or fmax?
 //printf("%s %f\n", phaseName, pickTime);
         // Try to pad this out a little
@@ -499,6 +504,7 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
         {
             dptr = NULL;
             lsh = false;
+            lzero[i] = false;
             if (i == 0)
             {
                 dptr = ffGrns->zds;
@@ -628,9 +634,21 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
             {
                 array_set64f_work(ffGrns->npts, 0.0, sacFFGrns[kndx].data);
             }
+            xnorm = cblas_dnrm2(sacFFGrns[kndx].npts, sacFFGrns[kndx].data, 1);
+            if (xnorm == 0.0){lzero[i] = true;}
             // Handle scaling
             cblas_dscal(sacFFGrns[kndx].npts, xscal, sacFFGrns[kndx].data, 1);
             dptr = NULL;
+        } // Loop on fundamnetal faults
+        if (array_sum8l(10, lzero, &isclError) == 10)
+        {
+            memset(sncl, 0, 64*sizeof(char));
+            sprintf(sncl, "%s.%s.%s.%s",
+                    obs[iobs].header.knetwk, obs[iobs].header.kstnm, 
+                    obs[iobs].header.kcmpnm, obs[iobs].header.khole);
+            fprintf(stdout,
+                    "%s: Warning Greens function %s at gcarc=%e is zero %d\n",
+                    __func__, sncl, gcarc, hudson96ParmsWork.npts);
         }
 NEXT_OBS:;
         if (ffGrns != NULL)
