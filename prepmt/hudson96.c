@@ -318,7 +318,7 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
     double *dptr, cmpaz, cmpinc, dt, gcarc, offset0,
            pickTime, xnorm;
     int i, idep, ierrAll, ierr1, ierr2, indx, iobs, iobs0, ip, it,
-        kndx, maxPts, nloop, npts;
+        factor, kndx, nloop, npts;
     bool lzero[10], lfound, lsh;
     enum isclError_enum isclError;
     const enum sacHeader_enum pickVars[11]
@@ -466,16 +466,17 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
         hudson96ParmsWork.dt = dt;
         hudson96ParmsWork.gcarc = gcarc;
         hudson96ParmsWork.utstar = tstars[it];
-        maxPts = 256;
-        if (hudson96ParmsWork.dt < 0.1){maxPts = 512;}
-        hudson96ParmsWork.npts = MAX(maxPts,
+        factor = 2;
+        if (hudson96ParmsWork.dt < 0.1){factor = 4;}
+        hudson96ParmsWork.npts = MAX(256,
                                      MIN(2048,
-                                         2*fft_nextpow2(MAX(1, npts), ierr)));
+                                         factor*fft_nextpow2(MAX(1, npts), ierr)));
         hudson96ParmsWork.offset = fmin(pickTime, offset0); //TODO: fmin or fmax?
 //printf("%s %f\n", phaseName, pickTime);
         // Try to pad this out a little
         hudson96ParmsWork.offset = fmax(hudson96ParmsWork.offset,
                                   (double) (hudson96ParmsWork.npts - 1)*dt*0.2);
+        printf("%e %d\n", hudson96ParmsWork.offset/dt, npts);
 /*
         if (pickTime < hudson96ParmsWork.offset)
         {
