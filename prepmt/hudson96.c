@@ -647,8 +647,8 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
                     obs[iobs].header.knetwk, obs[iobs].header.kstnm, 
                     obs[iobs].header.kcmpnm, obs[iobs].header.khole);
             fprintf(stdout,
-                    "%s: Warning Greens function %s at gcarc=%e is zero %d\n",
-                    __func__, sncl, gcarc, hudson96ParmsWork.npts);
+                    "%s: Warning Greens fn %s w/ npts %d at gcarc=%e is zero\n",
+                    __func__, sncl, hudson96ParmsWork.npts, gcarc);
         }
 NEXT_OBS:;
         if (ffGrns != NULL)
