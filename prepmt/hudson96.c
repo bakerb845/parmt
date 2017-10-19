@@ -476,7 +476,7 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
         // Try to pad this out a little
         hudson96ParmsWork.offset = fmax(hudson96ParmsWork.offset,
                                   (double) (hudson96ParmsWork.npts - 1)*dt*0.2);
-        printf("%e %d\n", hudson96ParmsWork.offset/dt, npts);
+//        printf("%e %d\n", hudson96ParmsWork.offset/dt, npts);
 /*
         if (pickTime < hudson96ParmsWork.offset)
         {
