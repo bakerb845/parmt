@@ -414,6 +414,19 @@ int nlags = 0;
         double Muse[6], Mned[6], lam[3], U[9];
         printf("phi opt: %d %e\n", imtopt, phi[imtopt]);
         printf("%d %d %d %d %d %d %d\n", jloc, jg, jb, jm, jk, jt, js);
+        double gammaOpt = gammas[jg]*180.0/M_PI;
+        double deltaOpt = 90.0-betas[jb]*180.0/M_PI;
+        double kappaOpt = kappas[jk]*180.0/M_PI;
+        double thetaOpt = thetas[jt]*180.0/M_PI;
+        double sigmaOpt = sigmas[js]*180.0/M_PI; 
+        compearth_TT2CMT(1, &gammaOpt,
+                         &deltaOpt,
+                         &M0s[jm],
+                         &kappaOpt,
+                         &thetaOpt,
+                         &sigmaOpt,
+                         Muse, lam, U);
+/*
         compearth_tt2cmt(gammas[jg]*180.0/M_PI,
                          90.0-betas[jb]*180.0/M_PI,
                          M0s[jm],
@@ -421,6 +434,7 @@ int nlags = 0;
                          thetas[jt]*180.0/M_PI,
                          sigmas[js]*180.0/M_PI,
                          Muse, lam, U);
+*/
         parmt_discretizeMT64f(1, &gammas[jg],
                               1, &betas[jb],
                               1, &M0s[jm],

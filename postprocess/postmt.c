@@ -194,6 +194,19 @@ return 0;
     printf("        Slip: %f (deg)\n", sigmas[js]*180.0/M_PI); 
     printf("        Dip: %f (deg)\n", thetas[jt]*180.0/M_PI);
     // Display the moment tensor in USE format which is useful for obspy and gmt
+        double gammaOpt = gammas[jg]*180.0/M_PI;
+        double deltaOpt = 90.0-betas[jb]*180.0/M_PI;
+        double kappaOpt = kappas[jk]*180.0/M_PI;
+        double thetaOpt = thetas[jt]*180.0/M_PI;
+        double sigmaOpt = sigmas[js]*180.0/M_PI; 
+        compearth_TT2CMT(1, &gammaOpt,
+                         &deltaOpt,
+                         &M0s[jm],
+                         &kappaOpt,
+                         &thetaOpt,
+                         &sigmaOpt,
+                         Muse, lam, U);
+/*
     compearth_tt2cmt(gammas[jg]*180.0/M_PI,
                      (M_PI/2.0 - betas[jb])*180.0/M_PI,
                      M0s[jm],
@@ -201,6 +214,7 @@ return 0;
                      thetas[jt]*180.0/M_PI,
                      sigmas[js]*180.0/M_PI,
                      Muse, lam, U);
+*/
     ierr = parmt_discretizeMT64f(1, &gammas[jg],
                                  1, &betas[jb],
                                  1, &M0s[jm],

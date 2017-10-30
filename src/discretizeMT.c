@@ -464,6 +464,7 @@ int parmt_discretizeMT64f(const int ng,
     double lam[3], Muse[6], U[9] __attribute__ ((aligned (64)));
     double *mtWork, deltaDeg, gammaDeg, kappaDeg, sigmaDeg, thetaDeg;
     int i, ierr, ierr1, ib, ig, indx, im, imt, ik, is, it, nmtBase;
+    const double M01[1] = {1.0};
     const double pi180i = 180.0/M_PI;
     const double betaMin = 0.0;
     const double betaMax = M_PI;
@@ -562,7 +563,7 @@ int parmt_discretizeMT64f(const int ng,
     }
 #ifdef _OPENMP
     #pragma omp parallel for collapse(5) \
-     firstprivate (lam, Muse, U) \
+     firstprivate (lam, M01, Muse, U) \
      private (deltaDeg, gammaDeg, kappaDeg, \
               sigmaDeg, thetaDeg, ierr1, imt, ib, ig, ik, is, it) \
      shared (fcnm, M0s, betas, gammas, kappas, sigmas, mtWork, thetas) \
@@ -604,10 +605,16 @@ int parmt_discretizeMT64f(const int ng,
                         // use unity here.  This has been verified b/c
                         // apply CMT2m0 on this moment tensor will yield
                         // the input M0.
+                        ierr1 = compearth_TT2CMT(1, &gammaDeg, &deltaDeg, M01,
+                                                 &kappaDeg, &thetaDeg,
+                                                 &sigmaDeg,
+                                                 Muse, lam, U);
+/*
                         ierr1 = compearth_tt2cmt(gammaDeg, deltaDeg, 1.0, //sqrt2i,
                                                  kappaDeg, thetaDeg,
                                                  sigmaDeg,
                                                  Muse, lam, U);
+*/
                         // Convert from USE to our NED estimation basis
                         ierr1 = compearth_convertMT(1, CE_USE, CE_NED, Muse,
                                                     &mtWork[imt*ldm]);
