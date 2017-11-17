@@ -246,7 +246,7 @@ int postmt_gmtHelper_writeThetaBoxes(const bool lappend, const bool lclose,
 /*
             "gmt psbasemap -JX5i/1i %s -R0/90/0/%.2f -Bg10a10:\"Dips (deg)\":/a%.2f:\"Likelihood\":WSn -P %s -K >%s ${psfl}\n",
 */
-            "gmt psbasemap -JX5i/1i %s -R0/90/0/%.2f -Bpxg10a10+l:\"Dips (deg)\" -Bpya%.2f+l:\"Likelihood\" -BWSnn -P %s -K >%s ${psfl}\n",
+            "gmt psbasemap -JX5i/1i %s -R0/90/0/%.2f -Bpxg10a10+l:\"Dips (deg)\" -Bpya%.2f+l:\"Likelihood\" -BWSnn -P %s -K ${parms} >%s ${psfl}\n",
             shift, tmax*1.1, tmax*0.2, app, more);
     setFillColor(0, ithetaOpt, color);
     if (nt > 1)
@@ -293,7 +293,7 @@ int postmt_gmtHelper_writeThetaBoxes(const bool lappend, const bool lclose,
 /*
     fprintf(ofl, "gmt psbasemap -R0/90/0/1.05 -J -Bp0.2/a0.2:\"CDF\":E -O -K >> ${psfl}\n");
 */
-    fprintf(ofl, "gmt psbasemap -R0/90/0/1.05 -J -Bpx0.2 -Bpya0.2+l\"CDF\" -BE -O -K >> ${psfl}\n");
+    fprintf(ofl, "gmt psbasemap -R0/90/0/1.05 -J -Bpx0.2 -Bpya0.2+l\"CDF\" -BE -O -K ${parms} >> ${psfl}\n");
     cumTheta = array_cumsum64f(nt, thetaHist, &ierr);
     if (lclose)
     {
@@ -363,7 +363,7 @@ int postmt_gmtHelper_writeSigmaBoxes(const bool lappend, const bool lclose,
 /*
            "gmt psbasemap -JX5i/1i %s -R-90/90/0/%.2f -Bg15a15:\"Slips (deg)\":/a%.2f:\"Likelihood\":WSn -P %s -K >%s ${psfl}\n",
 */
-            "gmt psbasemap -JX5i/1i %s -R-90/90/0/%.2f -Bpxg15a15+l\"Slips (deg)\" -Bpya%.2f+l\"Likelihood\" -BWSn -P %s -K >%s ${psfl}\n",
+            "gmt psbasemap -JX5i/1i %s -R-90/90/0/%.2f -Bpxg15a15+l\"Slips (deg)\" -Bpya%.2f+l\"Likelihood\" -BWSn -P %s -K ${parms} >%s ${psfl}\n",
             shift, smax*1.1, smax*0.2, app, more);
     setFillColor(0, isigmaOpt, color);
     if (ns > 1)
@@ -409,7 +409,7 @@ int postmt_gmtHelper_writeSigmaBoxes(const bool lappend, const bool lclose,
 /*
     fprintf(ofl, "gmt psbasemap -R-90/90/0/1.05 -J -Bp0.2/a0.2:\"CDF\":E -O -K >> ${psfl}\n");
 */
-    fprintf(ofl, "gmt psbasemap -R-90/90/0/1.05 -J -Bpx0.2 -Bpya0.2+l\"CDF\" -BE -O -K >> ${psfl}\n");
+    fprintf(ofl, "gmt psbasemap -R-90/90/0/1.05 -J -Bpx0.2 -Bpya0.2+l\"CDF\" -BE -O -K ${parms} >> ${psfl}\n");
     cumSigma = array_cumsum64f(ns, sigmaHist, &ierr);
     if (lclose)
     {
@@ -479,7 +479,7 @@ int postmt_gmtHelper_writeKappaBoxes(const bool lappend, const bool lclose,
 /*
             "gmt psbasemap -JX5i/1i %s -R0/360/0/%.2f -Bg30a30:\"Strike (deg)\":/a%.2f:\"Likelihood\":WSn -P %s -K >%s ${psfl}\n",
 */
-            "gmt psbasemap -JX5i/1i %s -R0/360/0/%.2f -Bpxg30a30+l\"Strike (deg)\" -Bpya%.2f+l\"Likelihood\" -BWSn -P %s -K >%s ${psfl}\n",
+            "gmt psbasemap -JX5i/1i %s -R0/360/0/%.2f -Bpxg30a30+l\"Strike (deg)\" -Bpya%.2f+l\"Likelihood\" -BWSn -P %s -K ${parms} >%s ${psfl}\n",
             shift, kmax*1.1, kmax*0.2, app, more);
     setFillColor(0, kappaOpt, color);
     if (nk > 1)
@@ -525,7 +525,7 @@ int postmt_gmtHelper_writeKappaBoxes(const bool lappend, const bool lclose,
 /*
     fprintf(ofl, "gmt psbasemap -R0/360/0/1.05 -J -Bp0.2/a0.2:\"CDF\":E -O -K >> ${psfl}\n");
 */
-    fprintf(ofl, "gmt psbasemap -R0/360/0/1.05 -J -Bpx0.2 -Bpya0.2+l\"CDF\" -BE -O -K >> ${psfl}\n");
+    fprintf(ofl, "gmt psbasemap -R0/360/0/1.05 -J -Bpx0.2 -Bpya0.2+l\"CDF\" -BE -O -K ${parms} >> ${psfl}\n");
     cumKappa = array_cumsum64f(nk, kappaHist, &ierr);
     if (lclose)
     {
@@ -596,7 +596,7 @@ int postmt_gmtHelper_writeDepthBoxes(const bool lappend, const bool lclose,
 /*
             "gmt psbasemap -JX5i/1i %s -R%.1f/%.1f/0/%.2f -Bg%fa%f:\"Depths (km)\":/a%.2f:\"Likelihood\":WSn -P %s -K >%s ${psfl}\n",
 */
-            "gmt psbasemap -JX5i/1i %s -R%.1f/%.1f/0/%.2f -Bpxg%fa%f+l\"Depths (km)\" -Bpya%.2f+l\"Likelihood\" -BWSn -P %s -K >%s ${psfl}\n",
+            "gmt psbasemap -JX5i/1i %s -R%.1f/%.1f/0/%.2f -Bpxg%fa%f+l\"Depths (km)\" -Bpya%.2f+l\"Likelihood\" -BWSn -P %s -K ${parms} >%s ${psfl}\n",
             shift, depMin, depMax, dmax*1.1, dd, (nd-1)*dd/5.0, dmax*0.2, app, more);
     setFillColor(0, idepOpt, color);
     if (nd > 1)
@@ -641,7 +641,7 @@ int postmt_gmtHelper_writeDepthBoxes(const bool lappend, const bool lclose,
 /*
     fprintf(ofl, "gmt psbasemap -R%f/%f/0/1.05 -J -Bp0.2/a0.2:\"CDF\":E -O -K >> ${psfl}\n", depMin, depMax);
 */
-    fprintf(ofl, "gmt psbasemap -R%f/%f/0/1.05 -J -Bpx0.2 -Bpya0.2+l\"CDF\" -BE -O -K >> ${psfl}\n", depMin, depMax);
+    fprintf(ofl, "gmt psbasemap -R%f/%f/0/1.05 -J -Bpx0.2 -Bpya0.2+l\"CDF\" -BE -O -K ${parms} >> ${psfl}\n", depMin, depMax);
     cumDep = array_cumsum64f(nd, depHist, &ierr);
     if (lclose)
     {
@@ -715,7 +715,7 @@ int postmt_gmtHelper_writeMagnitudeBoxes(const bool lappend, const bool lclose,
 /*
             "gmt psbasemap -JX5i/1i %s -R%.2f/%.2f/0/%.2f -Bg%fa%f:\"Magnitude (Mw)\":/a%.2f:\"Likelihood\":WSn -P %s -K >%s ${psfl}\n",
 */
-            "gmt psbasemap -JX5i/1i %s -R%.2f/%.2f/0/%.2f -Bpxg%fa%f+l\"Magnitude (Mw)\" -Bpya%.2f+l\"Likelihood\" -BWSn -P %s -K >%s ${psfl}\n",
+            "gmt psbasemap -JX5i/1i %s -R%.2f/%.2f/0/%.2f -Bpxg%fa%f+l\"Magnitude (Mw)\" -Bpya%.2f+l\"Likelihood\" -BWSn -P %s -K ${parms} >%s ${psfl}\n",
             shift, mwMin, mwMax, mmax*1.1, dm, (nm-1)*dm/5.0, mmax*0.2, app, more);
     setFillColor(0, magOpt, color);
     if (nm > 1)
@@ -760,7 +760,7 @@ int postmt_gmtHelper_writeMagnitudeBoxes(const bool lappend, const bool lclose,
 /*
     fprintf(ofl, "gmt psbasemap -R%f/%f/0/1.05 -J -Bp0.2/a0.2:\"CDF\":E -O -K >> ${psfl}\n", mwMin, mwMax);
 */
-    fprintf(ofl, "gmt psbasemap -R%f/%f/0/1.05 -J -Bpx0.2 -Bpya0.2+l\"CDF\" -BE -O -K >> ${psfl}\n", mwMin, mwMax);
+    fprintf(ofl, "gmt psbasemap -R%f/%f/0/1.05 -J -Bpx0.2 -Bpya0.2+l\"CDF\" -BE -O -K ${parms} >> ${psfl}\n", mwMin, mwMax);
     cumMag = array_cumsum64f(nm, magHist, &ierr);
     if (lclose)
     {
@@ -831,7 +831,7 @@ int postmt_gmtHelper_writeGammaBoxes(const bool lappend, const bool lclose,
 /*
             "gmt psbasemap -JX5i/1i %s -R-30/30/0/%.2f -Bg5a5:\"Longitude (deg)\":/a%.2f:\"Likelihood\":WSn -P %s -K >%s ${psfl}\n",
 */
-            "gmt psbasemap -JX5i/1i %s -R-30/30/0/%.2f -Bpxg5a5+l\"Longitude (deg)\" -Bpya%.2f+l\"Likelihood\" -BWSn -P %s -K >%s ${psfl}\n",
+            "gmt psbasemap -JX5i/1i %s -R-30/30/0/%.2f -Bpxg5a5+l\"Longitude (deg)\" -Bpya%.2f+l\"Likelihood\" -BWSn -P %s -K ${parms} >%s ${psfl}\n",
             shift, gmax*1.1, gmax*0.2, app, more);
     setFillColor(0, igammaOpt, color);
     if (ng > 1)
@@ -878,7 +878,7 @@ int postmt_gmtHelper_writeGammaBoxes(const bool lappend, const bool lclose,
 /*
     fprintf(ofl, "gmt psbasemap -R-30/30/0/1.05 -J -Bp0.2/a0.2:\"CDF\":E -O -K >> ${psfl}\n");
 */
-    fprintf(ofl, "gmt psbasemap -R-30/30/0/1.05 -J -Bpx0.2 -Bpya0.2+l\"CDF\" -BE -O -K >> ${psfl}\n");
+    fprintf(ofl, "gmt psbasemap -R-30/30/0/1.05 -J -Bpx0.2 -Bpya0.2+l\"CDF\" -BE -O -K ${parms} >> ${psfl}\n");
     cumGamma = array_cumsum64f(ng, gammaHist, &ierr);
     if (lclose)
     {
@@ -951,7 +951,7 @@ int postmt_gmtHelper_writeBetaBoxes(const bool lappend, const bool lclose,
 /*
             "gmt psbasemap -JX5i/1i %s -R-90/90/0/%.3f -Bg15a15:\"Latitude (deg)\":/a%.2f:\"Likelihood\":WSn -P %s -K >%s ${psfl}\n",
 */
-            "gmt psbasemap -JX5i/1i %s -R-90/90/0/%.3f -Bpxg15a15+l\"Latitude (deg)\" -Bpya%.2f+l\"Likelihood\" -BWSn -P %s -K >%s ${psfl}\n",
+            "gmt psbasemap -JX5i/1i %s -R-90/90/0/%.3f -Bpxg15a15+l\"Latitude (deg)\" -Bpya%.2f+l\"Likelihood\" -BWSn -P %s -K ${parms} >%s ${psfl}\n",
             shift, bmax*1.1, bmax*0.2, app, more);
     setFillColor(0, ibetaOpt, color);
     if (nb > 1)
@@ -998,7 +998,7 @@ int postmt_gmtHelper_writeBetaBoxes(const bool lappend, const bool lclose,
 /*
     fprintf(ofl, "gmt psbasemap -R-90/90/0/1.05 -J -Bp0.2/a0.2:\"CDF\":E -O -K >> ${psfl}\n");
 */
-    fprintf(ofl, "gmt psbasemap -R-90/90/0/1.05 -J -Bpx0.2 -Bpya0.2+l\"CDF\" -BE -O -K >> ${psfl}\n");
+    fprintf(ofl, "gmt psbasemap -R-90/90/0/1.05 -J -Bpx0.2 -Bpya0.2+l\"CDF\" -BE -O -K ${parms} >> ${psfl}\n");
     betaCum = array_cumsum64f(nb, betaHist, &ierr);
     if (lclose)
     {
