@@ -7,6 +7,7 @@
 #else
 #include <cblas.h>
 #endif
+#include "iscl/array/array.h"
 #include "iscl/memory/memory.h"
 
 /*!
@@ -109,12 +110,14 @@ int parmt_utils_sacGrnsToEst(const struct sacData_struct data,
                              const struct sacData_struct sacGxz,
                              const struct sacData_struct sacGyz,
                              const double *__restrict__ mt,
+                             const bool lrescale,
                              struct sacData_struct *est)
 {
     const char *fcnm = "parmt_utils_sacGrnsToEst\0";
     double *G;
     int ierr, npts, nptsGxx, nptsGyy, nptsGzz, nptsGxy, nptsGxz, nptsGyz;
     const int ldg = 6;
+    double xnum, xden, xscal;
     // Release memory on the target
     sacio_free(est);
     // Build the modeling matrix
@@ -141,6 +144,14 @@ int parmt_utils_sacGrnsToEst(const struct sacData_struct data,
     cblas_dgemv(CblasColMajor, CblasNoTrans,
                 npts, 6, 1.0, G, npts, mt, 1, 0.0, est->data, 1);
     memory_free64f(&G);
+    // Potentially rescale the synthetic
+    if (lrescale)
+    {
+        xnum = array_maxAbs64f(npts, data.data, &ierr);
+        xden = array_maxAbs64f(npts, est->data, &ierr);
+        xscal = xnum/xden;
+        cblas_dscal(npts, xscal, est->data, 1); 
+    }
     return 0;
 }
 

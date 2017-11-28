@@ -181,6 +181,8 @@ int parmt_utils_readGeneralParms(const char *iniFile,
                  __func__, parms->objFnType);
         return -1;
     }
+    // determine if the l1 lag should be rescaled
+    parms->lrescale = iniparser_getboolean(ini, "general:lrescale\0", 0);
 END:;
     iniparser_freedict(ini);
     return ierr;
@@ -271,7 +273,7 @@ int parmt_utils_readMtSearch(const char *iniFile,
     double betaLower, betaUpper, mw;
     int ierr;
     dictionary *ini;
-    bool isMw;
+    bool isMw, lrescale;
     const double pi180 = M_PI/180.0;
     ierr = 0;
     memset(parms, 0, sizeof(struct parmtMtSearchParms_struct));
@@ -477,6 +479,17 @@ int parmt_utils_readMtSearch(const char *iniFile,
         compearth_mw2m0(1, CE_KANAMORI_1978, &mw, &parms->m0Upper);
     }
     parms->luseLog = iniparser_getboolean(ini, "mtsearch:luseLog", false);
+
+    // determine if i want to rescale the synthetics to the observations or ont
+    lrescale = iniparser_getboolean(ini, "general:lrescale\0", 0);
+    if (lrescale)
+    {   
+        if (parms->nm > 1)
+        {
+            fprintf(stdout, "%s: lrescale invalidates magnitude!\n", __func__);
+            fprintf(stdout, "%s: nm should be set to 1!\n", __func__);
+        }
+    }
 
     iniparser_freedict(ini);
     return ierr;

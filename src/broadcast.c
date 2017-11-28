@@ -41,7 +41,7 @@ int parmt_broadcast_mtSearchParms(struct parmtMtSearchParms_struct *parms,
     MPI_Bcast(&parms->thetaUpper, 1, MPI_DOUBLE, root, comm);
     MPI_Bcast(&parms->m0Lower, 1, MPI_DOUBLE, root, comm);
     MPI_Bcast(&parms->m0Upper, 1, MPI_DOUBLE, root, comm);
-    MPI_Bcast(&parms->luseLog, 1, MPI_C_BOOL, root, comm);
+    MPI_Bcast(&parms->luseLog,  1, MPI_C_BOOL, root, comm);
     return 0; 
 }
 
@@ -67,6 +67,7 @@ int parmt_broadcast_generalParms(struct parmtGeneralParms_struct *parms,
     MPI_Bcast(&parms->defaultMaxLagTime, 1, MPI_DOUBLE, root, comm);
 
     MPI_Bcast(&parms->lwantLags, 1, MPI_C_BOOL, root, comm);
+    MPI_Bcast(&parms->lrescale,  1, MPI_C_BOOL, root, comm);
     return 0;
 }
 

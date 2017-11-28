@@ -109,7 +109,8 @@ static int performL1Search64f(const int nmt, const int ldm,
                               const int blockSize, const int mblock,
                               const int Mrows, const int Kcols,
                               const int klag,
-                              const bool lmintLags, const bool lwantLags,
+                              const bool lminLags, const bool lwantLags,
+                              const bool lrescale,
                               const double dnorm,
                               const double *__restrict__ Dmat,
                               const double *__restrict__ CG,
@@ -408,6 +409,7 @@ int parmt_mtSearchXC64f(const int ldm, const int nmt,
 int parmt_mtSearchL164f(const int ldm, const int nmt,
                         const int npts, const int blockSize,
                         const int nlags, const bool lwantLags,
+                        const bool lrescale,
                         const double *__restrict__ Gxx, 
                         const double *__restrict__ Gyy,
                         const double *__restrict__ Gzz,
@@ -488,6 +490,7 @@ int parmt_mtSearchL164f(const int ldm, const int nmt,
                                   Mrows, Kcols,
                                   0,
                                   false, false,
+                                  lrescale,
                                   dnorm,
                                   Dmat, CG, Cd, mts, 
                                   lags, phi, var);
@@ -547,6 +550,7 @@ int parmt_mtSearchL164f(const int ldm, const int nmt,
                                       Mrows, Kcols,
                                       k,
                                       true, lwantLags,
+                                      lrescale,
                                       dnorm,
                                       Dmat, CG, Cd, mts,
                                       lags, phi, var);
@@ -1604,6 +1608,7 @@ static int performL1Search64f(const int nmt, const int ldm,
                               const int Mrows, const int Kcols,
                               const int klag,
                               const bool lminLags, const bool lwantLags,
+                              const bool lrescale,
                               const double dnorm,
                               const double *__restrict__ Dmat,
                               const double *__restrict__ CG,
@@ -1614,7 +1619,7 @@ static int performL1Search64f(const int nmt, const int ldm,
                               double *__restrict__ var)
 {
     const char *fcnm = "performL1Search64f\0";
-    double *M, *R, *rnorm, *U, *unorm, *varLoc, robj, viMin;
+    double *M, *R, *rnorm, *U, *unorm, *varLoc, *xden, robj, xnum, viMin;
     int i, ic, idx, jdx, ierr, imt, jmt, kmt, Ncols, nmtBlocks;
     const double one = 1.0;
     const double zero = 0.0;
@@ -1625,16 +1630,29 @@ static int performL1Search64f(const int nmt, const int ldm,
         printf("%s: Internal error - all mts wont be visited\n", fcnm);
         return -1;
     }
+    // Get the size of the numerator - recall Dmat is simply a copy of itself
+    xnum = 1.0;
+    if (lrescale)
+    {
+        ic = 0;
+        i = 0;
+        xnum = fabs(Dmat[mblock*i+ic]);
+        for (i=0; i<npts; i++)
+        {
+            xnum = fmax(xnum, fabs(Dmat[mblock*i+ic]));
+        }
+    }
     #pragma omp parallel \
-     firstprivate(dnorm) \
+     firstprivate(dnorm, xnum) \
      private (i, ic, idx, imt, jdx, jmt, M, Ncols, R, rnorm, robj, viMin, \
-              U, unorm, varLoc) \
-     shared (Cd, CG, Dmat, lags, mts, nmtBlocks, phi, var) \
+              U, unorm, xden, varLoc) \
+     shared (Cd, CG, Dmat, lags, mts, nmtBlocks, lrescale, phi, var) \
      default (none) reduction(+:ierr)
     {
     varLoc = array_copy64f(npts, var, &ierr);
     rnorm = memory_calloc64f(mblock);
     unorm = memory_calloc64f(mblock);
+    xden = memory_calloc64f(mblock);
     M = memory_calloc64f(mblock*8);
     R = memory_calloc64f(mblock*npts);
     U = memory_calloc64f(mblock*npts);
@@ -1642,6 +1660,7 @@ static int performL1Search64f(const int nmt, const int ldm,
     __assume_aligned(varLoc, 64);
     __assume_aligned(rnorm, 64);
     __assume_aligned(unorm, 64);
+    __assume_aligned(xden, 64);
     __assume_aligned(M, 64);
     __assume_aligned(U, 64);
     __assume_aligned(R, 64);
@@ -1667,8 +1686,35 @@ static int performL1Search64f(const int nmt, const int ldm,
         }
         // Compute U = GM
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                   Mrows, Ncols, Kcols, one, CG, LDCG,
-                   M, mblock, zero, U, mblock);
+                    Mrows, Ncols, Kcols, one, CG, LDCG,
+                    M, mblock, zero, U, mblock);
+        // Rescale the synthetic data
+        if (lrescale)
+        {
+            i = 0;
+            for (ic=0; ic<Ncols; ic++)
+            {
+                xden[ic] = fabs(U[mblock*i+ic]);
+            }
+            i = 1;
+            for (i=0; i<npts; i++)
+            {
+                for (ic=0; ic<Ncols; ic++)
+                {
+                    xden[ic] = fmax(xden[ic], fabs(U[mblock*i+ic]));
+                }
+            }
+            // Rescale the synthetics to the observed 
+            for (ic=0; ic<Ncols; ic++)
+            {
+                xden[ic] = xnum/xden[ic];
+                cblas_dscal(npts, xden[ic], &U[ic], mblock);
+                //int imax = cblas_idamax(npts, &U[ic], mblock);
+                //int jmax = cblas_idamax(npts, &Dmat[ic], mblock);
+                //printf("%e %e\n", U[imax*mblock+ic], Dmat[jmax*mblock+ic]);
+            }
+            //getchar();
+        }
         memset(rnorm, 0, (size_t) Ncols*sizeof(double));
         memset(unorm, 0, (size_t) Ncols*sizeof(double));
         #pragma omp simd aligned(R, Dmat, U: 64)
@@ -1743,6 +1789,7 @@ static int performL1Search64f(const int nmt, const int ldm,
     memory_free64f(&varLoc);
     memory_free64f(&rnorm);
     memory_free64f(&unorm);
+    memory_free64f(&xden);
     memory_free64f(&M);
     memory_free64f(&R);
     memory_free64f(&U);

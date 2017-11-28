@@ -43,6 +43,11 @@ struct parmtGeneralParms_struct
     int programID; 
     bool lwantLags;            /*!< If true then the program is to optimize
                                     at different synthetic/data lags */
+    bool lrescale;            /*!< If true then the synthetics will be 
+                                   rescaled to the size of the magnitude.
+                                   This will invalidate the magnitude
+                                   search. */
+
     char pad[3];
 };
 
@@ -101,7 +106,7 @@ struct parmtMtSearchParms_struct
     int nt; /*!< Number of dip angles */
     int nm; /*!< Number of scalar moments */
     bool luseLog; /*!< If true then use a log scale when discretizing MT. */
-    char pad[3];
+    char pad[2];
 };
 
 struct parmtDatas_struct
@@ -185,6 +190,7 @@ int parmt_utils_sacGrnsToEst(const struct sacData_struct data,
                              const struct sacData_struct sacGxz,
                              const struct sacData_struct sacGyz,
                              const double *__restrict__ mt, 
+                             const bool lrescale,
                              struct sacData_struct *est);
 //-------------------------------file io--------------------------------------//
 int parmt_io_createObjfnArchive64f(

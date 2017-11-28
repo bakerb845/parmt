@@ -179,6 +179,7 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
             ierr = parmt_locSearchL164f(locComm,
                                         iobs, parms.blockSize,
                                         nlags[iobs], lwantLags,
+                                        parms.lrescale,
                                         mtloc, &data,
                                         CeInv, phiWork, var, lagsWork);
             if (ierr != 0)

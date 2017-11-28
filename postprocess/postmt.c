@@ -458,6 +458,7 @@ int im, iloc;
         ierr = parmt_mtSearchL164f(6, 1,
                                    npts, 1,
                                    nlags, parms.lwantLags,
+                                   parms.lrescale,
                                    &G[0*npmax], &G[1*npmax], &G[2*npmax],
                                    &G[3*npmax], &G[4*npmax], &G[5*npmax],
                                    NULL, Mned, data.data[iobs].data,
@@ -471,11 +472,12 @@ int im, iloc;
         // Compute the synthetic
         k = iobs*data.nlocs + joptLoc;
         parmt_utils_sacGrnsToEst(data.data[iobs],
-                                     data.sacGxx[k], data.sacGyy[k],
-                                     data.sacGzz[k], data.sacGxy[k],
-                                     data.sacGxz[k], data.sacGyz[k],
-                                     Mned,
-                                     &data.est[iobs]);
+                                 data.sacGxx[k], data.sacGyy[k],
+                                 data.sacGzz[k], data.sacGxy[k],
+                                 data.sacGxz[k], data.sacGyz[k],
+                                 Mned,
+                                 parms.lrescale,
+                                 &data.est[iobs]);
         // Fix the timing
         ierr = sacio_getEpochalStartTime(data.est[iobs].header, &epoch);
         epoch = epoch + (double) lag*data.data[iobs].header.delta;

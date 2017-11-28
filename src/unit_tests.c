@@ -47,6 +47,7 @@ int main()
     double cmpaz, cmpinc, sigma, xnorm;
     int *lags, i, icomp, ierr, imt, imtopt, j, ldc, ldz, ng, nb, nk,
         nlags, ns, nt, nm, nmt, npgrns, npts, rank;
+    bool lrescale = false;
     const double oneDeg = M_PI/180.0;  // one degree for padding
     const double az = 25.0;
     const int ldm = 8;
@@ -312,6 +313,7 @@ printf("%e %e %e %e\n", xfact, sigma, d[14], dn[14]);
 imt = array_argmin64f(nmt, phi, &ierr);
     printf("est + true optimal indices: %d %d %e\n", imt, imtopt, phi[imt]);
     printf("Unlagged time: %f (s)\n", time_toc());
+
     lags = memory_calloc32i(nmt);
     var = memory_calloc64f(npts);
     nlags = 0;
@@ -319,6 +321,7 @@ imt = array_argmin64f(nmt, phi, &ierr);
     time_tic();
     ierr = parmt_mtSearchL164f(ldm, nmt, npts, blockSize,
                                nlags, false,
+                               lrescale,
                                &G[0*npgrns], &G[1*npgrns], &G[2*npgrns],
                                &G[3*npgrns], &G[4*npgrns], &G[5*npgrns],
                                eye, mts, d, phi, var, lags);
@@ -330,6 +333,7 @@ imt = array_argmin64f(nmt, phi, &ierr);
 omp_set_num_threads(1);
     ierr = parmt_mtSearchL164f(ldm, nmt, npts, blockSize,
                                nlags, true,
+                               lrescale,
                                &G[0*npgrns], &G[1*npgrns], &G[2*npgrns],
                                &G[3*npgrns], &G[4*npgrns], &G[5*npgrns],
                                eye, mts, d, phi, var, lags);
@@ -337,6 +341,28 @@ omp_set_num_threads(1);
     printf("L1 lagged est + true optimal indices: %d %d %d %e %e\n",
            imt, imtopt, lags[imt], phi[imt], phi[imtopt]);
     printf("Lagged time: %f (s)\n", time_toc());
+
+    time_tic();
+    ierr = parmt_mtSearchL164f(ldm, nmt, npts, blockSize,
+                               nlags, true,
+                               true, //lrescale,
+                               &G[0*npgrns], &G[1*npgrns], &G[2*npgrns],
+                               &G[3*npgrns], &G[4*npgrns], &G[5*npgrns],
+                               eye, mts, d, phi, var, lags);
+    int imtNew = array_argmax64f(nmt, phi, &ierr);
+    if (imtNew != imt)
+    {
+        if (fabs(phi[imtNew] - phi[imt]) > 1.e-14)
+        {
+            printf("Failed to locate lrescaled script %e\n",
+                   fabs(phi[imtNew] - phi[imt]));
+            return EXIT_FAILURE;
+        }
+    }
+    printf("L1 rescaled lagged est + true optimal indices: %d %d %d %e %e\n",
+           imt, imtopt, lags[imt], phi[imt], phi[imtopt]);
+    printf("Rescaled lagged time: %f (s)\n", time_toc());
+
     // repeat with lags 
     ierr = testBlockSize();
 /*
@@ -483,6 +509,7 @@ int testBlockSize(void)
     const int ldm = 6;
     const bool lwantLags = false;
     int imtopt, ng, nb, nk, ns, nt, nm;
+    const bool lrescale = false;
     double *betas, *gammas, *kappas, *mts, *M0s, *thetas, *sigmas;
     double betaMin, betaMax, gammaMin, gammaMax, kappaMin, kappaMax,
            m0Min, m0Max, sigmaMin, sigmaMax, thetaMin, thetaMax;
@@ -563,6 +590,7 @@ int testBlockSize(void)
             time_tic();
             ierr = parmt_mtSearchL164f(ldm, nmt, npts, blockSizes[i],
                                        nlags, lwantLags, 
+                                       lrescale,
                                        &G[0*npgrns], &G[1*npgrns], &G[2*npgrns],
                                        &G[3*npgrns], &G[4*npgrns], &G[5*npgrns],
                                        eye, mts, d, phi, var, lags);

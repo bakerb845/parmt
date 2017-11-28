@@ -46,6 +46,7 @@ int parmt_computeL1StationMagnitude64f(const int ldm, const int nmt,
 int parmt_locSearchL164f(const MPI_Comm locComm,
                          const int iobs, const int blockSize,
                          const int nlags, const bool lwantLags,
+                         const bool lrescale,
                          struct localMT_struct mtloc,
                          struct parmtData_struct *data,
                          const double *__restrict__ CeInv,
@@ -54,7 +55,7 @@ int parmt_locSearchL164f(const MPI_Comm locComm,
                          int *__restrict__ lags)
 {
     const char *fcnm = "parmt_locSearchL164f\0";
-    double *G, *d, *phiLoc, *phiWork, *varLoc, *varWork;
+    double *G, *d, *phiLoc, *phiWork, *varLoc, *varWork, xrescaleNum;
     int *lagLoc, *lagWork, ierr, iloc, jndx, jloc, k,
         myloc, npmax, nlocProcs, npts;
     const int master = 0;
@@ -151,6 +152,7 @@ int parmt_locSearchL164f(const MPI_Comm locComm,
         ierr = parmt_mtSearchL164f(mtloc.ldm, mtloc.nmt,
                                    npts, blockSize,
                                    nlags, lwantLags,
+                                   lrescale,
                                    &G[0*npmax], &G[1*npmax], &G[2*npmax],
                                    &G[3*npmax], &G[4*npmax], &G[5*npmax],
                                    CeInv, mtloc.mts, d,
