@@ -1646,7 +1646,7 @@ static int performL1Search64f(const int nmt, const int ldm,
      firstprivate(dnorm, xnum) \
      private (i, ic, idx, imt, jdx, jmt, M, Ncols, R, rnorm, robj, viMin, \
               U, unorm, xden, varLoc) \
-     shared (Cd, CG, Dmat, lags, mts, nmtBlocks, lrescale, phi, var) \
+     shared (Cd, CG, Dmat, lags, mts, nmtBlocks, phi, var) \
      default (none) reduction(+:ierr)
     {
     varLoc = array_copy64f(npts, var, &ierr);
