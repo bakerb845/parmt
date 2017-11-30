@@ -22,7 +22,6 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
                        struct localMT_struct mtloc,
                        double *__restrict__ phi)
 {
-    const char *fcnm = "parmt_obsSearch64f\0";
     MPI_Win counterWin;
     const char *archiveName = NULL;
     double lagTime, *CeInv, *phiWork, *phiAll, *var, *varAll, *varOut, *wts,
@@ -72,7 +71,7 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
             if (parms.lwantLags)
             {
                 printf("%s: Number of lags for waveform %d is %d\n",
-                       fcnm, iobs+1, nlags[iobs]);
+                       __func__, iobs+1, nlags[iobs]);
             }
         }
     }
@@ -83,11 +82,11 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
     if (npmax < 1 || mtloc.nmtAll < 1 || parms.objFnType < 1 ||
         parms.objFnType > 3)
     {
-        if (npmax < 1){printf("%s: No data points\n", fcnm);}
-        if (mtloc.nmtAll < 1){printf("%s: Empty mts\n", fcnm);}
+        if (npmax < 1){printf("%s: No data points\n", __func__);}
+        if (mtloc.nmtAll < 1){printf("%s: Empty mts\n", __func__);}
         if (parms.objFnType < 1 || parms.objFnType > 3)
         {
-            printf("%s: Invalid objfn function\n", fcnm);
+            printf("%s: Invalid objfn function\n", __func__);
         }
         return -1;
     }
@@ -115,7 +114,7 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
         {
             if (phi == NULL)
             {
-                printf("%s: phi not set on master - segfault\n", fcnm);
+                printf("%s: phi not set on master - segfault\n", __func__);
                 return -1; 
             }
             phiAll = phi;
@@ -168,7 +167,7 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
         iobs = value - 1; // Map to C based numbering to indicate observation
         if (linObsComm)
         {
-            printf("%s: Proccessing observation %d with %d points\n", fcnm,
+            printf("%s: Processing observation %d with %d points\n", __func__,
                    iobs+1, data.data[iobs].npts);
         }
         // Figure out the lags
@@ -185,7 +184,7 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
             if (ierr != 0)
             {
                 printf("%s: L1 search error for observation %d\n",
-                       fcnm, iobs + 1);
+                       __func__, iobs + 1);
                 return -1;
             }
             // Put the variance into the global buffer
@@ -202,13 +201,13 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
             if (ierr != 0)
             {
                 printf("%s: XC search error for observation %d\n",
-                       fcnm, iobs + 1);
+                       __func__, iobs + 1);
                 return -1;
             }
         }
         else if (parms.objFnType == 3)
         {
-            printf("%s: need to write this function\n", fcnm);
+            printf("%s: need to write this function\n", __func__);
             return -1;
         }
         // Scale by number of observations and stack
