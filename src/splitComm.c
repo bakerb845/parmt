@@ -14,8 +14,14 @@
  * @param[in] npInLocGroups    number of processes in a location group.
  * @param[in] npInMTGroups     number of processes in a moment tensor gorup.
  *
+ * @param[out] linObsComm      If true then the process is in the observation
+ *                             communicator.
  * @param[out] obsComm         observation group communicator handle
+ * @param[out] linLocComm      If true then the process is in the location
+ *                             communicator.
  * @param[out] locComm         location group communicator handle
+ * @param[out] linMTComm       If true then the process is in the moment
+ *                             tensor communicator.
  * @param[out] mtComm          moment tensor group communication handle
  *
  * @result 0 indicates success

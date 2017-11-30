@@ -100,7 +100,7 @@ double Mdc[6], lam[3], U[6], theta;
  * @param[in] kappaUpper  Upper strike in grid search (kappaLower, 2*pi].
  * @param[in] ns          Number of slips in grid search.
  * @param[in] sigmaLower  Lower slip angle in grid search [-pi, sigmaUpper).
- * @param[in] sigmaUPper  Upper slip angle in grid search (sigmaUpper, pi].
+ * @param[in] sigmaUpper  Upper slip angle in grid search (sigmaUpper, pi].
  * @param[in] nt          Number of dips in grid search.
  * @param[in] thetaLower  Lower dip in grid search [0,dipUpper).
  * @param[in] thetaUpper  Upper dip in grid search (dipLower, pi/2].

@@ -156,18 +156,16 @@ int parmt_io_writeVarianceForWaveform64f(
 /*!
  * @brief Writes the the objective function to the initialized archive file.
  *
- * @param[in] resultsDir      directory in which archive will reside
- * @param[in] projnm          name of project
- * @param[in] resultsSuffix   project suffix
- * @param[in] nmt             Number of moment tensors.
- * @param[in] phi             Objective function at all moment tensor points
- *                            [nmt]
+ * @param[in] flname    Name of archive file.
+ * @param[in] nmt       Number of moment tensors.
+ * @param[in] phi       Objective function at all moment tensor points.
+ *                      This is an array of dimension [nmt].
  *
- * @result 0 indicates success
+ * @result 0 indicates success.
  *
  * @author Ben Baker
  *
- * @copyright ISTI distributed under Apache 2
+ * @copyright ISTI distributed under Apache 2.
  *
  */
 int parmt_io_writeObjectiveFunction64f(
@@ -223,9 +221,8 @@ int parmt_io_writeObjectiveFunction64f(
  *
  * @bug There is a deficiency and locations currently means depths 
  *
- * @param[in] resultsDir      directory in which archive will reside
- * @param[in] projnm          name of project
- * @param[in] resultsSuffix   project suffix
+ * @param[in] programName     Name of program that is writing this file.
+ * @param[in] flname          Name of file to write.
  * @param[in] nobs            number of observations
  * @param[in] nlocs           number of locations
  * @param[in] deps            depths (km) [nlocs]

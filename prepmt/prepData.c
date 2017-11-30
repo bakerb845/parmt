@@ -1228,9 +1228,10 @@ int prepmt_prepData_computeTheoreticalPorSPickTimes(
  *                      will use the default as specified in the ttimes config
  *                      header file.
  * @param[in] model     ttimes model.  Likely "ak135" or "iasp91".
+ * @parma[in] nobs      Number of observations.
  * @param[in] data      Data with event depth, event origin time, and the
  *                      source-to-receiver great circle distance for each 
- *                      observation.
+ *                      observation.  This is an array with dimension [nobs].
  *
  * @param[out] ptimes   Epochal theoretical primary P arrival times
  *                      (UTC-seconds) for each observation.  This has dimension

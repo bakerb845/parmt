@@ -169,9 +169,8 @@ int prepmt_hudson96_readHudson96Parameters(const char *iniFile,
  * @param[in] luseSrcModel    If true then use the local source velocity
  *                            at the source.  This supersedes the crust1.0
  *                            source velocity if it is defined.
- * @param[in] srcModelName    If true then this is the name of CPS style
- *                            1D local source velocity model. 
- * @param[in] ntstar          Number of t*'s in grid.
+ * @param[in] sourceModel     If luseSrcModel is true then this is the name
+ *                            of the CPS style source model to read.
  *
  * @param[out] telmod         Holds the teleseismic model (ak135).
  * @param[out] srcmod         Holds the local source model.

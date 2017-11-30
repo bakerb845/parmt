@@ -63,7 +63,8 @@ int parmt_computeStackedCrossCorrelation_MPI(
  *                      i*ldm and the moment tensor terms are packed 
  *                      \f$ \{ m_{xx}, m_{yy}, m_{zz},
  *                             m_{xy}, m_{xz}, m_{yz} \f$.
- * @param[in] npts      number of points in singal
+ * @param[in] npts      number of points in signal
+ * @param[in] data      Observed data.  This is an array of dimension [npts].
  * @param[in] lxc       max size of xc (should be >= npts + npgrns - 1)
  *
  * @param[out] xc       stack of the observed and synthetic cross-correlations

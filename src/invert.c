@@ -140,10 +140,10 @@ ERROR:;
  * @param[in] nobs     number of waveforms (observations)
  * @param[in] lcDev    if true then force the solution to be purely deviatoric.
  *                     otherwise all moment tensor terms will be inverted for.
- * @param[in] wts      if not NULL then these are the data weights for each
- *                     observations [nobs].
  * @param[in] dataPtr  points from iobs'th observation to start index of 
  *                     observation [nobs+1]
+ * @param[in] wts      if not NULL then these are the data weights for each
+ *                     observations [nobs].
  * @param[in] gxxAll   all Gxx greens functions [dataPtr[nobs]] 
  * @param[in] gyyAll   all Gyy greens functions [dataPtr[nobs]]
  * @param[in] gzzAll   all Gzz greens functions [dataPtr[nobs]]
@@ -152,6 +152,7 @@ ERROR:;
  * @param[in] gyzAll   all Gyz greens functions [dataPtr[nobs]]
  * @param[in] obsAll   observations [dataPtr[nobs]]
  *
+ * @param[out] phi     L2 difference between observed and estimate seismograms. 
  * @param[out] m       on successful contains the moment tensor elements packed
  *                     \f$\{ m_{xx}, m_{yy}, m_{zz},
  *                           m_{xy}, m_{xz}, m_{yz} \}\f$. 
