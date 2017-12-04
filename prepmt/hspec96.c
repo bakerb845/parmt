@@ -153,7 +153,8 @@ int main(int argc, char **argv)
                 k = idist*ndeps + idep;
                 r[k] = precompute.dists[idist]*111.195;
                 depths[k] = precompute.depths[idep];
-                printf("%f %f\n", r[k]/111.195, depths[k]);
+                printf("Wavform %d has distance %f (deg) and depth %f (km)\n",
+                       k+1, r[k]/111.195, depths[k]);
             }
         }
         npts = precompute.npts;
