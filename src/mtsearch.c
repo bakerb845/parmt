@@ -853,7 +853,6 @@ int parmt_mtSearch_mahalanobis64f(const int ldm, const int nmt, const int npts,
 {
     double *Cd, *CG;
     double GtCG[36], GtCd[6], m[6] __attribute__ ((aligned (64)));
-    double objfn __attribute__ ((aligned (64))) = 0.0;
     double dtCd __attribute__ ((aligned (64))) = 0.0;
     int imt, M;
     //------------------------------------------------------------------------// 
@@ -914,7 +913,6 @@ int parmt_mtSearch_mahalanobis32f(const int ldm, const int nmt, const int npts,
 {
     float *Cd, *CG;
     float GtCG[36], GtCd[6], m[6] __attribute__ ((aligned (64)));
-    float objfn __attribute__ ((aligned (64))) = 0.0f;
     float dtCd __attribute__ ((aligned (64))) = 0.0f;
     int imt, M;
     //------------------------------------------------------------------------// 
