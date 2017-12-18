@@ -162,10 +162,9 @@ int parmt_mtSearchKL64f(const int ldm, const int nlags, const int nmt,
                         const double *__restrict__ d,
                         double *__restrict__ phi)
 {
-    double *G, *V, *phiCerf, *phiWork, sigma2, twopin,
-           xdiv, xdiv1, xdiv2, xdiv3, xdiv4, xscal;
+    double *G, *V, *phiCerf, *phiWork, sigma2, xdiv, xdiv1, xdiv2, xdiv3, xdiv4;
     int i, ierr, ir, ldv;
-    const double sqrt2 = sqrt(2.0);
+    //const double sqrt2 = sqrt(2.0);
     const double sqrt2pi = sqrt(2.0*M_PI);
     //------------------------------------------------------------------------//
     ldv = ldz + (64 - ldz%64)/SIZEOF_DOUBLE;
@@ -253,10 +252,9 @@ int parmt_mtSearchXC64f(const int ldm, const int nmt,
                         int *__restrict__ lags)
 {
     double GtG[36] __attribute__ ((aligned (64)));
-    double Gmag[8] __attribute__ ((aligned (64)));
     double m8[8] __attribute__ ((aligned (64)));
     double *DUmat, *DUmatT, *Gxc, *G, *Umat, *M, *uN, dNorm;
-    int i, ic, idx, ierr, imt, jdx, jmt, l1, l2, lag, lcref, lhalf,
+    int i, ic, idx, ierr, imt, jdx, jmt, l1, l2, lcref, lhalf,
         maxxc, mblock, mpts, Mrows, MrowsXC, Ncols, nlag, pad;
     bool ltrunc;
     const double one = 1.0;
@@ -422,13 +420,12 @@ int parmt_mtSearchL164f(const int ldm, const int nmt,
                         int *__restrict__ lags)
 {
     double *CG, *Cd, *G, *Dmat, dnorm;
-    double objfn, res, viMin;
+    //double objfn, res, viMin;
     int i, ic, ierr, k, mblock, Mrows, nmtBlocks;
     //int idx, imt, jdx, jmt, kmt, Ncols, nthreads0;
     int pad;
     const double zero = 0.0;
     const double one = 1.0;
-    const double negOne =-one;
     const int Kcols = 6; // number of columns of G
     // Set space and make G matrix
     pad = computePadding64f(blockSize);
