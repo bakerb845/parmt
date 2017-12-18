@@ -29,10 +29,8 @@ int parmt_obsSearch64f(const MPI_Comm globalComm,
     int *lagsWork, *nlags, ierr, iobs, myid, nobsProcs,
         npmax, value, value0;
     bool ldefault, lwantLags;
-    const double zero = 0.0;
     const double half = 0.5;
     const int master = 0;
-    const MPI_Aint sizeOfDouble = (MPI_Aint) (sizeof(double));
     //------------------------------------------------------------------------//
     //
     // Have the root process determine lag information

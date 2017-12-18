@@ -866,7 +866,7 @@ int polarity_performLocationSearch64f(const MPI_Comm locComm,
 {
     const char *fcnm = "polarity_performLocationSearch64f\0"; 
     double *Dmat, *G, *Sigma, *phiLoc, *phiWork;
-    int icol, ierr, ierrAll, iloc, imtLoc, ipol, jloc, jndx,
+    int icol, ierr, ierrAll, iloc, ipol, jloc, jndx,
         kt, mylocID, nlocProcs, mblock, pad;
     const int nPolarity = polarityData.nPolarity;
     const int Mrows = nPolarity;
@@ -908,7 +908,6 @@ int polarity_performLocationSearch64f(const MPI_Comm locComm,
     {
         iloc = jloc + mylocID;
         kt = iloc*nPolarity;
-        imtLoc = iloc*nmt;
         // Assemble the row major Green's functions matrix
         array_zeros64f_work(LDG*nPolarity, G);
         #pragma omp simd

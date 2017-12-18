@@ -42,8 +42,8 @@ int parmt_splitComm(const MPI_Comm globalComm,
     const char *fcnm = "parmt_splitComm\0";
     MPI_Group locGroup, locGroupInclude, mtGroup, mtGroupInclude,
               obsGroup, obsGroupInclude;
-    int *ids, *locIDs, *mtIDs, *obsIDs, i, i1, i2, id, j, k,
-         locCommSize, nprocs, mtCommSize, myGlobalID, obsCommSize, stride;
+    int *locIDs, *mtIDs, *obsIDs, i, i1, i2, id, j, k,
+         locCommSize, nprocs, mtCommSize, myGlobalID, obsCommSize;
     // Get global communicator information and check the split can work 
     MPI_Comm_size(globalComm, &nprocs);
     MPI_Comm_rank(globalComm, &myGlobalID);

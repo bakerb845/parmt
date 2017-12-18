@@ -162,7 +162,6 @@ int parmt_mtSearchKL64f(const int ldm, const int nlags, const int nmt,
                         const double *__restrict__ d,
                         double *__restrict__ phi)
 {
-    const char *fcnm = "parmt_mtSearchKL64f\0";
     double *G, *V, *phiCerf, *phiWork, sigma2, twopin,
            xdiv, xdiv1, xdiv2, xdiv3, xdiv4, xscal;
     int i, ierr, ir, ldv;
@@ -178,7 +177,7 @@ int parmt_mtSearchKL64f(const int ldm, const int nlags, const int nmt,
     ierr = setG64f(npts, Gxx, Gyy, Gzz, Gxy, Gxz, Gyz, G);
     if (ierr != 0)
     {
-        printf("%s: Failed to set G\n", fcnm);
+        printf("%s: Failed to set G\n", __func__);
         return -1;
     }
     ierr = array_set64f_work(nmt, 1.0, phi);
@@ -253,7 +252,6 @@ int parmt_mtSearchXC64f(const int ldm, const int nmt,
                         double *__restrict__ phi,
                         int *__restrict__ lags)
 {
-    const char *fcnm = "parmt_mtSearchXC64f\0";
     double GtG[36] __attribute__ ((aligned (64)));
     double Gmag[8] __attribute__ ((aligned (64)));
     double m8[8] __attribute__ ((aligned (64)));
@@ -298,7 +296,7 @@ int parmt_mtSearchXC64f(const int ldm, const int nmt,
     {
         if (maxlag >= npts)
         {
-            printf("%s: Error maxlag can't exceed npts\n", fcnm);
+            printf("%s: Error maxlag can't exceed npts\n", __func__);
             return -1;
         }
     }
@@ -306,13 +304,13 @@ int parmt_mtSearchXC64f(const int ldm, const int nmt,
     ierr = setG64f(npts, Gxx, Gyy, Gzz, Gxy, Gxz, Gyz, G);
     if (ierr != 0)
     {
-        printf("%s: Failed to set G\n", fcnm);
+        printf("%s: Failed to set G\n", __func__);
         return -1;
     }
     ierr = setGxc64f(npts, Gxx, Gyy, Gzz, Gxy, Gxz, Gyz, d, Gxc);
     if (ierr != 0)
     {
-        printf("%s: Failed to set Gxc\n", fcnm);
+        printf("%s: Failed to set Gxc\n", __func__);
         return -1;
     }
     // Compute G^T G
@@ -423,11 +421,10 @@ int parmt_mtSearchL164f(const int ldm, const int nmt,
                         double *__restrict__ var,
                         int *__restrict__ lags)
 {
-    const char *fcnm = "parmt_mtSearchL164f\0";
-    double *CG, *Cd, *G, *Dmat,
-           dnorm, objfn, res, viMin;
-    int i, ic, idx, jdx, ierr, imt, jmt, k, kmt, mblock, Mrows,
-        Ncols, nmtBlocks, nthreads0;
+    double *CG, *Cd, *G, *Dmat, dnorm;
+    double objfn, res, viMin;
+    int i, ic, ierr, k, mblock, Mrows, nmtBlocks;
+    //int idx, imt, jdx, jmt, kmt, Ncols, nthreads0;
     int pad;
     const double zero = 0.0;
     const double one = 1.0;
@@ -456,13 +453,13 @@ int parmt_mtSearchL164f(const int ldm, const int nmt,
     ierr = setG64f(npts, Gxx, Gyy, Gzz, Gxy, Gxz, Gyz, G);
     if (ierr != 0)
     {
-        printf("%s: Failed to set G\n", fcnm);
+        printf("%s: Failed to set G\n", __func__);
         return -1;
     }
     nmtBlocks = (int) ((double) (nmt)/(double) (blockSize) + 1.0);
     if (nmtBlocks*blockSize < nmt)
     {
-        printf("%s: Internal error - all mts wont be visited\n", fcnm);
+        printf("%s: Internal error - all mts wont be visited\n", __func__);
         return -1;
     }
     // They want lags but there are none to compute
@@ -663,34 +660,33 @@ int parmt_mtSearch64f(const int ldm, const int nlags, const int nmt,
                       const double *__restrict__ d,
                       double *__restrict__ phi)
 {
-    const char *fcnm = "parmt_mtSearch32f\0";
     double *G;
-    int ierr, ir;
+    int ierr;
     if (nmt < 1 || npts < 1 || mts == NULL || Gxx == NULL || Gyy == NULL ||
         Gzz == NULL || Gxy == NULL || Gxz == NULL || Gxy == NULL ||
         CeInv == NULL || d == NULL || phi == NULL)
     {
-        if (nmt < 1){printf("%s: No moment tensors\n", fcnm);}
-        if (npts < 1){printf("%s: No data points\n", fcnm);}
-        if (Gxx == NULL){printf("%s: Gxx is NULL\n", fcnm);}
-        if (Gyy == NULL){printf("%s: Gyy is NULL\n", fcnm);}
-        if (Gzz == NULL){printf("%s: Gzz is NULL\n", fcnm);}
-        if (Gxy == NULL){printf("%s: Gxy is NULL\n", fcnm);}
-        if (Gxz == NULL){printf("%s: Gxz is NULL\n", fcnm);}
-        if (CeInv == NULL){printf("%s: CeInv is NULL\n", fcnm);}
-        if (mts == NULL){printf("%s: mts is NULL\n", fcnm);}
-        if (d == NULL){printf("%s: d is NULL\n", fcnm);}
-        if (phi == NULL){printf("%s: phi is NULL\n", fcnm);}
+        if (nmt < 1){printf("%s: No moment tensors\n", __func__);}
+        if (npts < 1){printf("%s: No data points\n", __func__);}
+        if (Gxx == NULL){printf("%s: Gxx is NULL\n", __func__);}
+        if (Gyy == NULL){printf("%s: Gyy is NULL\n", __func__);}
+        if (Gzz == NULL){printf("%s: Gzz is NULL\n", __func__);}
+        if (Gxy == NULL){printf("%s: Gxy is NULL\n", __func__);}
+        if (Gxz == NULL){printf("%s: Gxz is NULL\n", __func__);}
+        if (CeInv == NULL){printf("%s: CeInv is NULL\n", __func__);}
+        if (mts == NULL){printf("%s: mts is NULL\n", __func__);}
+        if (d == NULL){printf("%s: d is NULL\n", __func__);}
+        if (phi == NULL){printf("%s: phi is NULL\n", __func__);}
         return -1;
     }
     if (!ldiag && ldc < npts)
     {
-        printf("%s: Error ldc must be >= npts\n", fcnm);
+        printf("%s: Error ldc must be >= npts\n", __func__);
         return -1;
     }
     if (nlags > 0 && nlags > npts)
     {
-        printf("%s: Error nlags can't exceed npts\n", fcnm);
+        printf("%s: Error nlags can't exceed npts\n", __func__);
         return -1;
     }
     // Set space and make G matrix
@@ -698,7 +694,7 @@ int parmt_mtSearch64f(const int ldm, const int nlags, const int nmt,
     ierr = setG64f(npts, Gxx, Gyy, Gzz, Gxy, Gxz, Gyz, G);
     if (ierr != 0)
     {
-        printf("%s: Failed to set G\n", fcnm);
+        printf("%s: Failed to set G\n", __func__);
         return -1;
     }
     // straight application of Ce^{-1}
@@ -743,7 +739,7 @@ int parmt_mtSearch64f(const int ldm, const int nlags, const int nmt,
     }
     if (ierr != 0)
     {
-        printf("%s: Error computing search\n", fcnm);
+        printf("%s: Error computing search\n", __func__);
     }
     // Free memory
     memory_free64f(&G);
@@ -764,34 +760,33 @@ int parmt_mtSearch32f(const int ldm, const int nlags, const int nmt,
                       const float *__restrict__ d,
                       float *__restrict__ phi)
 {
-    const char *fcnm = "parmt_mtSearch32f\0";
     float *G;
-    int ierr, ir;
+    int ierr;
     if (nmt < 1 || npts < 1 || mts == NULL || Gxx == NULL || Gyy == NULL ||
         Gzz == NULL || Gxy == NULL || Gxz == NULL || Gxy == NULL ||
         CeInv == NULL || d == NULL || phi == NULL)
     {
-        if (nmt < 1){printf("%s: No moment tensors\n", fcnm);}
-        if (npts < 1){printf("%s: No data points\n", fcnm);}
-        if (Gxx == NULL){printf("%s: Gxx is NULL\n", fcnm);}
-        if (Gyy == NULL){printf("%s: Gyy is NULL\n", fcnm);}
-        if (Gzz == NULL){printf("%s: Gzz is NULL\n", fcnm);}
-        if (Gxy == NULL){printf("%s: Gxy is NULL\n", fcnm);}
-        if (Gxz == NULL){printf("%s: Gxz is NULL\n", fcnm);}
-        if (CeInv == NULL){printf("%s: CeInv is NULL\n", fcnm);}
-        if (mts == NULL){printf("%s: mts is NULL\n", fcnm);}
-        if (d == NULL){printf("%s: d is NULL\n", fcnm);}
-        if (phi == NULL){printf("%s: phi is NULL\n", fcnm);}
+        if (nmt < 1){printf("%s: No moment tensors\n", __func__);}
+        if (npts < 1){printf("%s: No data points\n", __func__);}
+        if (Gxx == NULL){printf("%s: Gxx is NULL\n", __func__);}
+        if (Gyy == NULL){printf("%s: Gyy is NULL\n", __func__);}
+        if (Gzz == NULL){printf("%s: Gzz is NULL\n", __func__);}
+        if (Gxy == NULL){printf("%s: Gxy is NULL\n", __func__);}
+        if (Gxz == NULL){printf("%s: Gxz is NULL\n", __func__);}
+        if (CeInv == NULL){printf("%s: CeInv is NULL\n", __func__);}
+        if (mts == NULL){printf("%s: mts is NULL\n", __func__);}
+        if (d == NULL){printf("%s: d is NULL\n", __func__);}
+        if (phi == NULL){printf("%s: phi is NULL\n", __func__);}
         return -1;
     }
     if (!ldiag && ldc < npts)
     {
-        printf("%s: Error ldc must be >= npts\n", fcnm);
+        printf("%s: Error ldc must be >= npts\n", __func__);
         return -1;
     }
     if (nlags > 0 && nlags > npts)
     {
-        printf("%s: Error nlags can't exceed npts\n", fcnm);
+        printf("%s: Error nlags can't exceed npts\n", __func__);
         return -1;
     }
     // Set space and make G matrix
@@ -799,7 +794,7 @@ int parmt_mtSearch32f(const int ldm, const int nlags, const int nmt,
     ierr = setG32f(npts, Gxx, Gyy, Gzz, Gxy, Gxz, Gyz, G);
     if (ierr != 0)
     {
-        printf("%s: Failed to set G\n", fcnm);
+        printf("%s: Failed to set G\n", __func__);
         return -1;
     }
     // straight application of Ce^{-1}
@@ -844,7 +839,7 @@ int parmt_mtSearch32f(const int ldm, const int nlags, const int nmt,
     }
     if (ierr != 0)
     {
-        printf("%s: Error computing search\n", fcnm);
+        printf("%s: Error computing search\n", __func__);
     }
     // Free memory
     memory_free32f(&G);
@@ -859,7 +854,6 @@ int parmt_mtSearch_mahalanobis64f(const int ldm, const int nmt, const int npts,
                                   const double *__restrict__ d,
                                   double *__restrict__ phi)
 {
-    const char *fcnm = "parmt_mtSearch_mahalanobis64f\0";
     double *Cd, *CG;
     double GtCG[36], GtCd[6], m[6] __attribute__ ((aligned (64)));
     double objfn __attribute__ ((aligned (64))) = 0.0;
@@ -921,7 +915,6 @@ int parmt_mtSearch_mahalanobis32f(const int ldm, const int nmt, const int npts,
                                   const float *__restrict__ d,
                                   float *__restrict__ phi)
 {
-    const char *fcnm = "parmt_mtSearch_mahalanobis32f\0";
     float *Cd, *CG;
     float GtCG[36], GtCd[6], m[6] __attribute__ ((aligned (64)));
     float objfn __attribute__ ((aligned (64))) = 0.0f;
@@ -984,7 +977,6 @@ int parmt_mtSearch_shiftedMahalanobis64f(const int nlags, const int nmt,
                                          const double *__restrict__ d,
                                          double *__restrict__ phi) 
 {
-    const char *fcnm = "parmt_mtSearch_shiftedMahalanobis64f\0";
     int ncopy;
     double *Cd, *CG, *dwork, *phiLoc;
     double GtCG[36], GtCd[6], m[6] __attribute__ ((aligned (64)));
@@ -997,17 +989,17 @@ int parmt_mtSearch_shiftedMahalanobis64f(const int nlags, const int nmt,
     // Try to avoid some problems
     if (nmt < 1 || npts < 1)
     {
-        printf("%s: Invalid number of points %d %d\n", fcnm, nmt, npts);
+        printf("%s: Invalid number of points %d %d\n", __func__, nmt, npts);
         return -1;
     }
     if (G == NULL || CeInv == NULL || mts == NULL || d == NULL || phi == NULL)
     {
-        printf("%s: Null pointer detected\n", fcnm);
+        printf("%s: Null pointer detected\n", __func__);
         return -1;
     }
     if (memory_isAligned(CeInv, 64) != 1 || memory_isAligned(mts, 64) != 1)
     {
-        printf("%s: CeInv and mts must be 64 bit aligned\n", fcnm);
+        printf("%s: CeInv and mts must be 64 bit aligned\n", __func__);
         return -1;
     }
     // Set space
@@ -1118,7 +1110,6 @@ int parmt_mtSearch_shiftedMahalanobis32f(const int nlags, const int nmt,
                                          const float *__restrict__ d,
                                          float *__restrict__ phi)
 {
-    const char *fcnm = "parmt_mtSearch_shiftedMahalanobis32f\0";
     int ncopy;
     float *Cd, *CG, *dwork, *phiLoc;
     float GtCG[36], GtCd[6], m[6] __attribute__ ((aligned (64)));
@@ -1131,17 +1122,17 @@ int parmt_mtSearch_shiftedMahalanobis32f(const int nlags, const int nmt,
     // Try to avoid some problems
     if (nmt < 1 || npts < 1)
     {
-        printf("%s: Invalid number of points %d %d\n", fcnm, nmt, npts);
+        printf("%s: Invalid number of points %d %d\n", __func__, nmt, npts);
         return -1;
     }
     if (G == NULL || CeInv == NULL || mts == NULL || d == NULL || phi == NULL)
     {
-        printf("%s: Null pointer detected\n", fcnm);
+        printf("%s: Null pointer detected\n", __func__);
         return -1;
     }
     if (memory_isAligned(CeInv, 64) != 1 || memory_isAligned(mts, 64) != 1)
     {
-        printf("%s: CeInv and mts must be 64 bit aligned\n", fcnm);
+        printf("%s: CeInv and mts must be 64 bit aligned\n", __func__);
         return -1;
     }
     // Set space
@@ -1282,21 +1273,20 @@ static int setG32f(const int npts,
                    const float *__restrict__ Gyz, 
                    float *__restrict__ G)
 {
-    const char *fcnm = "setG32f\0";
     int i;
     bool lalign;
     if (Gxx == NULL || Gyy == NULL || Gzz == NULL || Gxy == NULL ||
         Gxz == NULL || G == NULL || npts < 1)
     {    
-        if (Gxx == NULL){printf("%s: Error Gxx is NULL\n", fcnm);}
-        if (Gyy == NULL){printf("%s: Error Gyy is NULL\n", fcnm);}
-        if (Gzz == NULL){printf("%s: Error Gzz is NULL\n", fcnm);}
-        if (Gxy == NULL){printf("%s: Error Gxy is NULL\n", fcnm);}
-        if (Gxz == NULL){printf("%s: Error Gxz is NULL\n", fcnm);}
-        if (Gyz == NULL){printf("%s: ERror Gyz is NULL\n", fcnm);}
+        if (Gxx == NULL){printf("%s: Error Gxx is NULL\n", __func__);}
+        if (Gyy == NULL){printf("%s: Error Gyy is NULL\n", __func__);}
+        if (Gzz == NULL){printf("%s: Error Gzz is NULL\n", __func__);}
+        if (Gxy == NULL){printf("%s: Error Gxy is NULL\n", __func__);}
+        if (Gxz == NULL){printf("%s: Error Gxz is NULL\n", __func__);}
+        if (Gyz == NULL){printf("%s: Error Gyz is NULL\n", __func__);}
         if (npts < 1)
         {
-            printf("%s: No points in Green's functions\n", fcnm);
+            printf("%s: No points in Green's functions\n", __func__);
         }
         return -1;
     }
@@ -1347,7 +1337,6 @@ static int setGxc64f(const int npts,
                      const double *__restrict__ d,
                      double *__restrict__ Gxc)
 {
-    const char *fcnm = "setGxc64f\0";
     double *gxxWork, *gyyWork, *gzzWork, *gxyWork, *gxzWork, *gyzWork;
     int ierr, lcref;
     // Set the data
@@ -1421,21 +1410,20 @@ static int setG64f(const int npts,
                    const double *__restrict__ Gyz,
                    double *__restrict__ G)
 {
-    const char *fcnm = "setG64f\0";
     int i;
     bool lalign;
     if (Gxx == NULL || Gyy == NULL || Gzz == NULL || Gxy == NULL ||
         Gxz == NULL || G == NULL || npts < 1)
     {
-        if (Gxx == NULL){printf("%s: Error Gxx is NULL\n", fcnm);}
-        if (Gyy == NULL){printf("%s: Error Gyy is NULL\n", fcnm);}
-        if (Gzz == NULL){printf("%s: Error Gzz is NULL\n", fcnm);}
-        if (Gxy == NULL){printf("%s: Error Gxy is NULL\n", fcnm);}
-        if (Gxz == NULL){printf("%s: Error Gxz is NULL\n", fcnm);}
-        if (Gyz == NULL){printf("%s: ERror Gyz is NULL\n", fcnm);}
+        if (Gxx == NULL){printf("%s: Error Gxx is NULL\n", __func__);}
+        if (Gyy == NULL){printf("%s: Error Gyy is NULL\n", __func__);}
+        if (Gzz == NULL){printf("%s: Error Gzz is NULL\n", __func__);}
+        if (Gxy == NULL){printf("%s: Error Gxy is NULL\n", __func__);}
+        if (Gxz == NULL){printf("%s: Error Gxz is NULL\n", __func__);}
+        if (Gyz == NULL){printf("%s: ERror Gyz is NULL\n", __func__);}
         if (npts < 1)
         {
-            printf("%s: No points in Green's functions\n", fcnm);
+            printf("%s: No points in Green's functions\n", __func__);
         }
         return -1;
     }
@@ -1618,7 +1606,6 @@ static int performL1Search64f(const int nmt, const int ldm,
                               double *__restrict__ phi,
                               double *__restrict__ var)
 {
-    const char *fcnm = "performL1Search64f\0";
     double *M, *R, *rnorm, *U, *unorm, *varLoc, *xden, robj, xnum, viMin;
     int i, ic, idx, jdx, ierr, imt, jmt, kmt, Ncols, nmtBlocks;
     const double one = 1.0;
@@ -1627,7 +1614,7 @@ static int performL1Search64f(const int nmt, const int ldm,
     nmtBlocks = (int) ((double) (nmt)/(double) (blockSize) + 1.0);
     if (nmtBlocks*blockSize < nmt) 
     {    
-        printf("%s: Internal error - all mts wont be visited\n", fcnm);
+        printf("%s: Internal error - all mts wont be visited\n", __func__);
         return -1;
     }
     // Get the size of the numerator - recall Dmat is simply a copy of itself
