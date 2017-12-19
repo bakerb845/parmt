@@ -1,6 +1,13 @@
-/*TODO copyright and author info */
+/* Copyright: ISTI
+ * Author: ISTI 
+ * License: Apache 2 */
 #ifndef PARMT_CONFIG_H__
 #define PARMT_CONFIG_H__ 1
+
+#cmakedefine PARMT_VERSION_MAJOR @PARMT_VERSION_MAJOR@
+#cmakedefine PARMT_VERSION_MINOR @PARMT_VERSION_MINOR@
+#cmakedefine PARMT_VERSION_PATCH @PARMT_VERSION_PATCH@
+#cmakedefine PARMT_VERSION "@PARMT_VERSION@"
 
 /* using intel */
 #cmakedefine PARMT_USE_INTEL

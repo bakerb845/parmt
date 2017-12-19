@@ -1,7 +1,13 @@
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
 
 PROJECT(parmt C)
-enable_testing()
+ENABLE_TESTING()
+
+SET(PARMT_VERSION_MAJOR 0)
+SET(PARMT_VERSION_MINOR 2)
+SET(PARMT_VERSION_PATCH 0)
+SET(PARMT_VERSION ${PARMT_VERSION_MAJOR}.${PARMT_VERSION_MINOR}.${PARMT_VERSION_PATCH})
+MESSAGE("Configuring ParMT version: " ${PARMT_VERSION})
 
 #set(CMAKE_BUILD_TYPE Release)
 # Add modules for finding requisites
@@ -184,3 +190,32 @@ ADD_TEST(NAME utils_test
 ADD_TEST(NAME objfn_test
          WORKING_DIRECTORY ${CMAKE_TESTING_OUTPUT_DIRECTORY}
          COMMAND objfn_test)
+
+#------------------------------------------------------------------------------#
+#                              Configuration Details                           #
+#------------------------------------------------------------------------------#
+SET(PARMT_LIBRARY parmt)
+SET(INCLUDE_INSTALL_DIR include/)
+SET(LIB_INSTALL_DIR lib/)
+SET(SYSCONFIG_INSTALL_DIR etc/parmt/)
+#SET(LIB_INSTALL_DIR ${LIBRARY_OUTPUT_PATH})
+INCLUDE(CMakePackageConfigHelpers)
+CONFIGURE_PACKAGE_CONFIG_FILE(${CMAKE_MODULE_PATH}/FindParMT.cmake.in
+                              ${CMAKE_BINARY_DIR}/FindParMT.cmake
+                              INSTALL_DESTINATION ${LIB_INSTALL_DIR}/parmt/cmake
+                              PATH_VARS INCLUDE_INSTALL_DIR SYSCONFIG_INSTALL_DIR)
+WRITE_BASIC_PACKAGE_VERSION_FILE(${LIBRARY_OUTPUT_PATH}/ParMTConfigVersion.cmake
+                                 VERSION ${PARMT_VERSION}
+                                 COMPATIBILITY SameMajorVersion)
+SET(TARGET_NAMES parmt_shared parmt_static parmtUtils_shared parmtUtils_static prepmt_shared
+    xgrnsTeleB xprepRegSW hspec96 xprepTeleP xprepTeleS xgrnsRegSW
+    parmt postmt polarmt mergemt)
+INSTALL(TARGETS ${TARGET_NAMES}
+        PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_WRITE GROUP_READ WORLD_EXECUTE WORLD_WRITE WORLD_READ
+        LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+        RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+INSTALL(FILES
+        ${CMAKE_BINARY_DIR}/FindParMT.cmake
+        ${LIBRARY_OUTPUT_PATH}/ParMTConfigVersion.cmake
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/sacio/cmake)
