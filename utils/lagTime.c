@@ -112,7 +112,6 @@ int parmt_utils_setLagTimeInH5(const hid_t h5fl,
 int parmt_utils_setLagTime(const double maxLagTime,
                            struct sacData_struct *obs)
 {
-    const char *fcnm = "parmt_utils_setLagTime\0";
     sacio_setFloatHeader(SAC_MAXLAG_HDR, maxLagTime, &obs->header);
     return 0;
 }
@@ -139,7 +138,6 @@ double parmt_utils_getLagTime(const struct sacData_struct obs,
                               const double defaultMaxLag,
                               bool *ldefault)
 {
-    const char *fcnm = "parmt_utils_getLagTime\0";
     double lagtime;
     int ierr;
     *ldefault = true;
