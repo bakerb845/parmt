@@ -28,7 +28,7 @@ int parmt_utils_setLagTimeInH5(const hid_t h5fl,
                                const char *channel, const char *location,
                                const double maxLagTime)
 {
-    const char *sacFileName = "Observation";
+    //const char *sacFileName = "Observation";
     char varname[256], knetwk[8], kstnm[8], kcmpnm[8], khole[8];
     bool lupd;
     struct sacData_struct sac;
