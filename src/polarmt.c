@@ -243,7 +243,7 @@ INIT_ERROR:;
     phi = memory_calloc64f(data.nlocs*mtloc.nmtAll);
     t0 = MPI_Wtime();
     ierr = polarity_performLocationSearch64f(
-               locComm,
+               MPI_COMM_WORLD, //locComm,
                parms.blockSize,
                polarityData,
                mtloc, 

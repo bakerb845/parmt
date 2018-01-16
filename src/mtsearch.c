@@ -255,7 +255,7 @@ int parmt_mtSearchXC64f(const int ldm, const int nmt,
     double m8[8] __attribute__ ((aligned (64)));
     double *DUmat, *DUmatT, *Gxc, *G, *Umat, *M, *uN, dNorm;
     int i, ic, idx, ierr, imt, jdx, jmt, l1, l2, lcref, lhalf,
-        maxxc, mblock, mpts, Mrows, MrowsXC, Ncols, nlag, pad;
+        maxxc, mblock, mpts, MrowsXC, Ncols, nlag, pad;
     bool ltrunc;
     const double one = 1.0;
     const double zero = 0.0;
@@ -283,7 +283,7 @@ int parmt_mtSearchXC64f(const int ldm, const int nmt,
 #endif
     // Figure out the sizes for the cross-correlation
     MrowsXC = lcref;
-    Mrows = npts;
+    //Mrows = npts;
     ltrunc = false;
     lhalf = lcref/2;
     l1 = lhalf - maxlag;

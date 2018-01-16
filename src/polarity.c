@@ -86,7 +86,7 @@ int parmt_polarity_computeTTimesGreens(
     // ttimes uses read-only file-io and i don't want to fix it
     MPI_Comm_rank(globalComm, &myid);
     MPI_Comm_size(globalComm, &nprocs);
-    if (myid != master){goto WAIT;}
+    //if (myid != master){goto WAIT;}
     // Verify there is a chance for something to do
     if (data.nobs < 1 || data.nlocs < 1)
     {
@@ -346,7 +346,7 @@ int parmt_polarity_computeTTimesGreens(
     MPI_Allreduce(GyzBuf, polarityData->Gyz, data.nlocs*nPolarity,
                   MPI_DOUBLE, MPI_SUM, globalComm);
     // Finally assemble Green's functions into modeling matrix
-WAIT:;
+//WAIT:;
 ERROR:;
     MPI_Barrier(globalComm);
     // free memory
@@ -945,7 +945,7 @@ int polarity_performLocationSearch64f(const MPI_Comm locComm,
                         &phiWork[jndx], mtloc.nmtProc, mtloc.offset,
                         MPI_DOUBLE, master, mtloc.comm);
         }
-printf("%f %f\n", array_min64f(nmt, phiLoc, &ierr), array_max64f(nmt, phiLoc, &ierr));
+printf("%d %f %f\n", mylocID, array_min64f(nmt, phiLoc, &ierr), array_max64f(nmt, phiLoc, &ierr));
 
     }
     // Reduce the search onto the master
