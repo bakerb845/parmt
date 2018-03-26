@@ -174,7 +174,8 @@ int parmt_discretizeCells64f(
     *betas  = memory_calloc64f(nb);
     *gammas = memory_calloc64f(ng);
     *thetas = memory_calloc64f(nt);
-    compearth_u2beta(nb, 20, 2, u, 1.e-6, *betas);
+    //compearth_u2beta(nb, 20, 2, u, 1.e-6, *betas);
+    compearth_u2beta(nb, u, *betas);
     compearth_v2gamma(ng, v, *gammas);
     compearth_h2theta(nt, h, *thetas);
     // discretize the magnitudes, kappa, and sigma

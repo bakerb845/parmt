@@ -131,6 +131,7 @@ ADD_LIBRARY(parmt_static STATIC ${SRCS_PARMT})
 SET(LINK_LIB_ALL ${INIPARSER_LIBRARY} ${COMPEARTH_LIBRARY}
                  ${CPS_LIBRARY} ${TTIMES_LIBRARY} ${SACIO_LIBRARY}
                  ${ISCL_LIBRARY} ${MPI_C_LIBRARIES} ${H5_LIBRARY}
+                 ${CJSON_LIBRARY}
                  -Wl,--start-group ${MKL_LIBRARY} -Wl,--end-group 
                  ${IPP_LIBRARY} -lm -ldl -lpthread -lpng)
 

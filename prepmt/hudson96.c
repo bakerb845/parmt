@@ -482,7 +482,7 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
             hudson96ParmsWork.offset = (double) (int) (pickTime/dt + 0.5)*dt;
         }
 */
-        zresp = hudson96_interface(&hudson96ParmsWork,
+        zresp = hudson96_interface(hudson96ParmsWork,
                                    telmod, recmod[iobs], srcmod, ierr);
         if (*ierr != 0)
         {
@@ -491,7 +491,7 @@ struct sacData_struct *prepmt_hudson96_computeGreensFF(
             goto NEXT_OBS;
         }
         ffGrns = hpulse96_interface(nrDist, nrDepths, nsDepths,
-                                    &hpulse96ParmsWork,
+                                    hpulse96ParmsWork,
                                     &zresp, ierr);
         if (*ierr != 0)
         {

@@ -206,6 +206,7 @@ return 0;
                          &thetaOpt,
                          &sigmaOpt,
                          Muse, lam, U);
+
 /*
     compearth_tt2cmt(gammas[jg]*180.0/M_PI,
                      (M_PI/2.0 - betas[jb])*180.0/M_PI,
@@ -215,6 +216,15 @@ return 0;
                      sigmas[js]*180.0/M_PI,
                      Muse, lam, U);
 */
+/*
+Muse[0] = 28200000000000000.;  // mrr
+Muse[1] = 283100000000000000.; // mtt
+Muse[2] =-311300000000000000.; // mpp
+Muse[3] =-243300000000000000.; // mrt
+Muse[4] =-149900000000000000.; // mrp
+Muse[5] = 467500000000000000.; // mtp
+compearth_convertMT(1, CE_USE,  CE_NED, Muse, Mned);
+*/
     ierr = parmt_discretizeMT64f(1, &gammas[jg],
                                  1, &betas[jb],
                                  1, &M0s[jm],
@@ -222,6 +232,7 @@ return 0;
                                  1, &thetas[jt],
                                  1, &sigmas[js],
                                  6, 1, Mned);
+
     printf("mtUSE =[%.6e,%.6e,%.6e,%.6e,%.6e,%.6e]\n",
            Muse[0], Muse[1], Muse[2], Muse[3], Muse[4], Muse[5]);
     printf("mtNED =[%.6e,%.6e,%.6e,%.6e,%.6e,%.6e]\n",

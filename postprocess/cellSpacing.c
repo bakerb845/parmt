@@ -68,8 +68,8 @@ int postprocess_computeBetaCellSpacing(const int nb,
         if (i == nb - 1){u2 = uMax;}
         u1 = fmax(uMin, u1);
         u2 = fmin(uMax, u2);
-        compearth_u2beta(1, 50, 2, &u1, 1.e-8, &b1);
-        compearth_u2beta(1, 50, 2, &u2, 1.e-8, &b2);
+        compearth_u2beta(1, &u1, &b1); //compearth_u2beta(1, 50, 2, &u1, 1.e-8, &b1);
+        compearth_u2beta(1, &u2, &b2); //compearth_u2beta(1, 50, 2, &u2, 1.e-8, &b2);
         db[i] = b2 - b1;
         //printf("%f %f %f\n", db[i], u1, u2);
     }

@@ -967,7 +967,8 @@ int postmt_gmtHelper_writeBetaBoxes(const bool lappend, const bool lclose,
     for (i=0; i<nb-1; i++)
     {
         uAvg = 0.5*(u[i] + u[i+1]);
-        compearth_u2beta(1, 20, 2, &uAvg, 1.e-7, &betaAvg);
+        compearth_u2beta(1, &uAvg, &betaAvg);
+        //compearth_u2beta(1, 20, 2, &uAvg, 1.e-7, &betaAvg);
         fprintf(ofl, "%f %f\n", 90.0 - betaAvg*180.0/M_PI, betaHist[i]);
         fprintf(ofl, "%f %f\n", 90.0 - betaAvg*180.0/M_PI, 0.0);
         fprintf(ofl, "EOF\n");
