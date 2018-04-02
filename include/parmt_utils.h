@@ -120,6 +120,9 @@ extern "C"
 {
 #endif
 
+int parmt_utils_getComponent(const char *kcmpnm,
+                             const double cmpinc,
+                             int *icomp);
 int parmt_utils_readGeneralParms(const char *iniFile,
                                  struct parmtGeneralParms_struct *parms);
 int parmt_utils_readPolarityParms(const char *iniFile,

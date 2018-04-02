@@ -119,7 +119,8 @@ SET (SRCS_PREPMT prepmt/commands.c
 #ADD_LIBRARY(compearth_shared SHARED ${SRCS_COMPEARTH})
 #ADD_LIBRARY(compearth_static STATIC ${SRCS_COMPEARTH})
 ADD_LIBRARY(parmtUtils_shared SHARED utils/ff2mtGreens.c utils/getNoiseBasis.c
-            utils/lagTime.c utils/readini.c utils/setDataOnG.c utils/weights.c
+            utils/getComponent.c utils/lagTime.c utils/readini.c
+            utils/setDataOnG.c utils/weights.c
             io/dataArchive.c io/objfnArchive.c utils/sacGrnsToEst.c)
 ADD_LIBRARY(parmtUtils_static STATIC utils/ff2mtGreens.c utils/getNoiseBasis.c
             utils/readini.c io/dataArchive.c io/objfnArchive.c utils/sacGrnsToEst.c)

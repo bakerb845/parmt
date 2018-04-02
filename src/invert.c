@@ -15,24 +15,41 @@
 #include "iscl/memory/memory.h"
 
 /*!
- * @brief Location grid-search
+ * @brief Inverts for a moment tensor at each location in the grid-search.
  *
- * @param[in] data     parmt data structure with observations and 
+ * @param[in] data     parMT data structure with observations and 
  *                     corresponding green's functions at all locations
- *                     for all waveforms
- * @param[in] lcDev    if true then apply the deviatoric constraint.
- *                     otherwise invert for all moment tensors terms.
+ *                     for all waveforms.
+ * @param[in] ldm      Leading dimension of mts.  This must be at least 6.
+ * @param[in] lcDev    If true then apply the deviatoric constraint.
+ * @param[in] lcDev    Otherwise invert for all moment tensors terms.
+ *
+ * @param[out] mts     Moment tensors tabulated at each location.  This has
+ *                     dimension [data.nlocs x ldm].
+ * @param[out] phi     L2 objective function for each moment tensor.  This has
+ *                     dimension [data.nlocs].
+ *
+ * @result 0 indicates success.
  *
  */
 int parmt_invertLocationSearch(struct parmtData_struct data,
-                               const bool lcDev)
+                               const int ldm,
+                               const bool lcDev,
+                               double *__restrict__ mts,
+                               double *__restrict__ phi)
 {
-    const char *fcnm = "parmt_invertLocationSearch\0";
     double *G, *gxxAll, *gyyAll, *gzzAll, *gxyAll, *gxzAll, *gyzAll,
            *obsAll, *wts;
-    double m6[6], phiLoc;
+    //double m6[6], phiLoc;
     int *dataPtr, i1, ierr, ierr1, ierr2, iloc, iobs, k, mrows;
     ierr = 0;
+    if (ldm < 6 || mts == NULL || phi == NULL)
+    {
+        if (ldm < 6){fprintf(stderr, "%s: ldm must be at least 6\n", __func__);}
+        if (mts == NULL){fprintf(stderr, "%s: mts is NULL\n", __func__);}
+        if (phi == NULL){fprintf(stderr, "%s: phi is NULL\n", __func__);}
+        return -1;
+    }
     G = NULL;
     wts = NULL;
     gxxAll = NULL; 
@@ -44,7 +61,8 @@ int parmt_invertLocationSearch(struct parmtData_struct data,
     // 6 observations required for full MT, 5 for deviatoric constraint
     if (data.nobs < 6 - (int) lcDev)
     {
-        printf("%s: Insufficient number of observations \n", fcnm);
+        fprintf(stderr, "%s: Insufficient number of observations \n",
+                __func__);
         return -1;
     }
     // Figure out the workspace
@@ -55,7 +73,8 @@ int parmt_invertLocationSearch(struct parmtData_struct data,
     }
     if (dataPtr[data.nobs] < 6 - (int) lcDev)
     {
-        printf("%s: Insufficient number of points to invert with\n", fcnm);
+        fprintf(stderr, "%s: Insufficient number of points to invert with\n",
+                __func__);
         goto ERROR;
     }
     obsAll = memory_calloc64f(dataPtr[data.nobs]);
@@ -81,12 +100,14 @@ int parmt_invertLocationSearch(struct parmtData_struct data,
             memory_free64f(&G);
             if (ierr1 != 0)
             {
-                printf("%s: Failed to make greens functions matrix\n", fcnm);
+                fprintf(stderr, "%s: Failed to make greens functions matrix\n",
+                        __func__);
                 ierr2 = ierr2 + 1;
             }
             if (mrows != dataPtr[iobs+1] - dataPtr[iobs])
             {
-                printf("%s: Internal error on mrows and npts\n", fcnm);
+                fprintf(stderr, "%s: Internal error on mrows and npts\n",
+                        __func__);
                 ierr2 = ierr2 + 1;
                 goto NEXT_OBS;
             }
@@ -111,10 +132,12 @@ NEXT_OBS:;
                                       wts,
                                       gxxAll, gyyAll, gzzAll,
                                       gxyAll, gxzAll, gyzAll,
-                                      obsAll, &phiLoc, m6);
+                                      obsAll, &phi[iloc], &mts[iloc*ldm]);
+            //&phiLoc, m6);
             if (ierr1 != 0)
             {
-                printf("%s: Error inverting location %d\n", fcnm, iloc);
+                fprintf(stderr, "%s: Error inverting location %d\n",
+                        __func__, iloc);
                 ierr = ierr + 1;
             }
         }
@@ -177,7 +200,6 @@ int parmt_invertMT64f(const int nobs,
                       const double *__restrict__ obsAll,
                       double *phi, double *__restrict__ m)
 {
-    const char *fcnm = "parmt_invertMT64f\0";
     double *G, *b, *est, m6[6];
     int i1, i2, ierr, iobs, ldg, mrows, ncols, nploc;
     *phi = 0.0;
@@ -188,15 +210,39 @@ int parmt_invertMT64f(const int nobs,
         gxyAll == NULL || gxzAll == NULL || gyzAll == NULL ||
         m == NULL)
     {
-        if (nobs < 5){printf("%s: At least 6 observations required\n", fcnm);}
-        if (dataPtr == NULL){printf("%s: Error dataPtr is NULL\n", fcnm);}
-        if (gxxAll == NULL){printf("%s: Error gxxAll is NULL\n", fcnm);}
-        if (gyyAll == NULL){printf("%s: Error gyyAll is NULL\n", fcnm);}
-        if (gzzAll == NULL){printf("%s: Error gzzAll is NULL\n", fcnm);}
-        if (gxyAll == NULL){printf("%s: Error gxyAll is NULL\n", fcnm);}
-        if (gxzAll == NULL){printf("%s: Error gxzAll is NULL\n", fcnm);}
-        if (gyzAll == NULL){printf("%s: Error gyzAll is NULL\n", fcnm);}
-        if (m == NULL){printf("%s: Error m is NULL\n", fcnm);}
+        if (nobs < 5)
+        {
+            fprintf(stderr, "%s: At least 6 observations required\n", __func__);
+        }
+        if (dataPtr == NULL)
+        {
+            fprintf(stderr, "%s: Error dataPtr is NULL\n", __func__);
+        }
+        if (gxxAll == NULL)
+        {
+            fprintf(stderr, "%s: Error gxxAll is NULL\n", __func__);
+        }
+        if (gyyAll == NULL)
+        {
+            fprintf(stderr, "%s: Error gyyAll is NULL\n", __func__);
+        }
+        if (gzzAll == NULL)
+        {
+            fprintf(stderr, "%s: Error gzzAll is NULL\n", __func__);
+        }
+        if (gxyAll == NULL)
+        {
+            fprintf(stderr, "%s: Error gxyAll is NULL\n", __func__);
+        }
+        if (gxzAll == NULL)
+        {
+            fprintf(stderr, "%s: Error gxzAll is NULL\n", __func__);
+        }
+        if (gyzAll == NULL)
+        {
+            fprintf(stderr, "%s: Error gyzAll is NULL\n", __func__);
+        }
+        if (m == NULL){fprintf(stderr, "%s: Error m is NULL\n", __func__);}
         return -1;
     }
     memset(m, 0, 6*sizeof(double));
@@ -210,7 +256,7 @@ int parmt_invertMT64f(const int nobs,
     }
     if (mrows < ncols)
     {
-        printf("%s: Error problem is undetermined\n", fcnm);
+        fprintf(stderr, "%s: Error problem is undetermined\n", __func__);
         return -1;
     }
     ldg = mrows;
@@ -284,7 +330,7 @@ int parmt_invertMT64f(const int nobs,
                                    m6, NULL);
     if (ierr != 0)
     {
-        printf("%s: Error solving Gm=u\n", fcnm);
+        fprintf(stderr, "%s: Error solving Gm=u\n", __func__);
         ierr = 1;
         goto END;
     }

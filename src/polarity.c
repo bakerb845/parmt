@@ -40,17 +40,31 @@ static int performPolaritySearch64f(const int nmt, const int ldm,
                                     const double *__restrict__ mts, 
                                     double *__restrict__ phi);
 
+/*!
+ * @brief Driver routine for computing the polarity Green's functions from the
+ *        ttimes ak135 global travel time table.
+ *
+ * @param[in] globalComm     Global MPI communicator.
+ * @param[in] parms          Contains the polarity modeling parameters.
+ * @param[in] data           The SAC data whose header information will define
+ *                           the polarity and channel information.
+ *
+ * @param[out] polarityData  On exit contains the corresponding polarity Green's
+ *                           functions that can be used by the grid-search to
+ *                           estimate polarities from a given moment tensor.
+ *
+ * @result 0 indicates success.
+ */
 int parmt_polarity_computeTTimesGreens(
     const MPI_Comm globalComm,
     const struct parmtPolarityParms_struct parms,
     const struct parmtData_struct data,
     struct polarityData_struct *polarityData)
 {
-    const char *fcnm = "parmt_polarity_computeTTimesGreens64f\0";
     char kt0[8], kcmpnm[8], stat[8];
     double G6[6], *cmpazs, *cmpincs, *deps, *evlas, *evlos,
            *GxxBuf, *GyyBuf, *GzzBuf, *GxyBuf, *GxzBuf, *GyzBuf,
-           *stlas, *stlos, cmpinc, cmpaz, stla, stlo;
+           *stlas, *stlos, cmpinc, cmpincSAC, cmpaz, stla, stlo;
     int *icomps, *observation, *polarity, *waveType, icomp, ierr, ierrAll,
         iloc, iobs, ipol, it, iwav, jloc, k, kt, myid, nPolarity, nprocs;
     size_t lenos;
@@ -90,8 +104,8 @@ int parmt_polarity_computeTTimesGreens(
     // Verify there is a chance for something to do
     if (data.nobs < 1 || data.nlocs < 1)
     {
-        if (data.nobs < 1){printf("%s: No observations\n", fcnm);}
-        if (data.nlocs < 1){printf("%s: No locations\n", fcnm);}
+        if (data.nobs < 1){fprintf(stderr, "%s: No observations\n", __func__);}
+        if (data.nlocs < 1){fprintf(stderr, "%s: No locations\n", __func__);}
         return 0;
     }
     // Extract the depths in the grid-search from the first waveform 
@@ -110,7 +124,8 @@ int parmt_polarity_computeTTimesGreens(
                                      &evlos[iloc]);
         if (ierr != 0)
         {
-            printf("%s: Unable to get event coordinates on %d\n", fcnm, myid);
+            fprintf(stderr, "%s: Unable to get event coordinates on %d\n",
+                    __func__, myid);
             goto ERROR;
         }
     }
@@ -131,7 +146,7 @@ int parmt_polarity_computeTTimesGreens(
         {
             // Ensure the essential preliminary information is defined
             ierr  = sacio_getFloatHeader(SAC_FLOAT_CMPINC,
-                                         data.data[iobs].header, &cmpinc);
+                                         data.data[iobs].header, &cmpincSAC);
             ierr += sacio_getFloatHeader(SAC_FLOAT_CMPAZ,
                                          data.data[iobs].header, &cmpaz);
             ierr += sacio_getFloatHeader(SAC_FLOAT_STLA,
@@ -142,12 +157,20 @@ int parmt_polarity_computeTTimesGreens(
                                              data.data[iobs].header, kcmpnm);
             if (ierr != 0)
             {
-                printf("%s: Failed to get header information\n", fcnm);
+                fprintf(stderr, "%s: Failed to get header information\n",
+                        __func__);
                 continue;
             }
-            // SAC to SEED convention
-            cmpinc = cmpinc - 90.0;
             // Figure out the component
+            ierr = parmt_utils_getComponent(kcmpnm, cmpincSAC, &icomp); 
+            if (ierr != 0)
+            {
+                fprintf(stderr, "%s: Failed to classify component\n", __func__);
+            }
+            // SAC to SEED convention
+            cmpinc = cmpincSAC - 90.0;
+            // Figure out the component
+/*
             lenos = MAX(1, strlen(kcmpnm));
             icomp = 1;
             if (kcmpnm[lenos-1] == 'Z' || kcmpnm[lenos-1] == '1')
@@ -164,9 +187,10 @@ int parmt_polarity_computeTTimesGreens(
             }
             else
             {
-                printf("%s: Cannot classify component %s\n", fcnm, kcmpnm);
+                fprintf(stderr, "%s: Cannot classify component %s\n", __func__, kcmpnm);
                 continue; 
             }
+*/
             // Get the primary pick
             for (it=0; it<nTimeVars; it++)
             {
@@ -197,8 +221,8 @@ int parmt_polarity_computeTTimesGreens(
                     {
                         continue;
                     }
-                    printf("%s: t0 phase is not a P or S phase %s\n",
-                           fcnm, kt0);
+                    fprintf(stderr, "%s: t0 phase is not a P or S phase %s\n",
+                            __func__, kt0);
                     continue;
                 }
                 if (kt0[lenos-1] == '+')
@@ -211,13 +235,15 @@ int parmt_polarity_computeTTimesGreens(
                 }
                 else
                 {
-                    printf("%s: could not classify polarity %s\n", fcnm, kt0);
+                    fprintf(stderr, "%s: could not classify polarity %s\n",
+                            __func__, kt0);
                     continue;
                 }
                 // let user know something happened 
                 sacio_getCharacterHeader(SAC_CHAR_KSTNM,
                                          data.data[iobs].header, stat);
-                printf("%s: Polarity for %s is %d\n", fcnm, stat, ipol); 
+                fprintf(stdout, "%s: Polarity for %s is %d\n",
+                        __func__, stat, ipol); 
 //printf("%f %f %f %f %d %d %d %d\n", stla, stlo, cmpinc, cmpaz, icomp, iobs, iwav, ipol);
                 // save information for modeling
                 stlas[nPolarity] = stla;
@@ -237,7 +263,10 @@ int parmt_polarity_computeTTimesGreens(
     MPI_Bcast(&nPolarity, 1, MPI_INT, master, globalComm);
     if (nPolarity == 0)
     {
-        if (myid == master){printf("%s: There are no polarities\n", fcnm);}
+        if (myid == master)
+        {
+            fprintf(stdout, "%s: There are no polarities\n", __func__);
+        }
         ierr = 0;
         goto ERROR;
     }
@@ -254,7 +283,8 @@ int parmt_polarity_computeTTimesGreens(
     }
     else
     {
-        printf("%s: Warning - i'm setting wts to unity for now\n", fcnm);
+        fprintf(stdout, "%s: Warning - i'm setting wts to unity for now\n",
+                __func__);
     }
     MPI_Bcast(stlas,   nPolarity, MPI_DOUBLE, master, globalComm);
     MPI_Bcast(stlos,   nPolarity, MPI_DOUBLE, master, globalComm);
@@ -306,8 +336,9 @@ int parmt_polarity_computeTTimesGreens(
                                 G6);
             if (ierr != 0)
             {
-                printf("%s: Error computing polarities %d %d on PID %d\n",
-                       fcnm, iloc, ipol, myid);
+                fprintf(stderr,
+                        "%s: Error computing polarities %d %d on PID %d\n",
+                       __func__, iloc, ipol, myid);
                 ierrAll = ierrAll + 1;
                 continue;
             }
@@ -325,7 +356,8 @@ int parmt_polarity_computeTTimesGreens(
     ierr = ierrAll;
     if (ierr != 0)
     {
-        printf("%s: Error computing polarities from ttimes\n", fcnm);
+        fprintf(stderr, "%s: Error computing polarities from ttimes\n",
+                __func__);
         ierr = 1;
         goto ERROR;
     }
@@ -370,6 +402,31 @@ ERROR:;
     return ierr;
 }
 //============================================================================//
+/*!
+ * @brief Computes the row of the Green's functions matrix for modeling
+ *        a polarity from the ttimes model.
+ *
+ * @param[in] data      Contains the pick type and channel information.
+ * @param[in] wavetype  P_WAVE (1) indicates a P-wave.
+ * @param[in] wavetype  S_WAVE (2) indicates an S-wave.
+ * @param[in] evdp      Depth of the event in kilometers. 
+ * @param[in] dirnm     Directory containing the iasp-tau binary files.  
+ * @param[in] model     Name of the model, e.g., ak135.
+ *
+ * @param[out] G        On exit contains the Green's functions so that for 
+ *                      the i'th row of G, \f$ G_i \cdot \textbf{m} \f$ 
+ *                      computes an estimate of polarity.  This is packed
+ *                      in order
+ *                      \f$
+ *                        \{m_{xx}, m_{yy}, m_{zz}, m_{xy}, m_{xz}, m_{yz} \}
+ *                      \f$
+ *                      and must have a dimension of at least [6].
+ *
+ * @result 0 indicates success.
+ *
+ * @copyright ISTI distributed under the Apache 2 license.
+ *
+ */
 int parmt_polarity_computeGreensRowFromData(const struct sacData_struct data,
                                             const int wavetype,
                                             const double evdp,
@@ -377,13 +434,12 @@ int parmt_polarity_computeGreensRowFromData(const struct sacData_struct data,
                                             const char *model,
                                             double *__restrict__ G)
 {
-    const char *fcnm = "parmt_polarity_computeGreensRowFromData\0";
     char kcmpnm[16];
-    double cmpaz, cmpinc, evla, evlo, stla, stlo;
+    double cmpaz, cmpinc, cmpincSAC, evla, evlo, stla, stlo;
     int icomp, ierr;
     size_t lenos;
     memset(kcmpnm, 16, 16*sizeof(char));
-    ierr  = sacio_getFloatHeader(SAC_FLOAT_CMPINC, data.header, &cmpinc); 
+    ierr  = sacio_getFloatHeader(SAC_FLOAT_CMPINC, data.header, &cmpincSAC); 
     ierr += sacio_getFloatHeader(SAC_FLOAT_CMPAZ,  data.header, &cmpaz);
     ierr += sacio_getFloatHeader(SAC_FLOAT_EVLA,   data.header, &evla);
     ierr += sacio_getFloatHeader(SAC_FLOAT_EVLO,   data.header, &evlo);
@@ -392,11 +448,18 @@ int parmt_polarity_computeGreensRowFromData(const struct sacData_struct data,
     ierr += sacio_getCharacterHeader(SAC_CHAR_KCMPNM, data.header, kcmpnm);
     if (ierr != 0) 
     {
-        printf("%s: Failed to get header information\n", fcnm);
+        fprintf(stderr, "%s: Failed to get header information\n", __func__);
+        return -1;
+    }
+    // Figure out the component
+    ierr = parmt_utils_getComponent(kcmpnm, cmpincSAC, &icomp);
+    if (ierr != 0)
+    {
+        fprintf(stderr, "%s: Failed to classify component\n", __func__);
         return -1;
     }
     // SAC to SEED convention
-    cmpinc = cmpinc - 90.0;
+    cmpinc = cmpincSAC - 90.0;
     // Figure out the component
     lenos = MAX(1, strlen(kcmpnm));
     icomp = 1;
@@ -414,7 +477,7 @@ int parmt_polarity_computeGreensRowFromData(const struct sacData_struct data,
     }
     else
     {
-        printf("%s: Can't classify component %s\n", fcnm, kcmpnm);
+        fprintf(stderr, "%s: Can't classify component %s\n", __func__, kcmpnm);
         return -1;
     }
     ierr = parmt_polarity_computeGreensRowFromTtimes(wavetype, icomp,
@@ -425,7 +488,7 @@ int parmt_polarity_computeGreensRowFromData(const struct sacData_struct data,
                                                      G);
     if (ierr != 0)
     {
-        printf("%s: Failed to compute G\n", fcnm);
+        fprintf(stderr, "%s: Failed to compute G\n", __func__);
     }
     return ierr;
 }
@@ -433,26 +496,28 @@ int parmt_polarity_computeGreensRowFromData(const struct sacData_struct data,
 /*!
  * @brief Computes a row of the Green's functions matrix from ttimes
  *
- * @param[in] wavetype   =1 then this is a P wave.
- *                       =2 then this is an S wave
- * @param[in] icomp      =1 then this is the vertical channel.
- *                       =2 then this is the north (2) channel.
- *                       =3 then this is the east (3) channel.
- * @param[in] evla       event latitude (degrees)
- * @param[in] evlo       event longitude (degrees)
- * @param[in] evdp       event depth (km)
- * @param[in] stla       station latitude (degrees)
- * @param[in] stlo       station longitude (degrees)
- * @param[in] cmpaz      component azimuth (0 north, +90 east)
- * @param[in] cmpinc     component inclinantion (-90 up, 0 east/north, +90 down)
- * @param[in] dirnm      directory containing the ttimes precomputed binary
- *                       files
- * @param[in] model      model (e.g. ak135 or iasp91)
+ * @param[in] wavetype   If 1 then this is a P wave.
+ * @param[in] wavetype   If 2 then this is an S wave.
+ * @param[in] icomp      If 1 then this is the vertical channel.
+ * @param[in] icomp      If 2 then this is the north (1 or 2) channel.
+ * @param[in] icomp      If 3 then this is the east (2 or 3) channel.
+ * @param[in] evla       Event latitude (degrees).
+ * @param[in] evlo       Event longitude (degrees).
+ * @param[in] evdp       Event depth (km).
+ * @param[in] stla       Station latitude (degrees).
+ * @param[in] stlo       Station longitude (degrees).
+ * @param[in] cmpaz      Component azimuth (0 north, +90 east).
+ * @param[in] cmpinc     Component inclination (-90 up, 0 east/north, +90 down).
+ * @param[in] dirnm      Directory containing the ttimes precomputed binary
+ *                       files.  If NULL then the default as dicated by the 
+ *                       ttimes configuration will be used. 
+ * @param[in] model      Model name (e.g., ak135 or iasp91)
  *
- * @param[out] G         row of matrix s.t. G*m produces estimates the polarity
+ * @param[out] G         Row of matrix s.t. G*m produces estimates the polarity
  *                       at the station.  Here m is packed 
  *                       \f$ \{m_{xx}, m_{yy}, m_{zz},
  *                             m_{xy}, m_{xz}, m_{yz} \} \f$
+ *                       This must have dimension of at least 6.
  *
  * @author Ben Baker
  *
@@ -467,20 +532,19 @@ int parmt_polarity_computeGreensRowFromTtimes(
     const char *dirnm, const char *model,
     double *__restrict__ G)
 {
-    const char *fcnm = "parmt_polarity_computeGreensRowFromCoordinates\0";
     double aoiRec, az, azSrc, baz, bazRec, dist, delta, toaSrc;
     struct ttimesTravelTime_struct ttime;
     int ierr;
     ierr = 0;
     if (G == NULL)
     {
-        printf("%s: Error G is NULL\n", fcnm);
+        fprintf(stderr, "%s: Error G is NULL\n", __func__);
         return -1;
     }
     memset(G, 0, 6*sizeof(double));
     if (evdp < 0.0 || evdp > ttimes_getMaxDepth())
     {
-        printf("%s: Error depth must be between [0,%f]\n", fcnm,
+        fprintf(stderr, "%s: Error depth must be between [0,%f]\n", __func__,
                 ttimes_getMaxDepth()); 
         return -1;
     }
@@ -497,12 +561,14 @@ int parmt_polarity_computeGreensRowFromTtimes(
     }
     else
     {
-        printf("%s: Invalid phase type - must be 1 (P) or 2 (S)\n", fcnm);
+        fprintf(stderr, "%s: Invalid phase type - must be 1 (P) or 2 (S)\n",
+                __func__);
         return -1;
     }
     if (ierr != 0)
     {
-        printf("%s: Error computing theoretical traveltime info\n", fcnm);
+        fprintf(stderr, "%s: Error computing theoretical traveltime info\n",
+                 __func__);
         return -1;
     }
     // Compute the column in the Green's function matrix
@@ -517,7 +583,7 @@ int parmt_polarity_computeGreensRowFromTtimes(
    
     if (ierr != 0)
     {
-        printf("%s: Failed to compute polarity greens row\n", fcnm);
+        fprintf(stderr, "%s: Failed to compute polarity for row\n", __func__);
         memset(G, 0, 6*sizeof(double));
         return -1;
     }
@@ -574,7 +640,6 @@ int parmt_polarity_computeGreensMatrixRow(const int wavetype,
                                           const double cmpaz,
                                           double *__restrict__ G)
 {
-    const char *fcnm = "parmt_polarity_computeGreensMatrixRow\0"; 
     double M[9], G63[18], up[6], ush[6], usv[6],
            gam[3], lhat[3], phat[3], phihat[3],
            cosba, cos_cmpaz, cost_rec,
@@ -592,12 +657,12 @@ int parmt_polarity_computeGreensMatrixRow(const int wavetype,
     // Error check
     if (icomp < 1 || icomp > 3)
     {
-        printf("%s: Invalid component\n", fcnm);
+        fprintf(stderr, "%s: Invalid component\n", __func__);
         return -1;
     } 
     if (wavetype < P_WAVE || wavetype > S_WAVE)
     {
-        printf("%s: Invalid wavetype\n", fcnm);
+        fprintf(stderr, "%s: Invalid wavetype\n", __func__);
         return -1;
     }
     // Fill the basis at the source (Aki and Richards Eqn 4.88)
@@ -730,9 +795,18 @@ int parmt_polarity_computeGreensMatrixRow(const int wavetype,
     }
     return 0;
 }
-
+//============================================================================//
 /*!
- * @brief Fills in the basis vectors - Aki and Richards pg 108
+ * @brief Fills in the basis vectors - Aki and Richards pg 108 Eqn 4.88.
+ *
+ * @param[in] i       Take-off angle (degrees).
+ * @param[in] phi     Azimuth angle (degrees).
+ * @param[in] gam     P-wave direction.  This has dimension [3].
+ * @param[in] phat    SV-wave direction.  This has dimension [3].
+ * @param[in] phihat  SH-wave direction.  This has dimension [3].
+ *
+ * @copyright ISTI distributed under the Apache 2 license.
+ * 
  */
 static void fillBasis(const double i, const double phi,
                       double *__restrict__ gam,
@@ -757,11 +831,17 @@ static void fillBasis(const double i, const double phi,
     phihat[1] = cosp;
     phihat[2] = 0.0;
 }
-
+//============================================================================//
 /*!
  * @brief Sets the moment tensor matrix where the k'th moment tensor
  *        term is 1 and others are zero.  Here moment tensor terms
  *        are counted {0,1,2,3,4,5} = {xx,yy,zz,xy,xz,yz}
+ *
+ * @param[in] k    Moment tensor index.  This is in the range [0,5] and follows
+ *                 the mapping {0,1,2,3,4,5} = {xx,yy,zz,xy,xz,yz}.
+ *
+ * @param[out] M   The 3x3 NED moment tensor. This is an array of dimension [9].
+ *
  */
 static void setM3x3(const int k, double *__restrict__ M)
 {
@@ -836,6 +916,7 @@ static void setM3x3(const int k, double *__restrict__ M)
 */
     return;
 }
+//============================================================================//
 /*!
  * @brief Computes the contraction in Aki and Richards Eqn 4.96
  *        for the given basis vectors and moment tensor.
@@ -857,14 +938,34 @@ static double computeContraction3x3(const double *__restrict__ a,
     }
     return res;
 }
-
+//============================================================================//
+/*!
+ * @brief Tabulates the objective function over the earthquake locations.
+ *
+ * @param[in] locComm       Location MPI communicator.
+ * @param[in] blockSize     Block-size for performing matrix-matrix
+ *                          multiplications.
+ * @param[in] polarityData  Contains the polarity data and the Green's functions.
+ * @param[in] mtloc         Contains the local moment tensors in this rank's
+ *                          grid search.
+ *
+ * @param[out] phi          The objective function tabulated for all locations
+ *                          and moment tensors.  This is only accessed by
+ *                          master process in locComm; and for this case has
+ *                          dimension [nlocs x mtloc.nmtAll] with leading
+ *                          dimension mtloc.nmtAll. Otherwise, this can be NULL.
+ *
+ * @result 0 indicates success. 
+ *
+ * @copyright ISTI distributed under the Apache 2 license.
+ *
+ */
 int polarity_performLocationSearch64f(const MPI_Comm locComm,
                                       const int blockSize,
                                       struct polarityData_struct polarityData, 
                                       struct localMT_struct mtloc,
                                       double *__restrict__ phi)
 {
-    const char *fcnm = "polarity_performLocationSearch64f\0"; 
     double *Dmat, *G, *Sigma, *phiLoc, *phiWork;
     int icol, ierr, ierrAll, iloc, ipol, jloc, jndx,
         kt, mylocID, nlocProcs, mblock, pad;
@@ -929,7 +1030,7 @@ int polarity_performLocationSearch64f(const MPI_Comm locComm,
                                         phiLoc);
         if (ierr != 0)
         {
-            printf("%s: Error in mt polarity search\n", fcnm);
+            fprintf(stderr, "%s: Error in mt polarity search\n", __func__);
             ierrAll = ierrAll + 1;
         }
         // Gather the moment tensor search results onto the master 
@@ -945,7 +1046,9 @@ int polarity_performLocationSearch64f(const MPI_Comm locComm,
                         &phiWork[jndx], mtloc.nmtProc, mtloc.offset,
                         MPI_DOUBLE, master, mtloc.comm);
         }
-printf("%d %f %f\n", mylocID, array_min64f(nmt, phiLoc, &ierr), array_max64f(nmt, phiLoc, &ierr));
+        fprintf(stdout, "%s: mylocID: %d min: %f max: %f\n",
+                __func__, mylocID, array_min64f(nmt, phiLoc, &ierr),
+                array_max64f(nmt, phiLoc, &ierr));
 
     }
     // Reduce the search onto the master
@@ -962,8 +1065,40 @@ printf("%d %f %f\n", mylocID, array_min64f(nmt, phiLoc, &ierr), array_max64f(nmt
     memory_free64f(&Sigma);
     return 0;
 }
-
 //============================================================================//
+/*!
+ * @brief Performs the polarity search for a host of moment tensors.
+ *
+ * @param[in] nmt        Number of moment tensors.
+ * @param[in] ldm        Leading dimension of moment tensor matrix.  This must
+ *                       be at least 6. 
+ * @param[in] nPolarity  The number of polarities (observations).
+ * @param[in] blockSize  Controls the number of forward problems GM to compute
+ *                       simultaneously.
+ * @param[in] mblock     The largest block size.  This serves as a leading 
+ *                       dimension. 
+ * @param[in] Mrows      Number of rows in Green's functions matrix.
+ * @param[in] Kcols      Number of columns in Green's functions matrix.  This
+ *                       should be 6.
+ * @param[in] Dmat       The polarity data replicated to the max block size.
+ *                       This has dimension [nPolarity x mblock] with leading
+ *                       dimension mblock.
+ * @param[in] G          Forward modeling matrix.  This has dimension
+ *                       [nPolarity x LDG] with leading dimension LDG.
+ * @param[in] Sigma      These are the data weights and has dimension
+ *                       [nPolarity].
+ * @param[in] mts        Matrix of moment tensors and has dimension [nmt x ldm].
+ *                       with leading dimension ldm.
+ *
+ * @param[out] phi       The objective function (variance reduction) tabulated
+ *                       for all the moment tensors and observations.  This has
+ *                       dimension [nmt].
+ *
+ * @result 0 indicates success.
+ *
+ * @copyright ISTI distributed under the Apache 2 license.
+ *
+ */
 static int performPolaritySearch64f(const int nmt, const int ldm, 
                                     const int nPolarity,
                                     const int blockSize, const int mblock,
@@ -974,7 +1109,6 @@ static int performPolaritySearch64f(const int nmt, const int ldm,
                                     const double *__restrict__ mts, 
                                     double *__restrict__ phi) 
 {
-    const char *fcnm = "performPolaritySearch64f\0";
     double *U, *Usign, *res2, *sqrtSigmaWt, res, traceSigma;
     int i, ic, ierr, ipol, jmt, kmt, nmtBlocks, Ncols;
     const double one = 1.0; 
@@ -983,7 +1117,8 @@ static int performPolaritySearch64f(const int nmt, const int ldm,
     nmtBlocks = (int) ((double) (nmt)/(double) (blockSize) + 1.0);
     if (nmtBlocks*blockSize < nmt) 
     {    
-        printf("%s: Internal error - all mts wont be visited\n", fcnm);
+        fprintf(stderr, "%s: Internal error - all mts wont be visited\n",
+                __func__);
         return -1;
     }
 #ifdef __INTEL_COMPILER

@@ -135,24 +135,60 @@ int prepmt_greens_ffGreensToGreens(const int nobs,
             break;
         }
         // Need to figure out the component
-        icomp = 1;
-        if (kcmpnm[2] == 'Z' || kcmpnm[2] == 'z' || kcmpnm[2] == '1')
+        ierr = parmt_utils_getComponent(kcmpnm, cmpinc, &icomp);
+        if (ierr != 0)
         {
-            icomp = 1;
+            fprintf(stderr, "%s: Error getting component\n", __func__);
+            break;
         }
-        else if (kcmpnm[2] == 'N' || kcmpnm[2] == 'n' || kcmpnm[2] == '2')
+/*
+        icomp = 1;
+        if (fabs(cmpinc - 0.0) < 1.e-4 || fabs(cmpinc - 180.0) < 1.e-4)
+        {
+            if (kcmpnm[2] == 'Z' || kcmpnm[2] == 'z' || kcmpnm[2] == '1')
+            {
+                icomp = 1;
+            }
+            else
+            {
+                fprintf(stderr, "%s: cmpinc is 0 but channel=%s isn't vertical",
+                        __func__, kcmpnm);
+            }
+        }
+        else if (fabs(cmpinc - 90.0) < 1.e-4)
         {
             icomp = 2;
+            if (kcmpnm[2] == 'N' || kcmpnm[2] == 'n' ||
+                kcmpnm[2] == '1' || kcmpnm[2] == '2')
+            {
+                icomp = 2;
+            }
+            else if (kcmpnm[2] == 'N' || kcmpnm[2] == 'n' ||
+                     kcmpnm[2] == '2' || kcmpnm[2] == '3') 
+            {
+                icomp = 3;
+            }
+            else
+            {
+                fprintf(stderr, "%s: cmpinc is 90 but channel=%s is weird",
+                        __func__, kcmpnm);
+                return -1;
+            }
         }
+*/
+        /*
         else if (kcmpnm[2] == 'E' || kcmpnm[2] == 'e' || kcmpnm[2] == '3')
         {
             icomp = 3;
         }
+        */
+/*
         else
         {
-            fprintf(stderr, "%s: Can't classify component: %s\n",
-                    __func__, kcmpnm);
+            fprintf(stderr, "%s: Can't classify component %s with cmpinc=%f\n",
+                    __func__, kcmpnm, cmpinc);
         }
+*/
         // Process all Green's functions in this block
         for (id=0; id<ndepth; id++)
         {

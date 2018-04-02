@@ -10,6 +10,22 @@
 #include "parmt_utils.h"
 #include "iscl/memory/memory.h"
 
+/*!
+ * @brief Computes a synthetic seismogram corresponding for the 
+ *        given observations, location (depth), and moment tensor.
+ *
+ * @param[in] iobs      Observations number.
+ * @param[in] ilocOpt   Location index.
+ * @param[in] imtOpt    Moment tensor number. 
+ * @param[in] ldm       Leading dimension of mts.  This must be at leats 6.
+ * @param[in] mts       Matrix of moement tensors with dimension [nmt x ldm].
+ *
+ * @param[in,out] data  On input contains the data.
+ * @param[in,out] data  On exit contains the corresponding synthetic.
+ * 
+ * @result 0 indicates success.
+ *
+ */
 int parmt_computeSynthetic(const int iobs,
                            const int ilocOpt,
                            const int imtOpt,
@@ -20,7 +36,8 @@ int parmt_computeSynthetic(const int iobs,
     double *G;
     int k, npts;
     k = iobs*data->nlocs + ilocOpt;
-printf("%d\n", k);
+    fprintf(stdout, "%s: Processing observation=%d, location=%d, mt=%d, k=%d\n",
+            __func__, iobs, ilocOpt, imtOpt, k);
     npts = data->sacGxx[k].header.npts;
     G = memory_calloc64f(6*npts);
     sacio_copyHeader(data->sacGxx[k].header, &data->est[iobs].header);

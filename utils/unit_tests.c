@@ -164,7 +164,7 @@ int main()
     cmpinc = 0.0;
     baz = fmod(az + 180.0, 360.0);
     ierr = parmt_utils_ff2mtGreens64f(npgrns, 3, az, baz,
-                                      cmpaz, cmpinc, 
+                                      cmpaz, cmpinc,
                                       sacZDS.data, sacZSS.data,
                                       sacZDD.data, sacZEX.data,
                                       sacRDS.data, sacRSS.data,
