@@ -14,8 +14,8 @@ Below is a list of dependencies.  It is strongly recommended to use vendor BLAS/
   - The initializing parser library [iniparser](https://github.com/ndevilla/iniparser) 
   - ISTI's scientific computing library [ISCL](https://github.com/bakerb845/libiscl).  This must have been compiled with [GeographicLib](https://geographiclib.sourceforge.io/)
   - ISTI's signals processing library [ISPL](https://github.com/bakerb845/ispl)
-  - The 1D global earth [travel-times library](https://github.com/bakerb845/libttimes) to [iaspei-tau](https://seiscode.iris.washington.edu/projects/iaspei-tau)
-  - The SAC input/output library [sacio](https://github.com/bakerb845/sacio)
+  - The 1D global earth [travel-times library](https://gitlab.isti.com/bbaker/libttimes) to [iaspei-tau](https://seiscode.iris.washington.edu/projects/iaspei-tau)
+  - The SAC input/output library [sacio](https://gitlab.isti.com/bbaker/sacio)
   - The Computer Programs in Seismology library [libcps](https://github.com/bakerb845/libcps) 
   - The C moment tensor manipulation library [compearth](https://github.com/bakerb845/compearth)
   
